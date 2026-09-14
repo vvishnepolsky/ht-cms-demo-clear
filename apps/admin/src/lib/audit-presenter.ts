@@ -20,7 +20,10 @@
  * `actorType` — a closed enum (`'SYSTEM' | 'CASEWORKER' | 'APPLICANT'`) used only
  * to classify the actor (System vs caseworker vs applicant), never rendered raw.
  * Its sibling `triggeredBy` (an opaque internal ref) is deliberately NOT
- * allowlisted and must NEVER be read or rendered. Free-form, operator-entered
+ * allowlisted and must NEVER be read or rendered. The Verify Assist flag rows
+ * (`VERIFY_ASSIST_FLAG_UPDATED`) add `noteAdded` (boolean) next to the existing
+ * `fromStatus`/`toStatus` enums; their `assignee` (an email) and `flagId` are
+ * NOT rendered. Free-form, operator-entered
  * values (`reason`, `noteToApplicant`, `resolution`) are NEVER read or rendered
  * either, even though `metadata` now flows to the client. Adding a new key to a
  * handler is a deliberate, reviewable act — keep free-form prose out.
@@ -331,6 +334,22 @@ function coreSentence(input: AuditSummaryInput, ctx: AuditSummaryContext): strin
 
     case 'CREATE_LINKED_CASE':
       return `${actor} created a linked case`;
+
+    // Verify Assist (CLEAR) out-of-state coverage flag worked from Case Assist.
+    // Metadata: fromStatus/toStatus (open | in_review | resolved | dismissed),
+    // assignee, noteAdded — no PHI.
+    case 'VERIFY_ASSIST_FLAG_UPDATED': {
+      const to = str(metadata, 'toStatus');
+      const from = str(metadata, 'fromStatus');
+      const noteAdded = metadata?.noteAdded === true;
+      let sentence: string;
+      if (to === 'in_review') sentence = `${actor} marked the Verify Assist flag in review`;
+      else if (to === 'resolved') sentence = `${actor} resolved the Verify Assist flag`;
+      else if (to === 'dismissed') sentence = `${actor} dismissed the Verify Assist flag`;
+      else if (to && from) sentence = `${actor} changed the Verify Assist flag from ${titleCase(from)} to ${titleCase(to)}`;
+      else sentence = `${actor} updated the Verify Assist flag`;
+      return noteAdded ? `${sentence} and added a note` : sentence;
+    }
 
     case 'ISSUE_RFI': {
       const items = splitItems(str(metadata, 'itemsRequested'));

@@ -42,6 +42,8 @@ export interface CaseAssistVerificationView {
 
 export interface CaseAssistFlagView {
   status: string;
+  /** Set once the flag is resolved/dismissed (e.g. `disenrollment_confirmed`). */
+  dispositionReason?: string | null;
 }
 
 export function checkPassed(c: { status: string; value?: boolean | null }): boolean {
@@ -67,30 +69,57 @@ export function deriveRecommendations(
 
   if (det?.duplicate_enrollment || (verification && flagOpen)) {
     const payer = det?.coverage?.payer_name ?? `${stateName} Medicaid`;
-    recs.push({
-      id: "oos-medicaid",
-      type: "draft_task",
-      priority: 1,
-      severity: "critical",
-      source: "verify_assist",
-      title: `Active out-of-state Medicaid coverage detected (${stateName})`,
-      body: `CLEAR's coverage discovery found an ACTIVE ${payer} enrollment for ${name}${det?.coverage?.insurance_member_id ? ` (member ID ending ${det.coverage.insurance_member_id.slice(-4)})` : ""}. Federal rules bar concurrent Medicaid enrollment in two states, so State-X coverage cannot be approved until the ${stateName} case is closed.${flag && !flagOpen ? ` The Verify Assist flag has been ${flag.status}.` : ""}`,
-      rationale: {
-        summary: `Payer state ${det?.payer_state ?? "?"} ≠ tenant state SX and plan_status is ACTIVE.`,
-        citedFieldPaths: [
-          "identityVerification.determination.duplicate_enrollment",
-          "identityVerification.determination.payer_state",
-          "identityVerification.determination.coverage.payer_name",
-          "identityVerification.determination.coverage.plan_status",
-          "intakeData.applicant.stateOfResidence",
+    const memberSuffix = det?.coverage?.insurance_member_id ? ` (member ID ending ${det.coverage.insurance_member_id.slice(-4)})` : "";
+    const citedFieldPaths = [
+      "identityVerification.determination.duplicate_enrollment",
+      "identityVerification.determination.payer_state",
+      "identityVerification.determination.coverage.payer_name",
+      "identityVerification.determination.coverage.plan_status",
+      "intakeData.applicant.stateOfResidence",
+    ];
+    const flagClosed = !!flag && !flagOpen; // resolved | dismissed
+    if (flagClosed) {
+      // The finding stays on record (the caseworker worked it), but it no longer
+      // blocks the determination — so it must not keep asking for the RFI.
+      const verb = flag.status === "dismissed" ? "dismissed" : "resolved";
+      recs.push({
+        id: "oos-medicaid",
+        type: "guidance",
+        priority: 3,
+        severity: "info",
+        source: "verify_assist",
+        title: `Out-of-state Medicaid finding ${verb} (${stateName})`,
+        body: `CLEAR's coverage discovery had found an ACTIVE ${payer} enrollment for ${name}${memberSuffix}. The Verify Assist flag was ${verb}${flag.dispositionReason ? ` (${flag.dispositionReason.replace(/_/g, " ")})` : ""}, so the determination is no longer blocked by this finding.`,
+        rationale: {
+          summary: `Payer state ${det?.payer_state ?? "?"} ≠ tenant state SX; flag status is ${flag.status}.`,
+          citedFieldPaths: [...citedFieldPaths, "identityVerification.flag.status"],
+        },
+        suggestedActions: [
+          verb === "resolved"
+            ? `Keep the ${stateName} disenrollment evidence in the case file`
+            : "Note why the finding was dismissed in the case file",
         ],
-      },
-      suggestedActions: [
-        `Issue RFI for proof of ${det?.payer_state ?? "SC"} Medicaid disenrollment`,
-        `Contact ${stateName} DHHS to confirm termination date`,
-        "Hold determination until resolved",
-      ],
-    });
+      });
+    } else {
+      recs.push({
+        id: "oos-medicaid",
+        type: "draft_task",
+        priority: 1,
+        severity: "critical",
+        source: "verify_assist",
+        title: `Active out-of-state Medicaid coverage detected (${stateName})`,
+        body: `CLEAR's coverage discovery found an ACTIVE ${payer} enrollment for ${name}${memberSuffix}. Federal rules bar concurrent Medicaid enrollment in two states, so State-X coverage cannot be approved until the ${stateName} case is closed.`,
+        rationale: {
+          summary: `Payer state ${det?.payer_state ?? "?"} ≠ tenant state SX and plan_status is ACTIVE.`,
+          citedFieldPaths,
+        },
+        suggestedActions: [
+          `Issue RFI for proof of ${det?.payer_state ?? "SC"} Medicaid disenrollment`,
+          `Contact ${stateName} DHHS to confirm termination date`,
+          "Hold determination until resolved",
+        ],
+      });
+    }
   }
 
   if (verification && verification.status === "success" && verification.checks.length > 0 && verification.checks.every(checkPassed)) {

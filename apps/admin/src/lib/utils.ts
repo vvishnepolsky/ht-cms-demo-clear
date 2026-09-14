@@ -66,10 +66,15 @@ export function toCalendarDate(value: string | null | undefined): string | null 
  * ApplicantSidebar, CompletedCaseDetail, derive-case-detail).
  */
 export function caseDisplayNumber(eeCase: Pick<EECase, 'id' | 'caseNumber' | 'intakeData'>): string {
+  // The demo server assigns `caseNumber` (SX-2026-NNNNNN) at creation and it is
+  // what the resident's confirmation, the case list and the case nav bar show —
+  // so it is canonical. The resident-generated displayMeta.caseNumber is only a
+  // fallback for rows created before the column was populated.
+  if (eeCase.caseNumber) return eeCase.caseNumber;
   const intake = (eeCase.intakeData ?? {}) as Record<string, unknown>;
   const displayMeta = (intake.displayMeta ?? {}) as Record<string, unknown>;
   const fromIntake = typeof displayMeta.caseNumber === 'string' ? displayMeta.caseNumber : null;
-  return fromIntake ?? eeCase.caseNumber ?? eeCase.id.slice(-8).toUpperCase();
+  return fromIntake ?? eeCase.id.slice(-8).toUpperCase();
 }
 
 /**

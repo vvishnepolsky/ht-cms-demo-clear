@@ -64,6 +64,9 @@ function SidebarNavItem({
             data-slot="sidebar-nav-item"
             onClick={onClick}
             data-active={isActive ? 'true' : undefined}
+            // Collapsed sidebar hides the label column, leaving an icon-only
+            // button with no accessible name — name it explicitly.
+            aria-label={sidebarOpen ? undefined : label}
             className={className}
           />
         }

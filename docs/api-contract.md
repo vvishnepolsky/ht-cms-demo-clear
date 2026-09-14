@@ -274,7 +274,7 @@ type UpdateVerifyAssistFlagPayload { flag: VerifyAssistFlag, errors: [PayloadErr
 
 | id | trigger | severity | title |
 |---|---|---|---|
-| `oos-medicaid` | linked verification `determination.duplicate_enrollment` | critical | Active out-of-state Medicaid coverage detected (South Carolina) |
+| `oos-medicaid` | linked verification `determination.duplicate_enrollment` | critical while the flag is `open`/`in_review` (or no flag row); downgraded to **info** (priority 3, title `Out-of-state Medicaid finding resolved|dismissed (South Carolina)`, single file-keeping action, no RFI action) once the flag is `resolved`/`dismissed` | Active out-of-state Medicaid coverage detected (South Carolina) |
 | `identity-verified` | verification `status === 'success'` and all checks success | info | Identity verified by CLEAR — no manual ID review needed |
 | `identity-unverified` | no linked verification, or status failed/expired | warning | Identity not verified — request ID documents |
 | `applicant-resolution` | `resolution === 'confirm_enrolled'` | warning | Applicant confirmed they are still enrolled in SC Medicaid |
@@ -298,8 +298,9 @@ Narrative: when `ANTHROPIC_API_KEY` is set, one non-streaming `messages.create`
 2–3 sentence caseworker-facing paragraph grounded ONLY in the recommendations
 list and the case summary (applicant first name, household size, program,
 status). No SSN, no full DOB, no address in the prompt. Result cached in
-`medicaid_ee_cases.case_assist_narrative`; regenerated when the
-recommendation id set changes. Otherwise the template narrative is used and
+`medicaid_ee_cases.case_assist_narrative`; regenerated when the cache key —
+the case status plus each recommendation's `id@severity` — changes (so working
+the Verify Assist flag or moving the case to IN_REVIEW/APPROVED refreshes it). Otherwise the template narrative is used and
 `narrativeSource = "template"`. Any API error → template fallback, never a 500.
 
 ## Verify Assist REST (unchanged from ht-clear unless noted)

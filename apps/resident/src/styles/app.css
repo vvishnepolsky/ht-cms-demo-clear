@@ -535,7 +535,7 @@ select.input {
 }
 .grid-csz {
   display: grid;
-  grid-template-columns: 1.6fr 90px 110px;
+  grid-template-columns: 1.4fr 130px 120px;
   gap: 12px;
 }
 
@@ -2820,6 +2820,9 @@ a {
   line-height: 1.4;
   white-space: nowrap;
   vertical-align: middle;
+}
+.verified-chip--compact {
+  padding: 2px 5px;
 }
 .verified-label {
   display: inline-flex;

@@ -273,6 +273,12 @@ function StatusHero() {
             ) : null}
           </div>
           <div className="status-meta">
+            {eeCaseStatus?.caseNumber ? (
+              <div className="status-meta-row">
+                <span className="muted">Case number</span>
+                <span data-testid="dashboard-case-number">{eeCaseStatus.caseNumber}</span>
+              </div>
+            ) : null}
             {coverageStartLabel ? (
               <div className="status-meta-row">
                 <span className="muted">Coverage starts</span>

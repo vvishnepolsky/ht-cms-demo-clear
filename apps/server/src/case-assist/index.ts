@@ -32,7 +32,7 @@ export function recommendationsFor(row: CaseRow): CaseAssistRecommendation[] {
           determination: verification.determination,
         }
       : null,
-    flagRow ? { status: flagRow.status } : null,
+    flagRow ? { status: flagRow.status, dispositionReason: flagRow.disposition_reason ?? null } : null,
   );
 }
 
@@ -57,12 +57,18 @@ const inflight = new Map<string, Promise<CaseAssistResult>>();
 
 /**
  * Recommendations are recomputed on every read (cheap, deterministic). The
- * narrative is cached on the case and regenerated only when the set of
- * recommendation ids changes.
+ * narrative is cached on the case and regenerated only when its inputs change:
+ * the set of recommendation ids *and severities* (a finding downgraded from
+ * critical to info — e.g. the Verify Assist flag was resolved — must not keep
+ * the old "issue an RFI" guidance) or the case status the lead sentence names.
  */
+function narrativeCacheKey(row: CaseRow, recs: CaseAssistRecommendation[]): string[] {
+  return [`status:${row.status}`, ...recs.map((r) => `${r.id}@${r.severity}`)];
+}
+
 export async function ensureCaseAssist(row: CaseRow): Promise<CaseAssistResult> {
   const recs = recommendationsFor(row);
-  const ids = recs.map((r) => r.id);
+  const ids = narrativeCacheKey(row, recs);
   const cachedIds = fromJson<string[]>(row.case_assist_rec_ids) ?? null;
   const cachedSource = (row.case_assist_narrative_source as NarrativeSource | null) ?? null;
   // Cache hit — also when a template narrative is cached and no key is configured,

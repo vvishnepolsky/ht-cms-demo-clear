@@ -326,9 +326,28 @@ export default function WorkspacePage() {
     if (error) console.error(LOG_PREFIX, 'Failed to load case', { name: error.name });
   }, [error]);
 
-  function fireApprove() {
+  // The EE lifecycle is PENDING_VERIFICATION → IN_REVIEW → APPROVED | DENIED.
+  // A MAGI case reaches Review & Decide straight from PENDING_VERIFICATION (the
+  // pipeline auto-processes it), so the decision must queue it for review first
+  // — the same hop the Non-MAGI DDS path takes in handleReferToDds. Returns
+  // false (after toasting) when the transition failed, so the caller skips the
+  // approve/deny mutation instead of tripping INVALID_STATUS_TRANSITION.
+  async function ensureInReview(): Promise<boolean> {
+    if (!id || eeCase?.status !== 'PENDING_VERIFICATION') return true;
+    const result = await queueForReviewMutation({ variables: { input: { id } } });
+    const errors = result.data?.queueForReviewMedicaidEeCase?.errors ?? [];
+    if (errors.length > 0) {
+      console.error(LOG_PREFIX, 'Queue for review payload error:', errors[0].code);
+      toast.error('Failed to queue case for review. Please try again.');
+      return false;
+    }
+    return true;
+  }
+
+  async function fireApprove() {
     if (!id) return;
     setApproveGuardOpen(false);
+    if (!(await ensureInReview())) return;
     void approveMutation({ variables: { input: { id } } });
   }
 
@@ -343,11 +362,12 @@ export default function WorkspacePage() {
       setApproveGuardOpen(true);
       return;
     }
-    fireApprove();
+    void fireApprove();
   }
 
-  function handleDeny(reason: string) {
+  async function handleDeny(reason: string) {
     if (!id) return;
+    if (!(await ensureInReview())) return;
     void denyMutation({ variables: { input: { id, reason } } });
   }
 
@@ -562,10 +582,14 @@ export default function WorkspacePage() {
   // ID-CLEAR is derived client-side from the linked CLEAR verification; the
   // server writes OOS-MCD into displayMeta.flags itself. Dedupe so a stored
   // chip never renders twice.
+  // A caseworker decision stamps determinations[].determinedBy; only a case
+  // with no such actor was auto-processed, so the no-touch chips are reserved
+  // for those (a case approved from Review & Decide must not claim NO-TOUCH).
+  const decidedByCaseworker = (eeCase?.determinations ?? []).some((d) => !!d.determinedBy);
   const caseFlags = Array.from(
     new Set([
       // NON-MAGI ABD cases require caseworker DDS confirmation — not auto-processed
-      ...(eeCase?.status === 'APPROVED' && !isNonMagi
+      ...(eeCase?.status === 'APPROVED' && !isNonMagi && !decidedByCaseworker
         ? ['Auto-Approved', 'NO-TOUCH', ...(eeCase.caseType === 'RENEWAL' ? ['EX-PARTE'] : [])]
         : []),
       ...(isNonMagi && ddsReferralSent && !ddsConfirmed ? ['DDS Referral Sent'] : []),

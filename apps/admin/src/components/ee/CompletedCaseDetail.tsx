@@ -107,6 +107,9 @@ export function CompletedCaseDetail({ eeCase, applicantName }: CompletedCaseDeta
   const isApproved = eeCase.status === 'APPROVED';
   const isDenied = eeCase.status === 'DENIED';
   const determination = pickLatestDetermination(eeCase);
+  // The server stamps `determinedBy` with the caseworker who approved/denied.
+  // Only a case with no such actor was genuinely auto-processed (no-touch).
+  const decidedByCaseworker = (eeCase.determinations ?? []).some((d) => !!d.determinedBy);
 
   const decidedAtIso = determination?.determinedAt ?? eeCase.updatedAt;
   const decidedAtLabel = fmtDateTime(decidedAtIso);
@@ -479,10 +482,17 @@ export function CompletedCaseDetail({ eeCase, applicantName }: CompletedCaseDeta
                     <p className="text-sm font-semibold text-blue-900">
                       {isNonMagi
                         ? 'Approved following caseworker disability determination review — Non-MAGI ABD pathway.'
-                        : 'This case was auto-processed. No caseworker action was required.'}
+                        : decidedByCaseworker
+                          ? 'Approved after caseworker review.'
+                          : 'This case was auto-processed. No caseworker action was required.'}
                     </p>
                     <p className="text-xs text-blue-800 mt-1">
-                      {isNonMagi ? 'DDS confirmation recorded' : 'Processed by Rules Engine v4.2'} on{' '}
+                      {isNonMagi
+                        ? 'DDS confirmation recorded'
+                        : decidedByCaseworker
+                          ? 'Determination recorded by the caseworker'
+                          : 'Processed by Rules Engine v4.2'}{' '}
+                      on{' '}
                       {fmtDate(decidedAtIso)} at {decidedTimeLabel}
                     </p>
                   </div>

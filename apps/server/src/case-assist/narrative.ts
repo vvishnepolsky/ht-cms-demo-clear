@@ -66,7 +66,8 @@ export function templateNarrative(summary: NarrativeCaseSummary, recs: CaseAssis
     const rest = infos.filter((i) => i !== verified);
     const bits: string[] = [];
     if (verified) bits.push("identity is already verified by CLEAR");
-    if (rest.length) bits.push(rest.map((i) => i.title.replace(/\.$/, "").toLowerCase()).join("; "));
+    // Lower-case only the leading letter so proper nouns (CLEAR, South Carolina) survive mid-sentence.
+    if (rest.length) bits.push(rest.map((i) => i.title.replace(/\.$/, "").replace(/^./, (c) => c.toLowerCase())).join("; "));
     if (bits.length) parts.push(`${bits.join("; ").replace(/^./, (c) => c.toUpperCase())}.`);
   }
   return parts.join(" ");

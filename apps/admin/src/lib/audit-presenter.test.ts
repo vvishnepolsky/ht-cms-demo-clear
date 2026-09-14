@@ -65,6 +65,31 @@ describe('buildAuditSummary', () => {
     expect(summary.endsWith('changed case status from Pending Review to Approved')).toBe(true);
   });
 
+  // Verify Assist (CLEAR) flag worked from the Case Assist panel — must never
+  // surface as the raw VERIFY_ASSIST_FLAG_UPDATED enum in the activity log.
+  it('renders VERIFY_ASSIST_FLAG_UPDATED per target status, noting an added note', () => {
+    expect(
+      buildAuditSummary({
+        ...base,
+        action: 'VERIFY_ASSIST_FLAG_UPDATED',
+        metadata: { fromStatus: 'open', toStatus: 'in_review', assignee: 'caseworker@state-x.gov' },
+      }),
+    ).toBe('Sarah Mitchell marked the Verify Assist flag in review');
+    expect(
+      buildAuditSummary({
+        ...base,
+        action: 'VERIFY_ASSIST_FLAG_UPDATED',
+        metadata: { fromStatus: 'in_review', toStatus: 'resolved', noteAdded: true },
+      }),
+    ).toBe('Sarah Mitchell resolved the Verify Assist flag and added a note');
+    expect(
+      buildAuditSummary({ ...base, action: 'VERIFY_ASSIST_FLAG_UPDATED', metadata: { toStatus: 'dismissed' } }),
+    ).toBe('Sarah Mitchell dismissed the Verify Assist flag');
+    expect(buildAuditSummary({ ...base, action: 'VERIFY_ASSIST_FLAG_UPDATED', metadata: {} })).toBe(
+      'Sarah Mitchell updated the Verify Assist flag',
+    );
+  });
+
   // AC-CREATE-CASE
   it('renders a case CREATE with the applicant name from context (no backend metadata)', () => {
     const summary = buildAuditSummary(

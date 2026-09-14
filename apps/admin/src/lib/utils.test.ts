@@ -14,15 +14,20 @@ function makeCase(input: Partial<CaseInput> = {}): CaseInput {
 }
 
 describe('caseDisplayNumber (ENG-1912)', () => {
-  it('prefers the citizen-persisted displayMeta.caseNumber', () => {
+  it('prefers the server-assigned caseNumber over the citizen-persisted displayMeta.caseNumber', () => {
     const c = makeCase({
-      caseNumber: 'IA-2026-048821',
+      caseNumber: 'SX-2026-000004',
       intakeData: { displayMeta: { caseNumber: 'SX-2026-0601-93837' } },
     });
+    expect(caseDisplayNumber(c)).toBe('SX-2026-000004');
+  });
+
+  it('falls back to displayMeta.caseNumber when the caseNumber column is null', () => {
+    const c = makeCase({ intakeData: { displayMeta: { caseNumber: 'SX-2026-0601-93837' } } });
     expect(caseDisplayNumber(c)).toBe('SX-2026-0601-93837');
   });
 
-  it('falls back to the backend caseNumber column when displayMeta is absent', () => {
+  it('uses the backend caseNumber column when displayMeta is absent', () => {
     expect(caseDisplayNumber(makeCase({ caseNumber: 'IA-2026-048821' }))).toBe('IA-2026-048821');
   });
 

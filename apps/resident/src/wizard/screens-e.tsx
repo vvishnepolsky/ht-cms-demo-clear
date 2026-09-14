@@ -51,7 +51,7 @@ import { useUpdatePerson } from '../hooks/useUpdatePerson';
 import { useStepSubmit } from './submit-hooks';
 import { SSNInput } from './SSNInput';
 import { formatPhone, stripPhone } from '../lib/phone';
-import { client } from '../lib/apollo';
+import { client, CUSTOMER_ID } from '../lib/apollo';
 import { LIST_MY_MEDICAID_EE_CASES_QUERY } from '../lib/operations';
 import { SESSION_KEYS } from '../lib/session-keys';
 import { AddressAutofill } from '@mapbox/search-js-react';
@@ -209,7 +209,9 @@ function StepLoginV2({ ctx, goNext, goBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const customerId = (import.meta as any).env?.VITE_CUSTOMER_ID;
+  // State-X tenant id — `CUSTOMER_ID` carries the demo default so a build
+  // without a .env (the single-service prod bundle) can still register.
+  const customerId = CUSTOMER_ID;
 
   const handleSignIn = async () => {
     setError(null);
@@ -310,10 +312,6 @@ function StepLoginV2({ ctx, goNext, goBack }) {
     }
     if (!/\d/.test(password)) {
       setError('Password must contain at least one number.');
-      return;
-    }
-    if (!customerId) {
-      setError('Missing VITE_CUSTOMER_ID. Set it in apps/cms-demo/resident/.env.local.');
       return;
     }
     setLoading(true);
@@ -724,7 +722,9 @@ function StepPersonalInfoV2({ ctx }) {
       setPath('primaryApplicant', field, value);
     }
   };
-  const L = (text, field) => <VerifiedLabel text={text} verified={isVerified(field)} />;
+  const L = (text, field, compact = false) => (
+    <VerifiedLabel text={text} verified={isVerified(field)} compact={compact} />
+  );
 
   const updatePerson = useUpdatePerson();
   useStepSubmit(
@@ -914,10 +914,10 @@ function StepPersonalInfoV2({ ctx }) {
                 <Field label={L('City', 'city')} required>
                   <TextInput value={v.city} onChange={(x) => set('city', x)} autoComplete="address-level2" />
                 </Field>
-                <Field label={L('State', 'state')} required>
+                <Field label={L('State', 'state', true)} required>
                   <Select value={v.state} onChange={(x) => set('state', x)} options={US_STATES} />
                 </Field>
-                <Field label={L('ZIP', 'zip')} required>
+                <Field label={L('ZIP', 'zip', true)} required>
                   <TextInput
                     value={v.zip}
                     onChange={(x) => set('zip', x)}
