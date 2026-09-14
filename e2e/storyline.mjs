@@ -1,0 +1,368 @@
+/**
+ * End-to-end storyline for the State-X E&E demo (single-service mode).
+ *   node storyline.mjs            # BASE_URL defaults to http://localhost:4777
+ *
+ * Part 1  resident wizard → account → personal step → Verify with CLEAR
+ * Part 2  hosted Verify Assist flow (mock CLEAR replica) → SC Medicaid finding → return
+ * Part 3  return leg (prefill, chips, masked SSN) → rest of wizard → confirmation → dashboard
+ * Part 4  caseworker: case list → Case Assist → flag in review → RFI → resolve → approve
+ *         (+ a second case proves the approve guard fires while the flag is still open)
+ * Part 5  reloads (admin case URL, resident dashboard) and admin sign-out
+ * Exit code 1 when any check fails or an unexplained console/network error was seen.
+ */
+import fs from 'node:fs';
+import { launch, newContext, BASE, shot, dump, report, sleep, issues, setStep } from './lib.mjs';
+
+const PASSWORD = 'Password1234!';
+const state = { cases: [] };
+const failures = [];
+function check(cond, msg) {
+  setStep(msg);
+  if (cond) console.log(`  ✓ ${msg}`);
+  else { console.log(`  ✗ ${msg}`); failures.push(msg); }
+}
+const stepId = (page) => page.url().split('#/')[1]?.split('?')[0] ?? '';
+
+// Known-benign noise: Google Fonts is unreachable from this sandbox.
+const EXPLAINED = [
+  /fonts\.gstatic\.com/,
+  /fonts\.googleapis\.com/,
+  /Failed to load resource: the server responded with a status of 404 \(\)$/,
+  // Apollo tears down one of two concurrent GetEligibilityNotice fetches while the
+  // approval re-render settles; the surviving request returns 200 (verified: "View
+  // Notice" is enabled on the completed view). Client-side abort, not a server error.
+  /POST .*\/graphql — net::ERR_ABORTED body=.*GetEligibilityNotice/,
+];
+
+const browser = await launch();
+
+// ─────────────────────────────────────────────────────────────────────────
+// Resident journey (Parts 1–3). `full` also walks the wizard to submission.
+// ─────────────────────────────────────────────────────────────────────────
+async function residentJourney({ label, full }) {
+  const { page, ctx } = await newContext(browser, `resident-${label}`);
+  const email = `demo+${label}-${Date.now()}@example.com`;
+  const rec = { email };
+
+  console.log(`\n## Part 1 — resident wizard (${label})`);
+  await page.goto(BASE + '/');
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('button', { name: 'Get started' }).click();
+  await page.getByRole('button', { name: /Apply Online/ }).click();
+  await page.waitForURL(/#\/login/);
+  const loginInputs = page.locator('.step-body input');
+  await loginInputs.nth(0).fill('Jordan');
+  await loginInputs.nth(1).fill('Rivera');
+  await loginInputs.nth(2).fill(email);
+  await loginInputs.nth(3).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await page.waitForURL(/#\/household-info/, { timeout: 15000 });
+  check(true, `account created (${email}); wizard advanced to household-info`);
+  await page.locator('.typeahead input').fill('Polk');
+  await page.locator('.typeahead-opt').first().click();
+  await page.getByText('Myself only').click();
+  await page.getByRole('button', { name: /^Continue$/ }).click();
+  await page.waitForURL(/#\/auth-rep/);
+  await page.getByText(/^No, I'll handle/).click();
+  await page.getByRole('button', { name: /^Continue$/ }).click();
+  await page.waitForURL(/#\/personal/);
+  await sleep(300);
+  check(await page.getByRole('button', { name: /^Continue$/ }).isDisabled(), 'personal step: Continue disabled before verification');
+  if (full) await shot(page, 'p1-personal-before-clear');
+  await page.getByRole('button', { name: /Verify with/ }).click();
+  await page.waitForURL(/\/verify\/flow\?token=/, { timeout: 15000 });
+  check(true, `handed off to hosted flow ${page.url()}`);
+
+  console.log(`\n## Part 2 — hosted Verify Assist flow (${label})`);
+  await page.getByRole('button', { name: 'Begin verification' }).click();
+  await page.getByRole('heading', { name: 'Verify your identity with CLEAR' }).waitFor();
+  await page.locator('.clear-primary').click(); // Get started
+  await page.getByLabel('Phone number').fill('5551234567');
+  await page.getByRole('button', { name: 'Send code' }).click();
+  await page.getByLabel('One-time code').fill('123456');
+  await page.locator('.clear-primary').click();
+  await page.getByRole('heading', { name: 'Take a selfie' }).waitFor();
+  await sleep(800); // let the fake camera stream start
+  async function captureOrSimulate() {
+    const sim = page.getByRole('button', { name: /Simulate capture/ });
+    if (await sim.count()) { await sim.click(); return; }
+    await page.locator('.clear-primary').click(); // Take selfie / Capture ID
+    await page.getByRole('button', { name: /Looks good/ }).click();
+  }
+  await captureOrSimulate();
+  await page.getByRole('heading', { name: 'Photograph your ID' }).waitFor();
+  await sleep(800);
+  await captureOrSimulate();
+  await page.getByText(/We found active Medicaid coverage in South Carolina/).waitFor({ timeout: 40000 });
+  check(true, 'results show the South Carolina Medicaid finding');
+  check((await page.getByText('Identity verified').count()) > 0, 'results show identity verified');
+  if (full) { await shot(page, 'p2-results-sc-medicaid'); }
+  await page.getByText(/I'm still enrolled/).click();
+  await page.getByRole('button', { name: /Send results/ }).click();
+  await page.getByRole('heading', { name: /Results sent/ }).waitFor({ timeout: 15000 });
+  if (full) await shot(page, 'p2-closeout');
+  await page.waitForURL(/#\/personal/, { timeout: 15000 });
+  rec.verificationId = new URL(page.url()).hash.match(/verified=([^&]+)/)?.[1] ?? null;
+  check(!!rec.verificationId, `returned to wizard with ?verified=${rec.verificationId}`);
+
+  console.log(`\n## Part 3 — return leg, submit, dashboard (${label})`);
+  const polling = await page.getByText(/Confirming your verification with CLEAR/).count();
+  console.log(`  (polling state visible: ${polling > 0})`);
+  await page.getByText('Verified with CLEAR').waitFor({ timeout: 40000 });
+  await sleep(300);
+  if (full) {
+    const stepInputs = page.locator('.step-body input');
+    check((await stepInputs.nth(0).inputValue()) === 'Jordan', 'first name prefilled Jordan');
+    check((await stepInputs.nth(2).inputValue()) === 'Rivera', 'last name prefilled Rivera');
+    check((await page.locator('.step-body input[type=date]').inputValue()) === '1991-01-10', 'DOB prefilled 1991-01-10');
+    check((await page.locator('#addr-personal').inputValue()) === '742 Evergreen Terrace', 'street prefilled 742 Evergreen Terrace');
+    const texts = await page.locator('.step-body input[type=text]').evaluateAll((els) => els.map((e) => e.value));
+    check(texts.includes('Springfield') && texts.includes('55501'), 'city Springfield + ZIP 55501 prefilled');
+    check((await page.locator('.step-body select').nth(1).inputValue()) === 'SX', 'state prefilled SX');
+    const chips = await page.locator('.verified-check').count();
+    check(chips >= 8, `in-field "Verified by CLEAR" checks present (${chips})`);
+    check((await page.locator('[aria-label*="ending in 6789"]').count()) > 0, 'masked SSN •••-••-6789 shown');
+    check(await page.getByRole('button', { name: /^Continue$/ }).isEnabled(), 'Continue enabled after prefill');
+    check(!page.url().includes('verified='), 'hash rewritten to bare #/personal');
+    await shot(page, 'p3-personal-verified');
+  }
+
+  // Walk the remaining steps with minimal plausible answers.
+  const handlers = {
+    demographics: async () => {
+      if (full) {
+        check((await page.getByText(/No upload needed/).count()) > 0, 'proof of identity satisfied by CLEAR (no upload)');
+        check((await page.getByText(/Upload a driver's license/).count()) === 0, 'proof-of-identity dropzone hidden when verified');
+        await shot(page, 'p3-demographics-verified');
+      }
+      await page.getByText('Female', { exact: true }).click();
+      await page.getByText('U.S. Citizen', { exact: true }).click();
+    },
+    argyle: async () => {
+      const noIncome = page.getByRole('button', { name: /has no income/ });
+      if (await noIncome.count()) await noIncome.click();
+      await sleep(300);
+    },
+    projected: async () => { await page.getByText('About the same').click(); },
+    retroactive: async () => { await page.getByRole('button', { name: 'No', exact: true }).click(); },
+    review: async () => { await page.getByText(/I have reviewed my application/).click(); },
+    sign: async () => {
+      await page.getByText(/I have read and agree/).click();
+      await page.locator('.step-body input[type=text]').last().fill('Jordan Rivera');
+    },
+  };
+  const visited = [];
+  for (let guard = 0; guard < 30; guard++) {
+    const id = stepId(page);
+    if (id === 'confirmation') break;
+    visited.push(id);
+    if (handlers[id]) await handlers[id]();
+    await sleep(200);
+    const next = page.getByRole('button', { name: /^(Continue|Submit application)$/ });
+    if (!(await next.count()) || (await next.isDisabled())) {
+      await dump(page, `stuck-on-${id}`);
+      await shot(page, `p3-stuck-${id}`);
+      throw new Error(`Continue not available on step "${id}"`);
+    }
+    const before = id;
+    await next.click();
+    await page.waitForFunction((b) => !location.hash.startsWith('#/' + b) || location.hash === '#/confirmation', before, { timeout: 20000 });
+    await sleep(250);
+  }
+  console.log('  steps visited:', visited.join(' → '));
+  await page.getByText(/SX-2026-\d+/).first().waitFor({ timeout: 20000 });
+  const confText = await page.locator('body').innerText();
+  rec.caseNumber = confText.match(/SX-2026-\d{6}/)?.[0] ?? null;
+  check(!!rec.caseNumber, `confirmation shows case number ${rec.caseNumber}`);
+  check(/identity was verified by CLEAR|Identity verified by CLEAR/i.test(confText), 'confirmation mentions identity verified by CLEAR');
+  if (full) {
+    await shot(page, 'p3-confirmation');
+    await page.getByRole('button', { name: /View dashboard/ }).click();
+    await page.waitForURL(/\/dashboard/);
+    await page.locator('[data-testid=dashboard-case-number]').waitFor({ timeout: 20000 });
+    await sleep(500);
+    const hero = await page.locator('.status-hero').innerText();
+    check(hero.includes(rec.caseNumber), 'dashboard hero shows the case number');
+    check(/Identity verified by CLEAR/.test(hero), 'dashboard hero shows the CLEAR chip');
+    const notice = page.locator('.coverage-notice');
+    check((await notice.count()) > 0 && /South Carolina/.test(await notice.innerText()), 'dashboard shows the out-of-state coverage notice');
+    await shot(page, 'p3-dashboard');
+
+    console.log('\n## Part 5a — resident dashboard reload');
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+    await page.locator('[data-testid=dashboard-case-number]').waitFor({ timeout: 20000 });
+    check((await page.locator('.status-hero').innerText()).includes(rec.caseNumber), 'resident /dashboard survives a full reload (cookie session + SPA route)');
+  }
+  await ctx.close();
+  state.cases.push(rec);
+  return rec;
+}
+
+const primary = await residentJourney({ label: 'a', full: true });
+const secondary = await residentJourney({ label: 'b', full: false });
+
+// ─────────────────────────────────────────────────────────────────────────
+// Part 4 — caseworker
+// ─────────────────────────────────────────────────────────────────────────
+console.log('\n## Part 4 — caseworker');
+const { page: admin } = await newContext(browser, 'admin');
+const flagBadge = async () =>
+  (await admin.locator('[data-slot=verify-assist-flag-status]').count())
+    ? (await admin.locator('[data-slot=verify-assist-flag-status]').first().innerText()).trim()
+    : '(no badge)';
+
+await admin.goto(BASE + '/admin/');
+await admin.waitForURL(/\/admin\/login/, { timeout: 15000 });
+check(true, 'unauthenticated /admin/ redirects to /admin/login');
+await admin.locator('#email').fill('caseworker@state-x.gov');
+await admin.locator('#password').fill('password1234');
+await admin.locator('button[type=submit]').click();
+await admin.waitForURL(/\/admin\/ee\/cases$/, { timeout: 15000 });
+await admin.getByText(primary.caseNumber).waitFor({ timeout: 20000 });
+await sleep(500);
+const row = admin.locator('tr', { hasText: primary.caseNumber });
+const rowText = await row.innerText();
+check(/OOS-MCD/.test(rowText), 'case list row carries the OOS-MCD flag');
+check(/ID-CLEAR/.test(rowText), 'case list row carries the ID-CLEAR chip');
+check(/Out-of-state coverage/.test(rowText), 'Verify Assist column shows "Out-of-state coverage"');
+check((await row.getAttribute('data-verify-assist-pinned')) !== null, 'row is pinned (red rail) for the open Verify Assist flag');
+check(/Jordan Rivera/.test(rowText), 'applicant name resolved from the verified identity');
+const flagsKpi = await admin.getByText('Verify Assist Flags').locator('..').innerText().catch(() => '');
+console.log(`  (KPI tile: ${flagsKpi.replace(/\s+/g, ' ').slice(0, 80)})`);
+await shot(admin, 'p4-case-list');
+
+await row.click();
+await admin.waitForURL(/\/admin\/ee\/cases\/[^/]+$/);
+primary.caseId = admin.url().split('/').pop();
+await admin.locator('[data-slot=case-assist-panel]').waitFor({ timeout: 20000 });
+await sleep(800);
+const panel = admin.locator('[data-slot=case-assist-panel]');
+const panelText = await panel.innerText();
+check(/Active out-of-state Medicaid coverage detected \(South Carolina\)/.test(panelText), 'Case Assist lists the critical SC Medicaid recommendation');
+check(/CRITICAL/.test(panelText), 'recommendation is marked CRITICAL');
+check((await admin.locator('[data-slot=case-assist-narrative]').count()) > 0, 'Case Assist narrative rendered');
+check((await admin.locator('[data-slot=verify-assist-flag-card]').count()) > 0, 'Verify Assist flag card rendered');
+check((await flagBadge()) === 'Open', `flag status is Open (${await flagBadge()})`);
+const banner = admin.locator('[aria-label^="Case assist:"]');
+const bannerText = (await banner.count()) ? await banner.innerText() : '';
+check(/ACTION NEEDED/i.test(bannerText) && /out-of-state Medicaid/i.test(bannerText), 'CaseActionBanner shows ACTION NEEDED for the out-of-state coverage');
+const ivCard = admin.locator('[data-slot=identity-verification-card]');
+const ivText = await ivCard.innerText();
+check(/Selfie passes liveness check/.test(ivText) && /Passed/.test(ivText), 'Identity verification card lists CLEAR checks as Passed');
+check(/COVERAGE DISCOVERED/i.test(ivText) && /South Carolina Medicaid/.test(ivText) && /123485135/.test(ivText), 'Identity verification card shows coverage discovered (payer + member id)');
+check(/•••-••-6789/.test(ivText), 'Identity card shows masked SSN last-4 only');
+check((await admin.getByRole('button', { name: /1 Verify/ }).count()) > 0, 'Verify phase is available');
+const sidebarCaseId = await admin.locator('aside, .applicant-sidebar').first().innerText().catch(() => '');
+check(new RegExp(primary.caseNumber).test(await admin.locator('body').innerText()) && !/SX-2026-\d{4}-\d{5}/.test(await admin.locator('body').innerText()), 'sidebar/header agree on the server-assigned case number');
+await shot(admin, 'p4-case-detail-open-flag');
+
+// Mark flag in review
+await admin.getByRole('button', { name: 'Mark flag in review' }).click();
+await admin.locator('[data-slot=verify-assist-flag-status]', { hasText: 'In review' }).waitFor({ timeout: 15000 });
+check(true, 'flag refetched as In review');
+check(/caseworker@state-x\.gov/.test(await admin.locator('[data-slot=verify-assist-flag-card]').innerText()), 'flag assigned to the signed-in caseworker');
+
+// Issue RFI from the suggested action
+await admin.getByRole('button', { name: /Issue RFI for proof of SC Medicaid disenrollment/ }).click();
+const dialog = admin.locator('[role=dialog]');
+await dialog.getByText('Request additional information').waitFor();
+const dialogText = await dialog.innerText();
+check(/Proof of South Carolina Medicaid disenrollment/.test(dialogText), 'RFI modal pre-filled with the SC disenrollment proof item');
+await shot(admin, 'p4-rfi-modal');
+await dialog.getByRole('button', { name: 'Issue RFI', exact: true }).click();
+await admin.getByText('Request for additional information pending', { exact: true }).waitFor({ timeout: 15000 });
+check(true, 'pending RFI banner shown after issuing the RFI');
+check(/RFI outstanding/.test(await panel.innerText()), 'Case Assist adds the "RFI outstanding" finding');
+await shot(admin, 'p4-rfi-pending');
+
+// Resolve the RFI
+await admin.getByRole('button', { name: 'Mark as resolved' }).click();
+await admin.getByRole('button', { name: 'Confirm resolve' }).click();
+await admin.getByText('Request for additional information pending', { exact: true }).waitFor({ state: 'detached', timeout: 15000 });
+check(true, 'RFI resolved — pending banner cleared');
+
+// Resolve the flag with a reason
+await admin.getByRole('button', { name: 'Resolve flag' }).click();
+await dialog.getByText('Resolve Verify Assist flag').waitFor();
+await dialog.getByText('Disenrollment confirmed by the other state').click();
+await admin.locator('#flag-disposition-note').fill('SCDHHS confirmed termination effective 08/31/2026.');
+await dialog.getByRole('button', { name: 'Resolve flag' }).click();
+await admin.locator('[data-slot=verify-assist-flag-status]', { hasText: 'Resolved' }).waitFor({ timeout: 15000 });
+check(true, 'flag refetched as Resolved');
+check(/SCDHHS confirmed termination/.test(await admin.locator('[data-slot=verify-assist-flag-card]').innerText()), 'disposition note appears in the flag notes thread');
+const bannerAfter = await admin.locator('[aria-label^="Case assist:"]').innerText().catch(() => '');
+check(!/Resolve out-of-state Medicaid coverage before determination/.test(bannerAfter), 'red out-of-state banner no longer shown once the flag is resolved');
+check(/finding resolved/i.test(await panel.innerText()), 'Case Assist narrative regenerated to say the finding is resolved (no stale RFI guidance)');
+check(!/Issue RFI for proof of SC Medicaid disenrollment/.test(await panel.innerText()), 'resolved finding no longer offers the RFI action');
+await shot(admin, 'p4-flag-resolved');
+
+// Review & Decide → approve (guard must NOT appear now)
+await admin.getByRole('button', { name: /Review & Decide/ }).click();
+await dialog.getByText('Review & Decide').waitFor();
+await dialog.getByRole('button', { name: 'Confirm Approval' }).click();
+await sleep(1500);
+check((await admin.getByText('Verify Assist flag still open').count()) === 0, 'approve guard dialog does NOT appear once the flag is resolved');
+await admin.getByText(/Approved/i).first().waitFor({ timeout: 20000 });
+await sleep(800);
+const bodyAfter = await admin.locator('body').innerText();
+check(/APPROVED|Approved/.test(bodyAfter) && !/Confirm Approval/.test(bodyAfter), 'case shows APPROVED');
+check(!/auto-processed/i.test(bodyAfter) && !/NO-TOUCH/.test(bodyAfter), 'manually approved case is not labelled auto-processed / NO-TOUCH');
+check(/Approved after caseworker review/.test(bodyAfter), 'completed view says approved after caseworker review');
+await shot(admin, 'p4-approved');
+// Audit log on the completed case
+const auditTab = admin.getByRole('button', { name: /Audit Log/ });
+if (await auditTab.count()) {
+  await auditTab.first().click();
+  await sleep(1000);
+}
+const logText = await admin.locator('body').innerText();
+check(/RFI|Request for information/i.test(logText) && /Approved|APPROVED|Status/i.test(logText), 'activity/audit log lists the RFI and approval actions');
+check(/marked the Verify Assist flag in review/.test(logText) && /resolved the Verify Assist flag/.test(logText), 'activity/audit log humanizes the Verify Assist flag updates');
+check(!/VERIFY_ASSIST_FLAG_UPDATED/.test(logText), 'no raw audit action codes leak into the activity log');
+check(/changed case status from Pending Verification to In Review/.test(logText) && /from In Review to Approved/.test(logText), 'audit log shows both status transitions (queued for review, approved)');
+await shot(admin, 'p4-audit-log');
+
+// Approve guard SHOULD appear on the second case (flag still open)
+console.log('\n## Part 4b — approve guard on a case with an open flag');
+await admin.goto(BASE + '/admin/ee/cases');
+await admin.getByText(secondary.caseNumber).waitFor({ timeout: 20000 });
+await admin.locator('tr', { hasText: secondary.caseNumber }).click();
+await admin.waitForURL(/\/admin\/ee\/cases\/[^/]+$/);
+secondary.caseId = admin.url().split('/').pop();
+await admin.locator('[data-slot=case-assist-panel]').waitFor({ timeout: 20000 });
+await admin.getByRole('button', { name: /Review & Decide/ }).click();
+await dialog.getByText('Review & Decide').waitFor();
+await dialog.getByRole('button', { name: 'Confirm Approval' }).click();
+await admin.getByText('Verify Assist flag still open').waitFor({ timeout: 10000 });
+check(true, 'approve guard dialog appears while the flag is still open');
+await shot(admin, 'p4b-approve-guard');
+await admin.getByRole('button', { name: 'Back to case' }).click();
+await sleep(500);
+check((await admin.getByText('Verify Assist flag still open').count()) === 0, '"Back to case" dismisses the guard without approving');
+check(!/APPROVED/.test(await admin.locator('[aria-label^="Case assist:"], header, nav').first().innerText().catch(() => '')), 'second case is not approved');
+
+// ─────────────────────────────────────────────────────────────────────────
+// Part 5 — reloads + sign-out
+// ─────────────────────────────────────────────────────────────────────────
+console.log('\n## Part 5 — reloads and sign-out');
+await admin.goto(`${BASE}/admin/ee/cases/${primary.caseId}`);
+await admin.waitForLoadState('networkidle');
+await admin.getByText(primary.caseNumber).first().waitFor({ timeout: 20000 });
+check(admin.url().includes(`/admin/ee/cases/${primary.caseId}`), 'full reload of /admin/ee/cases/<id> works (SPA fallback + cookie session)');
+await admin.getByRole('button', { name: 'Sign out' }).click();
+await admin.waitForURL(/\/admin\/login/, { timeout: 15000 });
+check(true, 'admin sign-out returns to /admin/login');
+await admin.goto(`${BASE}/admin/ee/cases/${primary.caseId}`);
+await admin.waitForURL(/\/admin\/login/, { timeout: 15000 });
+check(true, 'after sign-out the case URL redirects to /admin/login');
+
+fs.writeFileSync('state.json', JSON.stringify(state, null, 2));
+console.log('\nstate:', JSON.stringify(state));
+report();
+const unexplained = issues.filter((i) => !EXPLAINED.some((re) => re.test(i.detail)));
+console.log(`\nunexplained console/network issues: ${unexplained.length}`);
+for (const i of unexplained) console.log(`  !! [${i.ctx}] ${i.kind} (after: ${i.at}): ${i.detail}`);
+console.log(failures.length ? `\nFAILED CHECKS: ${failures.length}\n  - ${failures.join('\n  - ')}` : '\nALL CHECKS PASSED');
+await browser.close();
+process.exit(failures.length || unexplained.length ? 1 : 0);

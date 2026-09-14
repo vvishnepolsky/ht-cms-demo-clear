@@ -9,7 +9,7 @@ import React, {
   useLayoutEffect,
   Fragment,
   createContext,
-} from 'react';
+} from "react";
 import {
   Icon,
   Button,
@@ -29,7 +29,7 @@ import {
   fmt$,
   fmtDate,
   validateDob,
-} from './ui';
+} from "./ui";
 import {
   useFormData,
   INITIAL_FORM,
@@ -38,27 +38,34 @@ import {
   WIZARD_RELATIONSHIPS,
   SAMPLE_SEED,
   FormDataContext,
-} from './context';
-import { computeEligibility, FPL_2026, PATHWAYS, lookupFPL, ageFrom, toMonthly } from './eligibility';
+} from "./context";
+import {
+  computeEligibility,
+  FPL_2026,
+  PATHWAYS,
+  lookupFPL,
+  ageFrom,
+  toMonthly,
+} from "./eligibility";
 import {
   login as identityLogin,
   register as identityRegister,
   enroll as identityEnroll,
   IdentityClientError,
-} from '../lib/identity-client';
-import { setResident } from '../lib/auth-store';
-import { useUpdatePerson } from '../hooks/useUpdatePerson';
-import { useStepSubmit } from './submit-hooks';
-import { SSNInput } from './SSNInput';
-import { formatPhone, stripPhone } from '../lib/phone';
-import { client, CUSTOMER_ID } from '../lib/apollo';
-import { LIST_MY_MEDICAID_EE_CASES_QUERY } from '../lib/operations';
-import { SESSION_KEYS } from '../lib/session-keys';
-import { AddressAutofill } from '@mapbox/search-js-react';
-import { MAPBOX_TOKEN, US_AUTOFILL_OPTIONS } from '../lib/address-autofill';
-import { i18n, setStoredLanguage, useTranslation } from '@ht/i18n';
-import { persistForm } from './context';
-import { VerifiedLabel } from './VerifiedChip';
+} from "../lib/identity-client";
+import { setResident } from "../lib/auth-store";
+import { useUpdatePerson } from "../hooks/useUpdatePerson";
+import { useStepSubmit } from "./submit-hooks";
+import { SSNInput } from "./SSNInput";
+import { formatPhone, stripPhone } from "../lib/phone";
+import { client, CUSTOMER_ID } from "../lib/apollo";
+import { LIST_MY_MEDICAID_EE_CASES_QUERY } from "../lib/operations";
+import { SESSION_KEYS } from "../lib/session-keys";
+import { AddressAutofill } from "@mapbox/search-js-react";
+import { MAPBOX_TOKEN, US_AUTOFILL_OPTIONS } from "../lib/address-autofill";
+import { i18n, setStoredLanguage, useTranslation } from "@ht/i18n";
+import { persistForm } from "./context";
+import { VerifiedControl } from "./VerifiedChip";
 import {
   applyVerificationToPrimary,
   clearPendingVerification,
@@ -67,7 +74,7 @@ import {
   startClearVerification,
   takeReturnLegVerificationId,
   unverifyField,
-} from './clear-verification';
+} from "./clear-verification";
 
 /* =========================================================================
    Screens E — v2 screens matching the consolidated 25-screen spec.
@@ -79,14 +86,17 @@ import {
 // Language picker dropdown for the top of the Welcome screen.
 // ─────────────────────────────────────────────────────────────────────────
 const ACTIVE_LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
 ];
 
 function LanguagePicker() {
-  const [currentLang, setCurrentLang] = useState(i18n.language?.startsWith('es') ? 'es' : 'en');
+  const [currentLang, setCurrentLang] = useState(
+    i18n.language?.startsWith("es") ? "es" : "en",
+  );
   const [open, setOpen] = useState(false);
-  const currentLabel = ACTIVE_LANGUAGES.find((l) => l.code === currentLang)?.label ?? 'English';
+  const currentLabel =
+    ACTIVE_LANGUAGES.find((l) => l.code === currentLang)?.label ?? "English";
 
   function handleSelect(code: string) {
     setCurrentLang(code);
@@ -97,7 +107,11 @@ function LanguagePicker() {
 
   return (
     <div className="lang-picker">
-      <button type="button" className="lang-trigger" onClick={() => setOpen((o) => !o)}>
+      <button
+        type="button"
+        className="lang-trigger"
+        onClick={() => setOpen((o) => !o)}
+      >
         <Icon name="map" size={14} />
         <span>{currentLabel}</span>
         <Icon name="chevronDown" size={12} />
@@ -108,7 +122,7 @@ function LanguagePicker() {
             <button
               key={code}
               type="button"
-              className={'lang-opt' + (code === currentLang ? ' on' : '')}
+              className={"lang-opt" + (code === currentLang ? " on" : "")}
               onClick={() => handleSelect(code)}
             >
               {label}
@@ -126,7 +140,7 @@ function LanguagePicker() {
 // ─────────────────────────────────────────────────────────────────────────
 function StepWelcomeV2({ goNext, goTo, ctx }) {
   const { loadSample } = ctx;
-  const { t } = useTranslation('welcome');
+  const { t } = useTranslation("welcome");
   return (
     <div className="welcome-stage step-fade-in">
       <div className="welcome-lang">
@@ -136,10 +150,10 @@ function StepWelcomeV2({ goNext, goTo, ctx }) {
       <div className="welcome-hero">
         <div>
           <div className="eyebrow" style={{ marginBottom: 14 }}>
-            {t('welcome.screen.eyebrow')}
+            {t("welcome.screen.eyebrow")}
           </div>
-          <h1>{t('welcome.screen.title')}</h1>
-          <p style={{ marginTop: 16 }}>{t('welcome.screen.desc')}</p>
+          <h1>{t("welcome.screen.title")}</h1>
+          <p style={{ marginTop: 16 }}>{t("welcome.screen.desc")}</p>
         </div>
 
         <div className="welcome-tiles">
@@ -147,49 +161,62 @@ function StepWelcomeV2({ goNext, goTo, ctx }) {
             <div className="ic">
               <Icon name="users" size={18} />
             </div>
-            <div className="ttl">{t('welcome.screen.tile1Title')}</div>
-            <div className="sub">{t('welcome.screen.tile1Desc')}</div>
+            <div className="ttl">{t("welcome.screen.tile1Title")}</div>
+            <div className="sub">{t("welcome.screen.tile1Desc")}</div>
           </div>
           <div className="welcome-tile">
             <div className="ic">
               <Icon name="lock" size={18} />
             </div>
-            <div className="ttl">{t('welcome.screen.tile2Title')}</div>
-            <div className="sub">{t('welcome.screen.tile2Desc')}</div>
+            <div className="ttl">{t("welcome.screen.tile2Title")}</div>
+            <div className="sub">{t("welcome.screen.tile2Desc")}</div>
           </div>
           <div className="welcome-tile">
             <div className="ic">
               <Icon name="save" size={18} />
             </div>
-            <div className="ttl">{t('welcome.screen.tile3Title')}</div>
-            <div className="sub">{t('welcome.screen.tile3Desc')}</div>
+            <div className="ttl">{t("welcome.screen.tile3Title")}</div>
+            <div className="sub">{t("welcome.screen.tile3Desc")}</div>
           </div>
         </div>
 
-        <Alert kind="neutral" title={t('welcome.screen.alertTitle')}>
-          {t('welcome.screen.alertDesc')}
+        <Alert kind="neutral" title={t("welcome.screen.alertTitle")}>
+          {t("welcome.screen.alertDesc")}
         </Alert>
 
         <Stack gap={12}>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
             <Button variant="primary" size="lg" onClick={goNext}>
-              {t('welcome.screen.getStarted')} <Icon name="arrowRight" size={16} />
+              {t("welcome.screen.getStarted")}{" "}
+              <Icon name="arrowRight" size={16} />
             </Button>
-            <Button variant="outline" onClick={() => alert('In a real app this would open the case-lookup flow.')}>
-              {t('welcome.screen.continueExisting')}
+            <Button
+              variant="outline"
+              onClick={() =>
+                alert("In a real app this would open the case-lookup flow.")
+              }
+            >
+              {t("welcome.screen.continueExisting")}
             </Button>
             <Button
               variant="ghost"
               onClick={() => {
                 loadSample();
-                goTo('review');
+                goTo("review");
               }}
               title="Fill the form with a sample household"
             >
-              <Icon name="sparkles" size={14} /> {t('welcome.screen.seeSample')}
+              <Icon name="sparkles" size={14} /> {t("welcome.screen.seeSample")}
             </Button>
           </div>
-          <div className="fineprint">{t('welcome.screen.fineprint')}</div>
+          <div className="fineprint">{t("welcome.screen.fineprint")}</div>
         </Stack>
       </div>
     </div>
@@ -201,11 +228,15 @@ function StepWelcomeV2({ goNext, goTo, ctx }) {
 // ─────────────────────────────────────────────────────────────────────────
 function StepLoginV2({ ctx, goNext, goBack }) {
   const { setPath } = ctx;
-  const [mode, setMode] = useState('register'); // 'register' | 'signin' — ENG-1690: create account is primary CTA
-  const [email, setEmail] = useState(ctx.data.primaryApplicant.email || '');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState(ctx.data.primaryApplicant.firstName || '');
-  const [lastName, setLastName] = useState(ctx.data.primaryApplicant.lastName || '');
+  const [mode, setMode] = useState("register"); // 'register' | 'signin' — ENG-1690: create account is primary CTA
+  const [email, setEmail] = useState(ctx.data.primaryApplicant.email || "");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState(
+    ctx.data.primaryApplicant.firstName || "",
+  );
+  const [lastName, setLastName] = useState(
+    ctx.data.primaryApplicant.lastName || "",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -216,7 +247,7 @@ function StepLoginV2({ ctx, goNext, goBack }) {
   const handleSignIn = async () => {
     setError(null);
     if (!email || !password) {
-      setError('Please enter your email and password.');
+      setError("Please enter your email and password.");
       return;
     }
     setLoading(true);
@@ -225,11 +256,13 @@ function StepLoginV2({ ctx, goNext, goBack }) {
       // If the user has no engagement (first sign-in after registration, or previous
       // enrollment failed), enroll them now so updatePerson and other tenant-scoped
       // operations work. 409 means already enrolled — safe to ignore.
-      if (result.session.engagementId === 'none') {
+      if (result.session.engagementId === "none") {
         try {
-          await identityEnroll(result.payload.sub, 'medicaid_ee');
+          await identityEnroll(result.payload.sub, "medicaid_ee");
         } catch (enrollErr) {
-          if (!(enrollErr instanceof IdentityClientError && enrollErr.status === 409)) {
+          if (!(
+            enrollErr instanceof IdentityClientError && enrollErr.status === 409
+          )) {
             throw enrollErr;
           }
         }
@@ -251,7 +284,7 @@ function StepLoginV2({ ctx, goNext, goBack }) {
           const { data } = await client.query({
             query: LIST_MY_MEDICAID_EE_CASES_QUERY,
             variables: { applicantPersonId: personId },
-            fetchPolicy: 'network-only',
+            fetchPolicy: "network-only",
           });
           const existingCaseId = data?.medicaidEeCases?.data?.[0]?.id;
           if (existingCaseId) {
@@ -261,7 +294,7 @@ function StepLoginV2({ ctx, goNext, goBack }) {
             // in Missouri production — do not carry this pattern into a
             // production resident app without an ADR decision.
             sessionStorage.setItem(SESSION_KEYS.CASE_ID, existingCaseId);
-            window.location.assign('/dashboard');
+            window.location.assign("/dashboard");
             return;
           }
         }
@@ -269,27 +302,34 @@ function StepLoginV2({ ctx, goNext, goBack }) {
         // Non-fatal — fall through to the wizard if the lookup fails. Log only
         // the error name, matching the sibling handlers below — never the raw
         // error object (can carry response bodies / request variables).
-        console.error('[sign-in] case lookup failed', {
+        console.error("[sign-in] case lookup failed", {
           name: lookupErr instanceof Error ? lookupErr.name : typeof lookupErr,
         });
       }
-      setPath('primaryApplicant', 'email', email);
-      setPath('primaryApplicant', 'firstName', result.payload.firstName);
-      setPath('primaryApplicant', 'lastName', result.payload.lastName);
-      setPath('primaryApplicant', 'ssn', '');
-      setPath('primaryApplicant', 'noSSN', false);
+      setPath("primaryApplicant", "email", email);
+      setPath("primaryApplicant", "firstName", result.payload.firstName);
+      setPath("primaryApplicant", "lastName", result.payload.lastName);
+      setPath("primaryApplicant", "ssn", "");
+      setPath("primaryApplicant", "noSSN", false);
       goNext();
     } catch (err) {
       if (err instanceof IdentityClientError) {
-        if (err.code === 'too_many_requests') setError('Too many attempts. Please try again later.');
-        else if (err.code === 'account_locked') setError('Account temporarily locked. Please try again later.');
+        if (err.code === "too_many_requests")
+          setError("Too many attempts. Please try again later.");
+        else if (err.code === "account_locked")
+          setError("Account temporarily locked. Please try again later.");
         else {
-          console.error('[sign-in] unhandled identity-client error', { code: err.code, status: err.status });
-          setError('Sign-in failed. Please try again.');
+          console.error("[sign-in] unhandled identity-client error", {
+            code: err.code,
+            status: err.status,
+          });
+          setError("Sign-in failed. Please try again.");
         }
       } else {
-        console.error('[sign-in] unexpected error', { name: err instanceof Error ? err.name : typeof err });
-        setError('Sign-in failed. Please try again.');
+        console.error("[sign-in] unexpected error", {
+          name: err instanceof Error ? err.name : typeof err,
+        });
+        setError("Sign-in failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -299,33 +339,41 @@ function StepLoginV2({ ctx, goNext, goBack }) {
   const handleRegister = async () => {
     setError(null);
     if (!email || !password || !firstName || !lastName) {
-      setError('Please fill in all fields.');
+      setError("Please fill in all fields.");
       return;
     }
     if (password.length < 12) {
-      setError('Password must be at least 12 characters.');
+      setError("Password must be at least 12 characters.");
       return;
     }
     if (!/[a-zA-Z]/.test(password)) {
-      setError('Password must contain at least one letter.');
+      setError("Password must contain at least one letter.");
       return;
     }
     if (!/\d/.test(password)) {
-      setError('Password must contain at least one number.');
+      setError("Password must contain at least one number.");
       return;
     }
     setLoading(true);
     try {
-      await identityRegister({ email, password, firstName, lastName, customerId });
+      await identityRegister({
+        email,
+        password,
+        firstName,
+        lastName,
+        customerId,
+      });
       // After register, log in to mint the session cookies.
       const result = await identityLogin(email, password);
       // Enroll the participant so subsequent tenant-scoped operations (updatePerson,
       // createMedicaidEeCase, etc.) find an Engagement row for this customer.
       // 409 means already enrolled (e.g. re-registration attempt) — safe to ignore.
       try {
-        await identityEnroll(result.payload.sub, 'medicaid_ee');
+        await identityEnroll(result.payload.sub, "medicaid_ee");
       } catch (enrollErr) {
-        if (!(enrollErr instanceof IdentityClientError && enrollErr.status === 409)) {
+        if (!(
+          enrollErr instanceof IdentityClientError && enrollErr.status === 409
+        )) {
           throw enrollErr;
         }
       }
@@ -337,23 +385,30 @@ function StepLoginV2({ ctx, goNext, goBack }) {
         customerId: result.payload.customerId,
         personId: result.session.personId,
       });
-      setPath('primaryApplicant', 'email', email);
-      setPath('primaryApplicant', 'firstName', firstName);
-      setPath('primaryApplicant', 'lastName', lastName);
-      setPath('primaryApplicant', 'ssn', '');
-      setPath('primaryApplicant', 'noSSN', false);
+      setPath("primaryApplicant", "email", email);
+      setPath("primaryApplicant", "firstName", firstName);
+      setPath("primaryApplicant", "lastName", lastName);
+      setPath("primaryApplicant", "ssn", "");
+      setPath("primaryApplicant", "noSSN", false);
       goNext();
     } catch (err) {
       if (err instanceof IdentityClientError) {
-        if (err.code === 'email_taken' || err.code === 'duplicate_email') {
-          setError('An account with this email already exists. Try signing in instead.');
+        if (err.code === "email_taken" || err.code === "duplicate_email") {
+          setError(
+            "An account with this email already exists. Try signing in instead.",
+          );
         } else {
-          console.error('[register] unhandled identity-client error', { code: err.code, status: err.status });
-          setError('Could not create account. Please try again.');
+          console.error("[register] unhandled identity-client error", {
+            code: err.code,
+            status: err.status,
+          });
+          setError("Could not create account. Please try again.");
         }
       } else {
-        console.error('[register] unexpected error', { name: err instanceof Error ? err.name : typeof err });
-        setError('Could not create account. Please try again.');
+        console.error("[register] unexpected error", {
+          name: err instanceof Error ? err.name : typeof err,
+        });
+        setError("Could not create account. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -373,15 +428,35 @@ function StepLoginV2({ ctx, goNext, goBack }) {
           </Button>
         </div>
       ) : null}
-      <Panel title={mode === 'signin' ? 'Sign in to your State-X HHS account' : 'Create your State-X HHS account'}>
+      <Panel
+        title={
+          mode === "signin"
+            ? "Sign in to your State-X HHS account"
+            : "Create your State-X HHS account"
+        }
+      >
         <Stack gap={14}>
-          {mode === 'register' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {mode === "register" && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 12,
+              }}
+            >
               <Field label="First name" required>
-                <TextInput value={firstName} onChange={setFirstName} autoComplete="given-name" />
+                <TextInput
+                  value={firstName}
+                  onChange={setFirstName}
+                  autoComplete="given-name"
+                />
               </Field>
               <Field label="Last name" required>
-                <TextInput value={lastName} onChange={setLastName} autoComplete="family-name" />
+                <TextInput
+                  value={lastName}
+                  onChange={setLastName}
+                  autoComplete="family-name"
+                />
               </Field>
             </div>
           )}
@@ -398,24 +473,39 @@ function StepLoginV2({ ctx, goNext, goBack }) {
             label="Password"
             required
             hint={
-              mode === 'register' && password ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              mode === "register" && password ? (
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
                   {[
-                    { met: password.length >= 12, label: 'At least 12 characters' },
-                    { met: /[a-zA-Z]/.test(password), label: 'At least one letter (a–z)' },
-                    { met: /\d/.test(password), label: 'At least one number (0–9)' },
+                    {
+                      met: password.length >= 12,
+                      label: "At least 12 characters",
+                    },
+                    {
+                      met: /[a-zA-Z]/.test(password),
+                      label: "At least one letter (a–z)",
+                    },
+                    {
+                      met: /\d/.test(password),
+                      label: "At least one number (0–9)",
+                    },
                   ].map(({ met, label }) => (
                     <span
                       key={label}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        display: "flex",
+                        alignItems: "center",
                         gap: 6,
                         fontSize: 12,
-                        color: met ? 'var(--civic-success, #16a34a)' : 'var(--civic-text-secondary)',
+                        color: met
+                          ? "var(--civic-success, #16a34a)"
+                          : "var(--civic-text-secondary)",
                       }}
                     >
-                      <span style={{ width: 12, textAlign: 'center' }}>{met ? '\u2713' : '\u25cb'}</span>
+                      <span style={{ width: 12, textAlign: "center" }}>
+                        {met ? "\u2713" : "\u25cb"}
+                      </span>
                       {label}
                     </span>
                   ))}
@@ -427,24 +517,47 @@ function StepLoginV2({ ctx, goNext, goBack }) {
               value={password}
               onChange={setPassword}
               type="password"
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              autoComplete={
+                mode === "signin" ? "current-password" : "new-password"
+              }
             />
           </Field>
           {error && <Alert kind="destr">{error}</Alert>}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <button
               type="button"
               className="fineprint"
               onClick={() => {
-                setMode(mode === 'signin' ? 'register' : 'signin');
+                setMode(mode === "signin" ? "register" : "signin");
                 setError(null);
               }}
-              style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+              style={{
+                cursor: "pointer",
+                background: "none",
+                border: "none",
+                padding: 0,
+              }}
             >
-              {mode === 'signin' ? 'Need an account? Create one' : 'Already have an account? Sign in'}
+              {mode === "signin"
+                ? "Need an account? Create one"
+                : "Already have an account? Sign in"}
             </button>
-            <Button variant="primary" onClick={mode === 'signin' ? handleSignIn : handleRegister} disabled={loading}>
-              {loading ? 'Working…' : mode === 'signin' ? 'Sign in' : 'Create account'}{' '}
+            <Button
+              variant="primary"
+              onClick={mode === "signin" ? handleSignIn : handleRegister}
+              disabled={loading}
+            >
+              {loading
+                ? "Working…"
+                : mode === "signin"
+                  ? "Sign in"
+                  : "Create account"}{" "}
               <Icon name="arrowRight" size={14} />
             </Button>
           </div>
@@ -463,7 +576,8 @@ function StepLoginV2({ ctx, goNext, goBack }) {
           <div className="login-option-body">
             <div className="login-option-title">Continue as a guest</div>
             <div className="login-option-desc">
-              Apply now without an account. Your progress is saved on this device only.
+              Apply now without an account. Your progress is saved on this
+              device only.
             </div>
           </div>
           <div className="login-option-cta">
@@ -479,11 +593,13 @@ function StepLoginV2({ ctx, goNext, goBack }) {
 // County typeahead with search
 // ─────────────────────────────────────────────────────────────────────────
 function CountyTypeahead({ value, onChange }) {
-  const [q, setQ] = useState(value || '');
+  const [q, setQ] = useState(value || "");
   const [open, setOpen] = useState(false);
-  useEffect(() => setQ(value || ''), [value]);
+  useEffect(() => setQ(value || ""), [value]);
 
-  const filtered = IOWA_COUNTIES.filter((c) => c.toLowerCase().includes(q.toLowerCase()));
+  const filtered = IOWA_COUNTIES.filter((c) =>
+    c.toLowerCase().includes(q.toLowerCase()),
+  );
   return (
     <div className="typeahead">
       <input
@@ -534,7 +650,10 @@ function StepHouseholdInfoV2({ ctx }) {
           required
           hint="The county you currently live in, not where you receive mail."
         >
-          <CountyTypeahead value={v.county} onChange={(x) => setPath('household', 'county', x)} />
+          <CountyTypeahead
+            value={v.county}
+            onChange={(x) => setPath("household", "county", x)}
+          />
         </Field>
       </Panel>
 
@@ -542,18 +661,22 @@ function StepHouseholdInfoV2({ ctx }) {
         <RadioGroup
           name="applicationFor"
           value={v.applicationFor}
-          onChange={(x) => setPath('household', 'applicationFor', x)}
+          onChange={(x) => setPath("household", "applicationFor", x)}
           options={[
-            { value: 'myself', title: 'Myself only', desc: 'Coverage just for me.' },
             {
-              value: 'household',
-              title: 'My entire household',
+              value: "myself",
+              title: "Myself only",
+              desc: "Coverage just for me.",
+            },
+            {
+              value: "household",
+              title: "My entire household",
               desc: "I'll be the primary contact and answer for everyone applying.",
             },
             {
-              value: 'specific',
-              title: 'Specific household members',
-              desc: 'Apply on behalf of one or more people in my home.',
+              value: "specific",
+              title: "Specific household members",
+              desc: "Apply on behalf of one or more people in my home.",
             },
           ]}
         />
@@ -575,49 +698,61 @@ function ClearVerifyPanel({ state, verified, error, onVerify }) {
     return (
       <Panel title="Verify your identity">
         <div className="verify-panel-body">
-          <p>Your information below was filled in from your verified ID. Review it and complete anything that's missing.</p>
+          <p>
+            Your information below was filled in from your verified ID. Review
+            it and complete anything that's missing.
+          </p>
           <span className="verified-pill">
-            <Icon name="shieldCheck" size={16} aria-hidden="true" /> Verified with CLEAR
+            <Icon name="shieldCheck" size={16} aria-hidden="true" /> Verified
+            with CLEAR
           </span>
         </div>
       </Panel>
     );
   }
-  if (state === 'polling') {
+  if (state === "polling") {
     return (
-      <Panel title="Verify your identity">
-        <div className="verify-panel-status" role="status" aria-busy="true">
-          <span className="verify-spinner" aria-hidden="true" />
-          Confirming your verification with CLEAR…
-        </div>
-      </Panel>
+      <section className="verify-panel-status" role="status" aria-busy="true">
+        <span className="verify-spinner" aria-hidden="true" />
+        <p>Confirming your verification with CLEAR…</p>
+      </section>
     );
   }
   return (
     <Panel title="Verify your identity">
-      <Stack gap={14}>
-        <div className="verify-panel-body">
-          <p>
-            You'll be taken to Verify Assist, our identity-verification service, to verify with CLEAR — a selfie and a
-            photo of your government ID, about two minutes. When you finish you'll come back here with your name, date
-            of birth, and address filled in.
-          </p>
-          <button type="button" className="btn btn--clear" disabled={state === 'starting'} onClick={onVerify}>
-            {state === 'starting' ? (
-              'Opening CLEAR…'
-            ) : (
-              <Fragment>
-                Verify with <span className="clear-wordmark">CLEAR</span>
-              </Fragment>
-            )}
-          </button>
-        </div>
-        {state === 'failed' ? (
-          <Alert kind="destr" title="We couldn't complete your verification">
-            {error || 'You can try again, or fill in your information below yourself.'}
-          </Alert>
-        ) : null}
-      </Stack>
+      <div className="verify-panel-body">
+        <p>
+          You'll be taken to Verify Assist, our identity-verification service,
+          to verify your identity with CLEAR — selfie + government ID, about 2
+          minutes. When you finish you'll return here with your information
+          filled in.
+        </p>
+        {/* CLEAR brand CTA: white pill, navy border, CLEAR wordmark (ht-clear /apply). */}
+        <button
+          type="button"
+          className="btn btn--clear"
+          disabled={state === "starting"}
+          onClick={onVerify}
+        >
+          {state === "starting" ? (
+            "Opening CLEAR…"
+          ) : (
+            <Fragment>
+              Verify with{" "}
+              <span className="clear-wordmark" aria-hidden="true">
+                CLEAR
+              </span>
+              <span className="sr-only">CLEAR</span>
+            </Fragment>
+          )}
+        </button>
+      </div>
+      {state === "failed" ? (
+        <p role="alert" className="verify-panel-error">
+          {error ||
+            "We couldn't complete your verification. You can try again or fill in your information manually."}
+        </p>
+      ) : null}
     </Panel>
   );
 }
@@ -629,16 +764,21 @@ function StepPersonalInfoV2({ ctx }) {
   const { data, setPath, updateFormData } = ctx;
   const v = data.primaryApplicant;
   const iv = v.identityVerification;
-  const verified = iv?.status === 'success';
+  const verified = iv?.status === "success";
   const [phoneTouched, setPhoneTouched] = useState(false);
-  const phoneInvalid = phoneTouched && (v.phone ?? '').replace(/\D/g, '').length !== 10;
+  const phoneInvalid =
+    phoneTouched && (v.phone ?? "").replace(/\D/g, "").length !== 10;
 
   // ── CLEAR return leg ────────────────────────────────────────────────────
   // The hash router hands us the `?verified=<id>` from the hosted flow's
   // returnTo (or we fall back to the sessionStorage pending marker). Poll to a
   // terminal status, then apply traits.document to the form.
-  const [returnLeg] = useState(() => (verified ? null : takeReturnLegVerificationId()));
-  const [verifyState, setVerifyState] = useState(returnLeg ? 'polling' : 'idle'); // idle | starting | polling | failed
+  const [returnLeg] = useState(() =>
+    verified ? null : takeReturnLegVerificationId(),
+  );
+  const [verifyState, setVerifyState] = useState(
+    returnLeg ? "polling" : "idle",
+  ); // idle | starting | polling | failed
   const [verifyError, setVerifyError] = useState(null);
 
   useEffect(() => {
@@ -651,35 +791,42 @@ function StepPersonalInfoV2({ ctx }) {
         // up quietly rather than block the step for 30 seconds.
         const verification = await pollVerification(returnLeg.id, {
           signal,
-          maxAttempts: returnLeg.source === 'url' ? undefined : 2,
+          maxAttempts: returnLeg.source === "url" ? undefined : 2,
         });
         if (signal.cancelled) return;
-        if (verification.status === 'success') {
-          updateFormData('primaryApplicant', (prev) => applyVerificationToPrimary(prev, verification));
-          setVerifyState('idle');
-        } else if (verification.status === 'failed' || verification.status === 'expired') {
+        if (verification.status === "success") {
+          updateFormData("primaryApplicant", (prev) =>
+            applyVerificationToPrimary(prev, verification),
+          );
+          setVerifyState("idle");
+        } else if (
+          verification.status === "failed" ||
+          verification.status === "expired"
+        ) {
           setVerifyError(
-            verification.status === 'expired'
-              ? 'Your verification session expired before it finished. You can start again.'
+            verification.status === "expired"
+              ? "Your verification session expired before it finished. You can start again."
               : null,
           );
-          setVerifyState('failed');
+          setVerifyState("failed");
         } else {
           // Still pending after the budget.
-          if (returnLeg.source === 'url') {
-            setVerifyError("We're still waiting on CLEAR. You can try again or fill in your information yourself.");
-            setVerifyState('failed');
+          if (returnLeg.source === "url") {
+            setVerifyError(
+              "We're still waiting on CLEAR. You can try again or fill in your information yourself.",
+            );
+            setVerifyState("failed");
           } else {
-            setVerifyState('idle');
+            setVerifyState("idle");
           }
         }
       } catch (err) {
         if (signal.cancelled) return;
-        console.error('[StepPersonalInfoV2] verification poll failed', {
+        console.error("[StepPersonalInfoV2] verification poll failed", {
           name: err instanceof Error ? err.name : typeof err,
         });
-        if (returnLeg.source === 'url') setVerifyState('failed');
-        else setVerifyState('idle');
+        if (returnLeg.source === "url") setVerifyState("failed");
+        else setVerifyState("idle");
       } finally {
         clearPendingVerification();
       }
@@ -691,24 +838,28 @@ function StepPersonalInfoV2({ ctx }) {
 
   const handleVerify = async () => {
     setVerifyError(null);
-    setVerifyState('starting');
+    setVerifyState("starting");
     try {
       // The provider mirrors every change to localStorage already; flush once
       // more synchronously so nothing typed in this render is lost when the
       // browser navigates to the hosted flow.
-      await startClearVerification('applicant', () => persistForm(data));
+      await startClearVerification("applicant", () => persistForm(data));
     } catch (err) {
-      console.error('[StepPersonalInfoV2] could not start CLEAR verification', {
+      console.error("[StepPersonalInfoV2] could not start CLEAR verification", {
         name: err instanceof Error ? err.name : typeof err,
-        code: err && typeof err === 'object' && 'code' in err ? err.code : undefined,
+        code:
+          err && typeof err === "object" && "code" in err
+            ? err.code
+            : undefined,
       });
-      const code = err && typeof err === 'object' && 'code' in err ? err.code : null;
+      const code =
+        err && typeof err === "object" && "code" in err ? err.code : null;
       setVerifyError(
-        code === 'unauthenticated' || code === 'wrong_app'
-          ? 'Please sign in to verify your identity with CLEAR. Guests can still enter their information below.'
+        code === "unauthenticated" || code === "wrong_app"
+          ? "Please sign in to verify your identity with CLEAR. Guests can still enter their information below."
           : "We couldn't start identity verification right now. You can try again, or fill in your information below.",
       );
-      setVerifyState('failed');
+      setVerifyState("failed");
     }
   };
 
@@ -717,13 +868,19 @@ function StepPersonalInfoV2({ ctx }) {
   // Editing a CLEAR-prefilled field drops it from verifiedFields (chip goes away).
   const set = (field, value) => {
     if (isVerified(field)) {
-      updateFormData('primaryApplicant', (prev) => unverifyField({ ...prev, [field]: value }, field));
+      updateFormData("primaryApplicant", (prev) =>
+        unverifyField({ ...prev, [field]: value }, field),
+      );
     } else {
-      setPath('primaryApplicant', field, value);
+      setPath("primaryApplicant", field, value);
     }
   };
-  const L = (text, field, compact = false) => (
-    <VerifiedLabel text={text} verified={isVerified(field)} compact={compact} />
+  // Labels stay plain; verified fields get the in-field check via `V`.
+  const L = (text, _field, _compact = false) => text;
+  const V = (field, node, inset = false) => (
+    <VerifiedControl verified={isVerified(field)} inset={inset}>
+      {node}
+    </VerifiedControl>
   );
 
   const updatePerson = useUpdatePerson();
@@ -731,33 +888,35 @@ function StepPersonalInfoV2({ ctx }) {
     useCallback(async () => {
       const form = {
         firstName: v.firstName,
-        middleName: v.middleName || '',
+        middleName: v.middleName || "",
         lastName: v.lastName,
-        suffix: v.suffix || '',
+        suffix: v.suffix || "",
         dob: v.dob,
         // CLEAR only reveals the last 4 — the verified SSN is never sent as digits.
-        ssn: v.ssn || '',
+        ssn: v.ssn || "",
         noSSN: !!v.noSSN,
-        street: v.streetAddress || '',
-        apt: v.aptUnit || '',
-        city: v.city || '',
-        state: v.state || '',
-        zip: v.zip || '',
-        mailingStreet: '',
-        mailingApt: '',
-        mailingCity: '',
-        mailingState: '',
-        mailingZip: '',
-        phone: v.phone || '',
-        phoneType: v.phoneType || 'mobile',
-        email: v.email || '',
+        street: v.streetAddress || "",
+        apt: v.aptUnit || "",
+        city: v.city || "",
+        state: v.state || "",
+        zip: v.zip || "",
+        mailingStreet: "",
+        mailingApt: "",
+        mailingCity: "",
+        mailingState: "",
+        mailingZip: "",
+        phone: v.phone || "",
+        phoneType: v.phoneType || "mobile",
+        email: v.email || "",
       };
       const { success, errors } = await updatePerson.execute(form);
       if (!success) {
         if (errors[0]?.code) {
-          console.error('[StepPersonalInfoV2] updatePerson failed', { code: errors[0].code });
+          console.error("[StepPersonalInfoV2] updatePerson failed", {
+            code: errors[0].code,
+          });
         }
-        return { ok: false, error: 'Unable to save. Please try again.' };
+        return { ok: false, error: "Unable to save. Please try again." };
       }
       return { ok: true };
     }, [updatePerson, v]),
@@ -767,67 +926,120 @@ function StepPersonalInfoV2({ ctx }) {
 
   return (
     <Stack gap={24}>
-      <ClearVerifyPanel state={verifyState} verified={verified} error={verifyError} onVerify={handleVerify} />
+      <ClearVerifyPanel
+        state={verifyState}
+        verified={verified}
+        error={verifyError}
+        onVerify={handleVerify}
+      />
 
       <Panel title="Name &amp; identity">
         <Stack gap={14}>
           <div className="grid-name">
-            <Field label={L('First name', 'firstName')} required>
-              <TextInput value={v.firstName} onChange={(x) => set('firstName', x)} autoComplete="given-name" />
+            <Field label={L("First name", "firstName")} required>
+              {V(
+                "firstName",
+                <>
+                  <TextInput
+                    value={v.firstName}
+                    onChange={(x) => set("firstName", x)}
+                    autoComplete="given-name"
+                  />
+                </>,
+                false,
+              )}
             </Field>
-            <Field label={L('Middle', 'middleName')}>
-              <TextInput value={v.middleName} onChange={(x) => set('middleName', x)} />
+            <Field label={L("Middle", "middleName")}>
+              {V(
+                "middleName",
+                <>
+                  <TextInput
+                    value={v.middleName}
+                    onChange={(x) => set("middleName", x)}
+                  />
+                </>,
+                false,
+              )}
             </Field>
-            <Field label={L('Last name', 'lastName')} required>
-              <TextInput value={v.lastName} onChange={(x) => set('lastName', x)} autoComplete="family-name" />
+            <Field label={L("Last name", "lastName")} required>
+              {V(
+                "lastName",
+                <>
+                  <TextInput
+                    value={v.lastName}
+                    onChange={(x) => set("lastName", x)}
+                    autoComplete="family-name"
+                  />
+                </>,
+                false,
+              )}
             </Field>
             <Field label="Suffix">
               <Select
                 value={v.suffix}
-                onChange={(x) => setPath('primaryApplicant', 'suffix', x)}
-                options={['', 'Jr.', 'Sr.', 'II', 'III', 'IV']}
+                onChange={(x) => setPath("primaryApplicant", "suffix", x)}
+                options={["", "Jr.", "Sr.", "II", "III", "IV"]}
                 placeholder="—"
               />
             </Field>
           </div>
           <div className="grid-2">
-            <Field label={L('Date of birth', 'dob')} required error={v.dob ? validateDob(v.dob) : undefined}>
-              <TextInput
-                type="date"
-                value={v.dob}
-                max="9999-12-31"
-                onChange={(x) => {
-                  if (!x || (x.split('-')[0]?.length ?? 0) <= 4) set('dob', x);
-                }}
-              />
+            <Field
+              label={L("Date of birth", "dob")}
+              required
+              error={v.dob ? validateDob(v.dob) : undefined}
+            >
+              {V(
+                "dob",
+                <>
+                  <TextInput
+                    type="date"
+                    value={v.dob}
+                    max="9999-12-31"
+                    onChange={(x) => {
+                      if (!x || (x.split("-")[0]?.length ?? 0) <= 4)
+                        set("dob", x);
+                    }}
+                  />
+                </>,
+                true,
+              )}
             </Field>
             <Field
-              label={L('Social Security Number', 'ssn')}
+              label={L("Social Security Number", "ssn")}
               htmlFor="primary-ssn-e"
               required={!v.noSSN && !ssnFromClear}
               hint={
                 ssnFromClear
-                  ? 'Confirmed during identity verification.'
-                  : 'Required for everyone with one. Used only to verify identity and income.'
+                  ? "Confirmed during identity verification."
+                  : "Required for everyone with one. Used only to verify identity and income."
               }
             >
-              {ssnFromClear ? (
-                <div
-                  id="primary-ssn-e"
-                  className="input readonly"
-                  role="textbox"
-                  aria-readonly="true"
-                  aria-label={`Social Security Number ending in ${iv.ssnLast4}, confirmed during identity verification`}
-                >
-                  {`•••-••-${iv.ssnLast4}`}
-                </div>
-              ) : (
-                <SSNInput
-                  id="primary-ssn-e"
-                  value={v.ssn}
-                  disabled={v.noSSN}
-                  onChange={(digits) => setPath('primaryApplicant', 'ssn', digits)}
-                />
+              {V(
+                "ssn",
+                <>
+                  {ssnFromClear ? (
+                    <div
+                      id="primary-ssn-e"
+                      className="input readonly"
+                      role="textbox"
+                      aria-readonly="true"
+                      aria-label={`Social Security Number ending in ${iv.ssnLast4}, confirmed during identity verification`}
+                    >
+                      {`•••-••-${iv.ssnLast4}`}
+                    </div>
+                  ) : (
+                    <SSNInput
+                      id="primary-ssn-e"
+                      value={v.ssn}
+                      disabled={v.noSSN}
+                      onChange={(digits) =>
+                        setPath("primaryApplicant", "ssn", digits)
+                      }
+                    />
+                  )}
+                </>,
+                false,
               )}
             </Field>
           </div>
@@ -836,8 +1048,10 @@ function StepPersonalInfoV2({ ctx }) {
               kind="checkbox"
               name="noSSN"
               value="noSSN"
-              current={v.noSSN ? ['noSSN'] : []}
-              onChange={(arr) => setPath('primaryApplicant', 'noSSN', arr.includes('noSSN'))}
+              current={v.noSSN ? ["noSSN"] : []}
+              onChange={(arr) =>
+                setPath("primaryApplicant", "noSSN", arr.includes("noSSN"))
+              }
               title="I don't have a Social Security Number"
               desc="You may still qualify for some programs. Your case will be routed for additional verification."
             />
@@ -851,81 +1065,136 @@ function StepPersonalInfoV2({ ctx }) {
             kind="checkbox"
             name="homeless"
             value="homeless"
-            current={v.homeless ? ['homeless'] : []}
-            onChange={(arr) => setPath('primaryApplicant', 'homeless', arr.includes('homeless'))}
+            current={v.homeless ? ["homeless"] : []}
+            onChange={(arr) =>
+              setPath("primaryApplicant", "homeless", arr.includes("homeless"))
+            }
             title="I don't have a fixed address"
             desc="A shelter, motel, or someone else's place is fine — we can use a mailing address instead."
           />
           {!v.homeless ? (
             <Fragment>
-              <div className="grid-2" style={{ gridTemplateColumns: '2fr 1fr' }}>
-                <Field label={L('Street address', 'streetAddress')} required htmlFor="addr-personal">
-                  {MAPBOX_TOKEN ? (
-                    <AddressAutofill
-                      accessToken={MAPBOX_TOKEN}
-                      options={US_AUTOFILL_OPTIONS}
-                      onRetrieve={(res) => {
-                        const props = res.features[0]?.properties;
-                        if (!props) return;
-                        if (props.address_line1) set('streetAddress', props.address_line1);
-                        if (props.address_level2) set('city', props.address_level2);
-                        if (props.postcode) set('zip', props.postcode.slice(0, 5));
-                        if (props.address_level1) {
-                          const raw = props.address_level1.trim();
-                          // Mapbox returns "California", "CA", or "US-CA" — normalise to 2-char abbr
-                          let abbr = '';
-                          if (/^US-[A-Z]{2}$/i.test(raw)) {
-                            abbr = raw.slice(3).toUpperCase();
-                          } else if (raw.length === 2) {
-                            abbr = raw.toUpperCase();
-                          } else {
-                            abbr = STATE_NAME_TO_ABBR[raw] || '';
-                          }
-                          if (abbr) set('state', abbr);
-                        }
-                      }}
-                    >
-                      <input
-                        id="addr-personal"
-                        className="input"
-                        type="text"
-                        name="address-line1"
-                        autoComplete="address-line1"
-                        placeholder="412 Walnut St"
-                        value={v.streetAddress}
-                        onChange={(e) => set('streetAddress', e.target.value)}
-                      />
-                    </AddressAutofill>
-                  ) : (
-                    <TextInput
-                      id="addr-personal"
-                      value={v.streetAddress}
-                      onChange={(x) => set('streetAddress', x)}
-                      autoComplete="address-line1"
-                      placeholder="412 Walnut St"
-                    />
+              <div
+                className="grid-2"
+                style={{ gridTemplateColumns: "2fr 1fr" }}
+              >
+                <Field
+                  label={L("Street address", "streetAddress")}
+                  required
+                  htmlFor="addr-personal"
+                >
+                  {V(
+                    "streetAddress",
+                    <>
+                      {MAPBOX_TOKEN ? (
+                        <AddressAutofill
+                          accessToken={MAPBOX_TOKEN}
+                          options={US_AUTOFILL_OPTIONS}
+                          onRetrieve={(res) => {
+                            const props = res.features[0]?.properties;
+                            if (!props) return;
+                            if (props.address_line1)
+                              set("streetAddress", props.address_line1);
+                            if (props.address_level2)
+                              set("city", props.address_level2);
+                            if (props.postcode)
+                              set("zip", props.postcode.slice(0, 5));
+                            if (props.address_level1) {
+                              const raw = props.address_level1.trim();
+                              // Mapbox returns "California", "CA", or "US-CA" — normalise to 2-char abbr
+                              let abbr = "";
+                              if (/^US-[A-Z]{2}$/i.test(raw)) {
+                                abbr = raw.slice(3).toUpperCase();
+                              } else if (raw.length === 2) {
+                                abbr = raw.toUpperCase();
+                              } else {
+                                abbr = STATE_NAME_TO_ABBR[raw] || "";
+                              }
+                              if (abbr) set("state", abbr);
+                            }
+                          }}
+                        >
+                          <input
+                            id="addr-personal"
+                            className="input"
+                            type="text"
+                            name="address-line1"
+                            autoComplete="address-line1"
+                            placeholder="412 Walnut St"
+                            value={v.streetAddress}
+                            onChange={(e) =>
+                              set("streetAddress", e.target.value)
+                            }
+                          />
+                        </AddressAutofill>
+                      ) : (
+                        <TextInput
+                          id="addr-personal"
+                          value={v.streetAddress}
+                          onChange={(x) => set("streetAddress", x)}
+                          autoComplete="address-line1"
+                          placeholder="412 Walnut St"
+                        />
+                      )}
+                    </>,
+                    false,
                   )}
                 </Field>
-                <Field label={L('Apt / unit', 'aptUnit')}>
-                  <TextInput value={v.aptUnit} onChange={(x) => set('aptUnit', x)} />
+                <Field label={L("Apt / unit", "aptUnit")}>
+                  {V(
+                    "aptUnit",
+                    <>
+                      <TextInput
+                        value={v.aptUnit}
+                        onChange={(x) => set("aptUnit", x)}
+                      />
+                    </>,
+                    false,
+                  )}
                 </Field>
               </div>
               <div className="grid-csz">
-                <Field label={L('City', 'city')} required>
-                  <TextInput value={v.city} onChange={(x) => set('city', x)} autoComplete="address-level2" />
+                <Field label={L("City", "city")} required>
+                  {V(
+                    "city",
+                    <>
+                      <TextInput
+                        value={v.city}
+                        onChange={(x) => set("city", x)}
+                        autoComplete="address-level2"
+                      />
+                    </>,
+                    false,
+                  )}
                 </Field>
-                <Field label={L('State', 'state', true)} required>
-                  <Select value={v.state} onChange={(x) => set('state', x)} options={US_STATES} />
+                <Field label={L("State", "state", true)} required>
+                  {V(
+                    "state",
+                    <>
+                      <Select
+                        value={v.state}
+                        onChange={(x) => set("state", x)}
+                        options={US_STATES}
+                      />
+                    </>,
+                    true,
+                  )}
                 </Field>
-                <Field label={L('ZIP', 'zip', true)} required>
-                  <TextInput
-                    value={v.zip}
-                    onChange={(x) => set('zip', x)}
-                    inputMode="numeric"
-                    maxLength={5}
-                    autoComplete="postal-code"
-                    placeholder="55501"
-                  />
+                <Field label={L("ZIP", "zip", true)} required>
+                  {V(
+                    "zip",
+                    <>
+                      <TextInput
+                        value={v.zip}
+                        onChange={(x) => set("zip", x)}
+                        inputMode="numeric"
+                        maxLength={5}
+                        autoComplete="postal-code"
+                        placeholder="55501"
+                      />
+                    </>,
+                    false,
+                  )}
                 </Field>
               </div>
             </Fragment>
@@ -933,52 +1202,70 @@ function StepPersonalInfoV2({ ctx }) {
           {!v.homeless ? (
             <ProofOfResidenceUpload
               files={v.proofOfResidence || []}
-              onChange={(next) => setPath('primaryApplicant', 'proofOfResidence', next)}
+              onChange={(next) =>
+                setPath("primaryApplicant", "proofOfResidence", next)
+              }
             />
           ) : null}
           <label className="inline-check">
             <input
               type="checkbox"
               checked={!!v.mailingAddressSame}
-              onChange={(e) => setPath('primaryApplicant', 'mailingAddressSame', e.target.checked)}
+              onChange={(e) =>
+                setPath(
+                  "primaryApplicant",
+                  "mailingAddressSame",
+                  e.target.checked,
+                )
+              }
             />
             <span className="inline-check-box" aria-hidden="true">
               <Icon name="check" size={12} />
             </span>
-            <span className="inline-check-label">My mailing address is the same as my home address</span>
+            <span className="inline-check-label">
+              My mailing address is the same as my home address
+            </span>
           </label>
         </Stack>
       </Panel>
 
       <Panel title="Contact">
         <Stack gap={12}>
-          <div className="grid-2" style={{ gridTemplateColumns: '1fr 200px' }}>
+          <div className="grid-2" style={{ gridTemplateColumns: "1fr 200px" }}>
             <Field
-              label={L('Phone number', 'phone')}
+              label={L("Phone number", "phone")}
               required
-              error={phoneInvalid ? <span id="phone-error">Enter a 10-digit US phone number</span> : undefined}
+              error={
+                phoneInvalid ? (
+                  <span id="phone-error">Enter a 10-digit US phone number</span>
+                ) : undefined
+              }
             >
-              <TextInput
-                type="tel"
-                inputMode="tel"
-                value={formatPhone(v.phone)}
-                onChange={(x) => set('phone', stripPhone(x))}
-                onBlur={() => setPhoneTouched(true)}
-                placeholder="(555) 123-4567"
-                autoComplete="tel"
-                invalid={phoneInvalid}
-                aria-invalid={phoneInvalid || undefined}
-                aria-describedby={phoneInvalid ? 'phone-error' : undefined}
-              />
+              {V(
+                "phone",
+                <TextInput
+                  type="tel"
+                  inputMode="tel"
+                  value={formatPhone(v.phone)}
+                  onChange={(x) => set("phone", stripPhone(x))}
+                  onBlur={() => setPhoneTouched(true)}
+                  placeholder="(555) 123-4567"
+                  autoComplete="tel"
+                  invalid={phoneInvalid}
+                  aria-invalid={phoneInvalid || undefined}
+                  aria-describedby={phoneInvalid ? "phone-error" : undefined}
+                />,
+                false,
+              )}
             </Field>
             <Field label="Type">
               <Select
                 value={v.phoneType}
-                onChange={(x) => setPath('primaryApplicant', 'phoneType', x)}
+                onChange={(x) => setPath("primaryApplicant", "phoneType", x)}
                 options={[
-                  { value: 'mobile', label: 'Mobile' },
-                  { value: 'home', label: 'Home' },
-                  { value: 'work', label: 'Work' },
+                  { value: "mobile", label: "Mobile" },
+                  { value: "home", label: "Home" },
+                  { value: "work", label: "Work" },
                 ]}
               />
             </Field>
@@ -987,7 +1274,7 @@ function StepPersonalInfoV2({ ctx }) {
             <TextInput
               type="email"
               value={v.email}
-              onChange={(x) => setPath('primaryApplicant', 'email', x)}
+              onChange={(x) => setPath("primaryApplicant", "email", x)}
               placeholder="you@example.com"
               autoComplete="email"
             />
@@ -1001,58 +1288,58 @@ function StepPersonalInfoV2({ ctx }) {
 // Mapbox Address Autofill returns full state names for some results — map to
 // the 2-letter codes the State select uses.
 const STATE_NAME_TO_ABBR = {
-  Alabama: 'AL',
-  Alaska: 'AK',
-  Arizona: 'AZ',
-  Arkansas: 'AR',
-  California: 'CA',
-  Colorado: 'CO',
-  Connecticut: 'CT',
-  Delaware: 'DE',
-  Florida: 'FL',
-  Georgia: 'GA',
-  Hawaii: 'HI',
-  Idaho: 'ID',
-  Illinois: 'IL',
-  Indiana: 'IN',
-  Iowa: 'IA',
-  Kansas: 'KS',
-  Kentucky: 'KY',
-  Louisiana: 'LA',
-  Maine: 'ME',
-  Maryland: 'MD',
-  Massachusetts: 'MA',
-  Michigan: 'MI',
-  Minnesota: 'MN',
-  Mississippi: 'MS',
-  Missouri: 'MO',
-  Montana: 'MT',
-  Nebraska: 'NE',
-  Nevada: 'NV',
-  'New Hampshire': 'NH',
-  'New Jersey': 'NJ',
-  'New Mexico': 'NM',
-  'New York': 'NY',
-  'North Carolina': 'NC',
-  'North Dakota': 'ND',
-  Ohio: 'OH',
-  Oklahoma: 'OK',
-  Oregon: 'OR',
-  Pennsylvania: 'PA',
-  'Rhode Island': 'RI',
-  'South Carolina': 'SC',
-  'South Dakota': 'SD',
-  Tennessee: 'TN',
-  Texas: 'TX',
-  Utah: 'UT',
-  Vermont: 'VT',
-  Virginia: 'VA',
-  Washington: 'WA',
-  'West Virginia': 'WV',
-  Wisconsin: 'WI',
-  Wyoming: 'WY',
-  'District of Columbia': 'DC',
-  'State-X': 'SX',
+  Alabama: "AL",
+  Alaska: "AK",
+  Arizona: "AZ",
+  Arkansas: "AR",
+  California: "CA",
+  Colorado: "CO",
+  Connecticut: "CT",
+  Delaware: "DE",
+  Florida: "FL",
+  Georgia: "GA",
+  Hawaii: "HI",
+  Idaho: "ID",
+  Illinois: "IL",
+  Indiana: "IN",
+  Iowa: "IA",
+  Kansas: "KS",
+  Kentucky: "KY",
+  Louisiana: "LA",
+  Maine: "ME",
+  Maryland: "MD",
+  Massachusetts: "MA",
+  Michigan: "MI",
+  Minnesota: "MN",
+  Mississippi: "MS",
+  Missouri: "MO",
+  Montana: "MT",
+  Nebraska: "NE",
+  Nevada: "NV",
+  "New Hampshire": "NH",
+  "New Jersey": "NJ",
+  "New Mexico": "NM",
+  "New York": "NY",
+  "North Carolina": "NC",
+  "North Dakota": "ND",
+  Ohio: "OH",
+  Oklahoma: "OK",
+  Oregon: "OR",
+  Pennsylvania: "PA",
+  "Rhode Island": "RI",
+  "South Carolina": "SC",
+  "South Dakota": "SD",
+  Tennessee: "TN",
+  Texas: "TX",
+  Utah: "UT",
+  Vermont: "VT",
+  Virginia: "VA",
+  Washington: "WA",
+  "West Virginia": "WV",
+  Wisconsin: "WI",
+  Wyoming: "WY",
+  "District of Columbia": "DC",
+  "State-X": "SX",
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1063,24 +1350,25 @@ function FileUpload({
   files,
   onChange,
   onRawFiles,
-  title = 'Proof of residence',
-  subtitle = 'Upload a lease, utility bill, or mortgage statement to verify your address.',
-  badge = 'Optional · speeds up approval',
-  hint = 'PDF, JPG, or PNG · up to 10 MB each',
+  title = "Proof of residence",
+  subtitle = "Upload a lease, utility bill, or mortgage statement to verify your address.",
+  badge = "Optional · speeds up approval",
+  hint = "PDF, JPG, or PNG · up to 10 MB each",
 }) {
   const inputRef = React.useRef(null);
   const [dragging, setDragging] = useState(false);
 
   function addFiles(list) {
     const incoming = Array.from(list || []).map((f) => ({
-      id: 'f' + Math.floor(Math.random() * 1e9),
+      id: "f" + Math.floor(Math.random() * 1e9),
       name: f.name,
       size: f.size,
       type: f.type,
       _rawFile: f,
     }));
     onChange([...(files || []), ...incoming]);
-    if (onRawFiles) onRawFiles(incoming.map(({ id, _rawFile }) => ({ id, file: _rawFile })));
+    if (onRawFiles)
+      onRawFiles(incoming.map(({ id, _rawFile }) => ({ id, file: _rawFile })));
   }
 
   function remove(id) {
@@ -1110,7 +1398,11 @@ function FileUpload({
       {subtitle ? <div className="proof-upload-sub">{subtitle}</div> : null}
 
       <div
-        className={'dropzone' + (dragging ? ' dragging' : '') + (hasFiles ? ' compact' : '')}
+        className={
+          "dropzone" +
+          (dragging ? " dragging" : "") +
+          (hasFiles ? " compact" : "")
+        }
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
@@ -1123,7 +1415,11 @@ function FileUpload({
           <Icon name="upload" size={20} />
         </div>
         <div className="dropzone-body">
-          <div className="dropzone-title">{dragging ? 'Drop to upload' : 'Drag & drop or click to choose a file'}</div>
+          <div className="dropzone-title">
+            {dragging
+              ? "Drop to upload"
+              : "Drag & drop or click to choose a file"}
+          </div>
           <div className="dropzone-sub">{hint}</div>
         </div>
         <input
@@ -1131,10 +1427,10 @@ function FileUpload({
           type="file"
           multiple
           accept=".pdf,.jpg,.jpeg,.png,.heic,application/pdf,image/*"
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           onChange={(e) => {
             addFiles(e.target.files);
-            e.target.value = '';
+            e.target.value = "";
           }}
         />
       </div>
