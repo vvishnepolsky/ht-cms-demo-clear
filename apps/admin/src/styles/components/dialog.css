@@ -1,0 +1,128 @@
+@layer civic.components {
+  [data-slot='dialog-overlay'] {
+    position: fixed;
+    inset: 0;
+    isolation: isolate;
+    z-index: 50;
+    background: var(--civic-overlay-bg);
+  }
+
+  [data-slot='dialog-overlay'][data-open] {
+    animation: civic-fade-in 100ms ease-out;
+  }
+  [data-slot='dialog-overlay'][data-closed] {
+    animation: civic-fade-out 100ms ease-in;
+  }
+
+  [data-slot='dialog-content'] {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 50;
+    display: grid;
+    width: 100%;
+    max-width: calc(100% - 2rem);
+    transform: translate(-50%, -50%);
+    gap: var(--civic-space-6);
+    border-radius: var(--civic-radius-2xl);
+    border: 1px solid var(--civic-border-subtle);
+    background: var(--civic-bg-card);
+    padding: var(--civic-space-6);
+    font-size: var(--civic-text-sm);
+    box-shadow: var(--civic-shadow-2xl);
+    outline: none;
+  }
+
+  @media (min-width: 640px) {
+    [data-slot='dialog-content'] {
+      max-width: 28rem;
+    }
+  }
+
+  [data-slot='dialog-content'][data-open] {
+    animation: civic-dialog-in 150ms ease-out;
+  }
+  [data-slot='dialog-content'][data-closed] {
+    animation: civic-dialog-out 100ms ease-in;
+  }
+
+  [data-slot='dialog-close-button'] {
+    position: absolute;
+    top: var(--civic-space-4);
+    right: var(--civic-space-4);
+  }
+
+  [data-slot='dialog-header'] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--civic-space-2);
+  }
+
+  [data-slot='dialog-footer'] {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--civic-space-2);
+  }
+
+  @media (min-width: 640px) {
+    [data-slot='dialog-footer'] {
+      flex-direction: row;
+      justify-content: flex-end;
+    }
+  }
+
+  [data-slot='dialog-title'] {
+    font-size: var(--civic-text-base);
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  [data-slot='dialog-description'] {
+    font-size: var(--civic-text-sm);
+    color: var(--civic-text-secondary);
+  }
+
+  [data-slot='dialog-description'] a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  [data-slot='dialog-description'] a:hover {
+    color: var(--civic-text-primary);
+  }
+
+  /* --- @scope demo: scope internal spacing to dialog content without leaking into nested components --- */
+
+  @scope ([data-slot="dialog-content"]) to ([data-slot]) {
+    :scope > * + * {
+      margin-top: var(--civic-space-4);
+    }
+
+    p {
+      font-size: var(--civic-text-sm);
+      color: var(--civic-text-secondary);
+      line-height: 1.5;
+    }
+  }
+} /* end @layer civic.components */
+
+@keyframes civic-dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes civic-dialog-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+}

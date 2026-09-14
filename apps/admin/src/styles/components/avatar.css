@@ -1,0 +1,94 @@
+@layer civic.components {
+  [data-slot='avatar'] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    border-radius: var(--civic-radius-full);
+    overflow: hidden;
+    background: var(--civic-bg-component);
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: var(--civic-text-sm);
+    font-weight: 500;
+    color: var(--civic-text-secondary);
+  }
+
+  [data-slot='avatar'][data-size='sm'] {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: var(--civic-text-xs);
+  }
+
+  [data-slot='avatar'][data-size='lg'] {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: var(--civic-text-base);
+  }
+
+  [data-slot='avatar-image'] {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--civic-radius-full);
+  }
+
+  [data-slot='avatar-fallback'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-weight: 500;
+  }
+
+  [data-slot='avatar-badge'] {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: var(--civic-radius-full);
+    border: 2px solid var(--civic-bg-card);
+    background: var(--civic-green-9);
+  }
+
+  [data-slot='avatar'][data-size='sm'] [data-slot='avatar-badge'] {
+    width: 0.5625rem;
+    height: 0.5625rem;
+  }
+
+  [data-slot='avatar'][data-size='lg'] [data-slot='avatar-badge'] {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  [data-slot='avatar-group'] {
+    display: flex;
+    flex-direction: row;
+  }
+
+  [data-slot='avatar-group'] [data-slot='avatar'],
+  [data-slot='avatar-group'] [data-slot='avatar-group-count'] {
+    margin-left: -0.5rem;
+    ring: 2px solid var(--civic-bg-card);
+    box-shadow: 0 0 0 2px var(--civic-bg-card);
+  }
+
+  [data-slot='avatar-group-count'] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: var(--civic-radius-full);
+    background: var(--civic-bg-component);
+    color: var(--civic-text-secondary);
+    font-size: var(--civic-text-sm);
+    font-weight: 500;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-left: -0.5rem;
+    box-shadow: 0 0 0 2px var(--civic-bg-card);
+  }
+}

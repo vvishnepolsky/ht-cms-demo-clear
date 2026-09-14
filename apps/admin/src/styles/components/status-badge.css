@@ -1,0 +1,19 @@
+@layer civic.components {
+  [data-slot='status-badge'] {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--civic-radius-full);
+    padding: 0.1875rem var(--civic-space-2);
+    font-size: var(--civic-text-xs);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  [data-slot='status-badge'][data-variant='small'],
+  [data-slot='status-badge'][data-size='sm'] {
+    padding: 0.125rem var(--civic-space-1-5);
+    font-size: 0.625rem;
+  }
+}

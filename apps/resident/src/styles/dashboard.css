@@ -1,0 +1,637 @@
+/* =========================================================================
+   Dashboard — landing page after a State Medicaid application.
+   Three primary widgets: status, inbox, documents + a quick-actions side.
+   ========================================================================= */
+
+/* ─── Map --iowa-* aliases onto the live --state-* token set ───────────── */
+:root {
+  --iowa-bg: var(--state-bg);
+  --iowa-surface: var(--state-surface);
+  --iowa-border: var(--state-border);
+  --iowa-primary: var(--state-primary);
+  --iowa-primary-dark: var(--state-primary-dark);
+  --iowa-accent: var(--state-accent);
+  --iowa-accent-light: var(--state-accent-light);
+  --iowa-olive: var(--state-olive);
+  --iowa-olive-light: var(--state-olive-light);
+  --iowa-olive-dark: var(--state-olive-dark);
+  --iowa-text: var(--state-text);
+  --iowa-text-muted: var(--state-text-muted);
+  --iowa-secondary: var(--state-secondary);
+  --iowa-green: var(--state-green);
+  --iowa-amber: var(--state-amber);
+  --iowa-amber-bg: var(--state-amber-bg);
+  --iowa-red: var(--state-red);
+  --iowa-shadow-sm: var(--state-shadow-sm);
+}
+
+.dash-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 100, 126, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(107, 138, 26, 0.05) 0%, transparent 55%), var(--iowa-bg);
+  background-attachment: fixed;
+}
+
+/* ─── Top bar with nav ────────────────────────────────────────────────── */
+.dash-topbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  gap: 32px;
+  border-bottom: 1px solid var(--iowa-border);
+  background: var(--iowa-surface);
+}
+.dash-nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  margin-left: 16px;
+}
+.dash-nav-item {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--iowa-text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 150ms,
+    color 150ms;
+}
+.dash-nav-item:hover {
+  background: var(--iowa-secondary);
+  color: var(--iowa-text);
+  text-decoration: none;
+}
+.dash-nav-item.active {
+  background: var(--iowa-accent-light);
+  color: var(--iowa-primary-dark);
+}
+.dash-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-account-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--iowa-text);
+}
+
+/* ─── Page wrapper ────────────────────────────────────────────────────── */
+.dash-main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 32px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.dash-greeting h1 {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--iowa-text);
+  margin: 0;
+}
+.dash-greeting p {
+  font-size: 16px;
+  margin-top: 6px;
+}
+
+/* ─── Status hero ─────────────────────────────────────────────────────── */
+.status-hero {
+  background: linear-gradient(135deg, var(--iowa-accent-light) 0%, var(--iowa-olive-light) 100%);
+  border: 1px solid rgba(0, 100, 126, 0.18);
+  border-radius: 20px;
+  padding: 28px 32px;
+  box-shadow: 0 8px 32px -12px rgba(0, 74, 94, 0.12);
+}
+.status-hero-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 20px;
+  align-items: flex-start;
+}
+.status-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--iowa-primary) 0%, var(--iowa-olive) 100%);
+  color: white;
+  display: grid;
+  place-content: center;
+  box-shadow: 0 4px 12px rgba(0, 100, 126, 0.28);
+}
+.status-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--iowa-primary-dark);
+  margin-bottom: 4px;
+}
+.status-body h2 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--iowa-text);
+  margin: 0 0 6px;
+}
+.status-body p {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--iowa-text);
+  margin: 0;
+}
+.status-meta {
+  text-align: right;
+  font-size: 15px;
+  min-width: 200px;
+}
+.status-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 0;
+}
+.status-meta-row .mono {
+  font-family: var(--civic-font-mono);
+  font-size: 13px;
+}
+
+/* ─── Status track (progress steps) ───────────────────────────────────── */
+.status-track {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 100, 126, 0.15);
+  position: relative;
+}
+.track-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.track-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 11px;
+  left: calc(50% + 14px);
+  right: calc(-50% + 14px);
+  height: 2px;
+  background: var(--iowa-border);
+}
+.track-step.done:not(:last-child)::after {
+  background: var(--iowa-primary);
+}
+.track-bubble {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--iowa-surface);
+  border: 2px solid var(--iowa-border);
+  display: grid;
+  place-content: center;
+  color: transparent;
+  z-index: 1;
+}
+.track-step.done .track-bubble {
+  background: var(--iowa-primary);
+  border-color: var(--iowa-primary);
+  color: white;
+}
+.track-step.current .track-bubble {
+  border-color: var(--iowa-primary);
+  background: var(--iowa-surface);
+}
+.track-step.current .track-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--iowa-primary);
+  animation: trackPulse 1.6s ease-in-out infinite;
+}
+@keyframes trackPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.3);
+  }
+}
+.track-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--iowa-text);
+}
+.track-step.pending .track-label {
+  color: var(--iowa-text-muted);
+  font-weight: 500;
+}
+.track-at {
+  font-size: 13px;
+  color: var(--iowa-text-muted);
+}
+
+/* ─── Two-column grid ─────────────────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: flex-start;
+}
+.dash-col-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.dash-col-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  .status-hero-row {
+    grid-template-columns: 56px 1fr;
+  }
+  .status-meta {
+    grid-column: 1 / -1;
+    text-align: left;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 100, 126, 0.15);
+  }
+}
+
+/* ─── Generic dashboard card ──────────────────────────────────────────── */
+.dash-card {
+  background: var(--iowa-surface);
+  border: 1px solid var(--iowa-border);
+  border-radius: 16px;
+  box-shadow:
+    0 2px 8px rgba(11, 90, 110, 0.07),
+    0 1px 2px rgba(11, 90, 110, 0.04);
+  overflow: hidden;
+}
+.dash-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--iowa-border);
+}
+.dash-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--iowa-text);
+}
+.dash-card-title svg {
+  color: var(--iowa-primary);
+}
+.dash-card-action {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--iowa-primary);
+  cursor: pointer;
+}
+.dash-card-meta {
+  font-size: 14px;
+}
+.unread-badge {
+  display: inline-grid;
+  place-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 9999px;
+  background: var(--iowa-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Inbox ───────────────────────────────────────────────────────────── */
+.inbox-list {
+  display: flex;
+  flex-direction: column;
+}
+.inbox-item + .inbox-item {
+  border-top: 1px solid var(--iowa-border);
+}
+.inbox-item.unread {
+  background: rgba(232, 245, 247, 0.35);
+}
+.inbox-item.open {
+  background: var(--iowa-surface);
+}
+
+.inbox-item-head {
+  display: grid;
+  grid-template-columns: 40px 1fr 14px;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 22px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--iowa-text);
+  transition: background 150ms;
+}
+.inbox-item-head:hover {
+  background: rgba(0, 100, 126, 0.04);
+}
+
+.inbox-item-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-content: center;
+  color: white;
+}
+.inbox-item-ic.success {
+  background: var(--iowa-green);
+}
+.inbox-item-ic.warning {
+  background: var(--iowa-amber);
+}
+.inbox-item-ic.info {
+  background: var(--iowa-primary);
+}
+
+.inbox-item-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--iowa-text);
+  letter-spacing: -0.005em;
+  margin-bottom: 2px;
+}
+.inbox-item.unread .inbox-item-title {
+  font-weight: 700;
+}
+.inbox-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--iowa-primary);
+  flex-shrink: 0;
+}
+.inbox-item-meta {
+  font-size: 13px;
+  color: var(--iowa-text-muted);
+  margin-bottom: 6px;
+}
+.inbox-item-preview {
+  font-size: 15px;
+  color: var(--iowa-text-muted);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.inbox-item.open .inbox-item-preview {
+  display: none;
+}
+
+.inbox-item-detail {
+  padding: 0 22px 18px 76px;
+  border-top: 1px dashed var(--iowa-border);
+  margin-top: 0;
+  padding-top: 14px;
+}
+.inbox-item-detail p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--iowa-text);
+  margin: 0 0 10px;
+}
+.inbox-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ─── Documents ───────────────────────────────────────────────────────── */
+.doc-dropzone-wrap {
+  padding: 16px 22px 8px;
+}
+.doc-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, var(--iowa-accent-light) 0%, var(--iowa-surface) 100%);
+  border: 1.5px dashed rgba(0, 100, 126, 0.32);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    border-color 150ms,
+    background 150ms,
+    transform 80ms ease;
+}
+.doc-dropzone:hover,
+.doc-dropzone.dragging {
+  border-color: var(--iowa-primary);
+  background: var(--iowa-accent-light);
+}
+.doc-dropzone.dragging {
+  transform: scale(1.005);
+}
+.doc-dropzone-ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-content: center;
+  background: linear-gradient(135deg, var(--iowa-primary) 0%, var(--iowa-accent) 100%);
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 100, 126, 0.24);
+}
+.doc-dropzone-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--iowa-text);
+}
+.doc-dropzone-sub {
+  font-size: 14px;
+  color: var(--iowa-text-muted);
+  margin-top: 2px;
+}
+
+.doc-section {
+  padding: 8px 22px;
+}
+.doc-section + .doc-section {
+  border-top: 1px solid var(--iowa-border);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+.doc-section:last-child {
+  padding-bottom: 18px;
+}
+.doc-section-head {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--iowa-text-muted);
+  padding: 10px 0 6px;
+}
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.doc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--iowa-surface);
+  border: 1px solid var(--iowa-border);
+  border-radius: 10px;
+}
+.doc-row-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+}
+.doc-row-ic.state {
+  background: var(--iowa-accent-light);
+  color: var(--iowa-primary-dark);
+}
+.doc-row-ic.user {
+  background: var(--iowa-olive-light);
+  color: var(--iowa-olive-dark);
+}
+.doc-row-body {
+  flex: 1;
+  min-width: 0;
+}
+.doc-row-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--iowa-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.doc-row-meta {
+  font-size: 13px;
+  color: var(--iowa-text-muted);
+  margin-top: 2px;
+}
+.doc-row-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ─── Quick actions ───────────────────────────────────────────────────── */
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+}
+.qa-item {
+  display: grid;
+  grid-template-columns: 36px 1fr 14px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 22px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--iowa-border);
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--iowa-text);
+  transition: background 150ms;
+}
+.qa-item:first-of-type {
+  border-top: none;
+}
+.qa-item:hover {
+  background: rgba(0, 100, 126, 0.04);
+}
+.qa-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: grid;
+  place-content: center;
+  background: var(--iowa-accent-light);
+  color: var(--iowa-primary);
+  flex-shrink: 0;
+}
+.qa-item.hot .qa-ic {
+  background: var(--iowa-amber-bg);
+  color: var(--iowa-amber);
+}
+.qa-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--iowa-text);
+}
+.qa-sub {
+  font-size: 13px;
+  color: var(--iowa-text-muted);
+  margin-top: 2px;
+}
+
+/* ─── Help card ───────────────────────────────────────────────────────── */
+.dash-help-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--iowa-surface);
+  border: 1px solid var(--iowa-border);
+  border-radius: 14px;
+  box-shadow: var(--iowa-shadow-sm);
+}
+.dash-help-card svg {
+  color: var(--iowa-primary);
+  flex-shrink: 0;
+}
+.dash-help-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--iowa-text);
+}
+.dash-help-sub {
+  font-size: 14px;
+  color: var(--iowa-text-muted);
+  margin-top: 2px;
+}

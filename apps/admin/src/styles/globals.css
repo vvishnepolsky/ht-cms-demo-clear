@@ -1,0 +1,469 @@
+/* ============================================================================
+   Civic — globals.css
+
+   Built on Radix Colors. No Tailwind. No build step required.
+   Import this file in any consumer project and all Civic components render.
+
+   CSS Layer order: civic.base < civic.components < unlayered consumer styles.
+   Consumer overrides always win without needing !important.
+   ============================================================================ */
+
+/* --- Radix Colors: full palette (light + dark, 31 scales) ---------------- */
+/* All scales are available for theming. Civic semantic tokens point to specific
+   scales (slate for neutrals, iris for accent). To theme for a client, swap
+   the semantic aliases below — e.g. --civic-accent-solid: var(--teal-9).
+   Alpha variants are imported for slate and iris only (overlays, focus rings). */
+
+/* Neutrals */
+@import '@radix-ui/colors/gray.css';
+@import '@radix-ui/colors/gray-dark.css';
+@import '@radix-ui/colors/mauve.css';
+@import '@radix-ui/colors/mauve-dark.css';
+@import '@radix-ui/colors/olive.css';
+@import '@radix-ui/colors/olive-dark.css';
+@import '@radix-ui/colors/sage.css';
+@import '@radix-ui/colors/sage-dark.css';
+@import '@radix-ui/colors/sand.css';
+@import '@radix-ui/colors/sand-dark.css';
+@import '@radix-ui/colors/slate.css';
+@import '@radix-ui/colors/slate-dark.css';
+@import '@radix-ui/colors/slate-alpha.css';
+@import '@radix-ui/colors/slate-dark-alpha.css';
+
+/* Blues */
+@import '@radix-ui/colors/blue.css';
+@import '@radix-ui/colors/blue-dark.css';
+@import '@radix-ui/colors/cyan.css';
+@import '@radix-ui/colors/cyan-dark.css';
+@import '@radix-ui/colors/indigo.css';
+@import '@radix-ui/colors/indigo-dark.css';
+@import '@radix-ui/colors/iris.css';
+@import '@radix-ui/colors/iris-dark.css';
+@import '@radix-ui/colors/iris-alpha.css';
+@import '@radix-ui/colors/iris-dark-alpha.css';
+@import '@radix-ui/colors/sky.css';
+@import '@radix-ui/colors/sky-dark.css';
+@import '@radix-ui/colors/violet.css';
+@import '@radix-ui/colors/violet-dark.css';
+
+/* Greens */
+@import '@radix-ui/colors/grass.css';
+@import '@radix-ui/colors/grass-dark.css';
+@import '@radix-ui/colors/green.css';
+@import '@radix-ui/colors/green-dark.css';
+@import '@radix-ui/colors/jade.css';
+@import '@radix-ui/colors/jade-dark.css';
+@import '@radix-ui/colors/lime.css';
+@import '@radix-ui/colors/lime-dark.css';
+@import '@radix-ui/colors/mint.css';
+@import '@radix-ui/colors/mint-dark.css';
+@import '@radix-ui/colors/teal.css';
+@import '@radix-ui/colors/teal-dark.css';
+
+/* Reds / Pinks */
+@import '@radix-ui/colors/crimson.css';
+@import '@radix-ui/colors/crimson-dark.css';
+@import '@radix-ui/colors/pink.css';
+@import '@radix-ui/colors/pink-dark.css';
+@import '@radix-ui/colors/plum.css';
+@import '@radix-ui/colors/plum-dark.css';
+@import '@radix-ui/colors/purple.css';
+@import '@radix-ui/colors/purple-dark.css';
+@import '@radix-ui/colors/red.css';
+@import '@radix-ui/colors/red-dark.css';
+@import '@radix-ui/colors/ruby.css';
+@import '@radix-ui/colors/ruby-dark.css';
+
+/* Yellows / Oranges */
+@import '@radix-ui/colors/amber.css';
+@import '@radix-ui/colors/amber-dark.css';
+@import '@radix-ui/colors/orange.css';
+@import '@radix-ui/colors/orange-dark.css';
+@import '@radix-ui/colors/tomato.css';
+@import '@radix-ui/colors/tomato-dark.css';
+@import '@radix-ui/colors/yellow.css';
+@import '@radix-ui/colors/yellow-dark.css';
+
+/* Metals */
+@import '@radix-ui/colors/bronze.css';
+@import '@radix-ui/colors/bronze-dark.css';
+@import '@radix-ui/colors/brown.css';
+@import '@radix-ui/colors/brown-dark.css';
+@import '@radix-ui/colors/gold.css';
+@import '@radix-ui/colors/gold-dark.css';
+
+/* --- Component styles ----------------------------------------------------- */
+@import './components.css';
+
+/* --- Font ----------------------------------------------------------------- */
+@import '@fontsource-variable/geist';
+
+/* --- Layer order declaration ---------------------------------------------- */
+@layer civic.base, civic.components;
+
+@layer civic.base {
+  @font-face {
+    font-family: 'Geist';
+    font-style: normal;
+    font-display: block;
+    font-weight: 100 900;
+    src: url('@fontsource-variable/geist/files/geist-latin-wght-normal.woff2') format('woff2-variations');
+  }
+
+  /* ============================================================================
+   Semantic aliases
+
+   Maps Radix Colors 12-step scales to Civic semantic tokens.
+   Radix step guide:
+     1-2   App/subtle backgrounds
+     3-5   Component backgrounds (normal, hover, active)
+     6-8   Borders (subtle, interactive, strong/focus)
+     9-10  Solid fills (normal, hover)
+     11-12 Text (low contrast, high contrast)
+   ============================================================================ */
+
+  :root {
+    /* --- Layout backgrounds --- */
+    --civic-bg-app: var(--slate-1);
+    --civic-bg-subtle: var(--slate-2);
+    --civic-bg-card: white;
+    --civic-bg-popover: white;
+
+    /* --- Component backgrounds --- */
+    --civic-bg-component: var(--slate-3);
+    --civic-bg-component-hover: var(--slate-4);
+    --civic-bg-component-active: var(--slate-5);
+
+    /* --- Accent / Primary --- */
+    --civic-accent-solid: var(--iris-9);
+    --civic-accent-solid-hover: var(--iris-10);
+    --civic-accent-bg: var(--iris-3);
+    --civic-accent-bg-hover: var(--iris-4);
+    --civic-accent-bg-active: var(--iris-5);
+    --civic-accent-text: var(--iris-11);
+    --civic-accent-text-contrast: var(--iris-12);
+    --civic-accent-on-solid: white;
+
+    /* --- Borders --- */
+    --civic-border-subtle: var(--slate-6);
+    --civic-border-component: var(--slate-7);
+    --civic-border-strong: var(--slate-8);
+    --civic-border-focus: var(--iris-8);
+
+    /* --- Text --- */
+    --civic-foreground: var(--slate-12);
+    --civic-text-primary: var(--slate-12);
+    --civic-text-secondary: var(--slate-11);
+    --civic-text-placeholder: var(--slate-9);
+
+    /* --- Destructive --- */
+    --civic-destructive-solid: var(--red-9);
+    --civic-destructive-solid-hover: var(--red-10);
+    --civic-destructive-bg: var(--red-3);
+    --civic-destructive-bg-hover: var(--red-4);
+    --civic-destructive-text: var(--red-11);
+    --civic-destructive-border: var(--red-7);
+
+    /* --- Success --- */
+    --civic-success-solid: var(--green-9);
+    --civic-success-bg: var(--green-3);
+    --civic-success-text: var(--green-11);
+    --civic-success-border: var(--green-7);
+
+    /* --- Warning --- */
+    --civic-warning-solid: var(--amber-9);
+    --civic-warning-bg: var(--amber-3);
+    --civic-warning-text: var(--amber-11);
+
+    /* --- Info --- */
+    --civic-info-solid: var(--blue-9);
+    --civic-info-bg: var(--blue-3);
+    --civic-info-text: var(--blue-11);
+
+    /* --- Slate/Neutral (grey — waiting/passive state) --- */
+    --civic-slate-solid: var(--slate-9);
+    --civic-slate-bg: var(--slate-3);
+    --civic-slate-text: var(--slate-11);
+    --civic-slate-border: var(--slate-7);
+
+    /* --- Charts (5-step iris ramp) --- */
+    --civic-chart-1: var(--iris-7);
+    --civic-chart-2: var(--iris-8);
+    --civic-chart-3: var(--iris-9);
+    --civic-chart-4: var(--iris-10);
+    --civic-chart-5: var(--iris-11);
+
+    /* --- Sidebar --- */
+    --civic-sidebar-bg: var(--slate-2);
+    --civic-sidebar-text: var(--slate-12);
+    --civic-sidebar-text-secondary: var(--slate-11);
+    --civic-sidebar-accent: var(--iris-9);
+    --civic-sidebar-accent-text: white;
+    --civic-sidebar-border: var(--slate-6);
+
+    /* --- Primitives for badge-level tinting --- */
+    /* These map directly to Radix Colors steps. */
+    /* Usage: --civic-green-3 for subtle bg, --civic-green-11 for text on tinted bg */
+    --civic-green-3: var(--green-3);
+    --civic-green-6: var(--green-6);
+    --civic-green-9: var(--green-9);
+    --civic-green-11: var(--green-11);
+    --civic-red-3: var(--red-3);
+    --civic-red-6: var(--red-6);
+    --civic-red-9: var(--red-9);
+    --civic-red-11: var(--red-11);
+    --civic-orange-3: var(--orange-3);
+    --civic-orange-6: var(--orange-6);
+    --civic-orange-11: var(--orange-11);
+    --civic-amber-3: var(--amber-3);
+    --civic-amber-6: var(--amber-6);
+    --civic-amber-9: var(--amber-9);
+    --civic-amber-11: var(--amber-11);
+    --civic-blue-3: var(--blue-3);
+    --civic-blue-6: var(--blue-6);
+    --civic-blue-9: var(--blue-9);
+    --civic-blue-11: var(--blue-11);
+    --civic-plum-3: var(--plum-3);
+    --civic-plum-6: var(--plum-6);
+    --civic-plum-9: var(--plum-9);
+    --civic-plum-11: var(--plum-11);
+    --civic-mint-3: var(--mint-3);
+    --civic-mint-11: var(--mint-11);
+
+    /* --- Spacing scale --- */
+    --civic-space-0: 0px;
+    --civic-space-px: 1px;
+    --civic-space-0-5: 2px;
+    --civic-space-1: 4px;
+    --civic-space-1-5: 6px;
+    --civic-space-2: 8px;
+    --civic-space-2-5: 10px;
+    --civic-space-3: 12px;
+    --civic-space-4: 16px;
+    --civic-space-5: 20px;
+    --civic-space-6: 24px;
+    --civic-space-8: 32px;
+    --civic-space-10: 40px;
+    --civic-space-12: 48px;
+    --civic-space-16: 64px;
+
+    /* --- Radius --- */
+    --civic-radius-sm: 4px;
+    --civic-radius-md: 6px;
+    --civic-radius-lg: 8px;
+    --civic-radius-xl: 12px;
+    --civic-radius-2xl: 16px;
+    --civic-radius-3xl: 24px;
+    --civic-radius-full: 9999px;
+
+    /* --- Shadows --- */
+    --civic-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --civic-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --civic-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --civic-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --civic-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --civic-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+    /* --- Typography --- */
+    --civic-font-sans: 'Geist', 'Geist Variable', system-ui, -apple-system, sans-serif;
+    --civic-font-mono: 'Geist Mono Variable', 'Fira Code', monospace;
+    --civic-text-xs: 0.75rem;
+    --civic-text-sm: 0.875rem;
+    --civic-text-base: 1rem;
+    --civic-text-lg: 1.125rem;
+    --civic-text-xl: 1.25rem;
+    --civic-text-2xl: 1.5rem;
+    --civic-text-3xl: 1.875rem;
+    --civic-text-4xl: 2.25rem;
+
+    /* --- Focus ring shorthand --- */
+    --civic-ring-width: 3px;
+    --civic-ring-color: var(--iris-a8);
+    --civic-ring-color-destructive: var(--red-a3);
+    --civic-ring: var(--civic-ring-width) solid var(--civic-ring-color);
+
+    /* --- Overlay --- */
+    --civic-overlay-bg: rgb(0 0 0 / 0.3);
+
+    /* --- Popover border --- */
+    --civic-border-popover: var(--slate-6);
+
+    /* --- Interaction states --- */
+    --civic-disabled-opacity: 0.5;
+
+    /* --- Surfaces that must flip in dark mode --- */
+    --civic-surface-on-solid: white;
+  }
+
+  /* --- Dark mode: Radix Colors handles the scale swap automatically --------- */
+  /* .dark and .dark-theme are both supported by @radix-ui/colors imports.      */
+  /* We only need to override the semantic aliases that don't flip with Radix.   */
+  .dark {
+    --civic-bg-card: var(--slate-2);
+    --civic-bg-popover: var(--slate-2);
+    --civic-accent-on-solid: white;
+    --civic-sidebar-accent-text: white;
+    --civic-overlay-bg: rgb(0 0 0 / 0.5);
+    --civic-surface-on-solid: white;
+  }
+
+  /* ============================================================================
+   Base reset
+   ============================================================================ */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--civic-border-subtle);
+  }
+
+  html {
+    font-family: var(--civic-font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    position: relative;
+    background: var(--civic-bg-app);
+    color: var(--civic-text-primary);
+    font-family: var(--civic-font-sans);
+    font-size: var(--civic-text-sm);
+    line-height: 1.5;
+  }
+
+  /* Base UI portal stacking: isolate the app root so portaled components
+   (Dialog, Popover, Sheet, Drawer) always layer above page content. */
+  #root {
+    isolation: isolate;
+  }
+
+  button,
+  input,
+  textarea,
+  select,
+  a {
+    font-family: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    margin: 0;
+  }
+  p {
+    margin: 0;
+  }
+  h1 {
+    font-size: var(--civic-text-2xl);
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-size: var(--civic-text-xl);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+  }
+  h3 {
+    font-size: var(--civic-text-lg);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  h4 {
+    font-size: var(--civic-text-base);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* Screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+} /* end @layer civic.base */
+
+/* --- Animations (used by Dialog, Select, Accordion) ----------------------- */
+/* Kept outside @layer so they're globally accessible from any layer context. */
+@keyframes civic-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes civic-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes civic-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes civic-zoom-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+@keyframes civic-slide-up {
+  from {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes civic-slide-down {
+  from {
+    transform: translateY(-4px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes civic-accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--accordion-panel-height, auto);
+  }
+}
+@keyframes civic-accordion-up {
+  from {
+    height: var(--accordion-panel-height, auto);
+  }
+  to {
+    height: 0;
+  }
+}

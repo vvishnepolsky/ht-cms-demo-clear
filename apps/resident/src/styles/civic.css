@@ -1,0 +1,634 @@
+/* =========================================================================
+   CIVIC Design System — colors_and_type.css
+   Flattened from packages/ui/src/styles/globals.css (source of truth)
+   Two-layer system: Radix Colors primitives + CIVIC semantic tokens
+   Every CIVIC value mirrors the exact Radix step it references in the repo.
+   ========================================================================= */
+
+/* --- Font: Geist Variable (local woff2) ---------------------------------- */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-display: block;
+  font-weight: 100 900;
+  src:
+    url('fonts/Geist[wght].woff2') format('woff2-variations'),
+    url('fonts/Geist-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Geist';
+  font-style: italic;
+  font-display: block;
+  font-weight: 100 900;
+  src:
+    url('fonts/Geist-Italic[wght].woff2') format('woff2-variations'),
+    url('fonts/Geist-Italic.woff2') format('woff2');
+}
+
+/* =========================================================================
+   :root — Light mode tokens
+   ========================================================================= */
+:root {
+  --radius: 0.5rem;
+
+  /* --- Surfaces --------------------------------------------------------- */
+  --civic-bg-app: #fcfcfd; /* slate-1 */
+  --civic-bg-card: #ffffff;
+  --civic-bg-popover: #ffffff;
+  --civic-bg-subtle: #f9f9fb; /* slate-2 */
+  --civic-bg-component: #f0f0f3; /* slate-3 */
+  --civic-bg-component-hover: #e8e8ec; /* slate-4 */
+  --civic-bg-placeholder: #e8e8ec;
+  --civic-bg-track: #d9d9e0; /* slate-6 */
+  --civic-bg-input: #fcfcfd;
+  --civic-sidebar-bg: #f9f9fb;
+
+  /* --- Text ------------------------------------------------------------- */
+  --civic-text-primary: #1c2024; /* slate-12 */
+  --civic-text-secondary: #60646c; /* slate-11 */
+  --civic-text-placeholder: #8b8d98; /* slate-9 */
+
+  /* --- Borders ---------------------------------------------------------- */
+  --civic-border-default: #d9d9e0; /* slate-6 */
+  --civic-border-subtle: #cdced6; /* slate-5 */
+  --civic-border-component: #cdced7; /* slate-7 */
+  --civic-border-strong: #b9bbc6; /* slate-8 */
+  --civic-border-focus: #9b9ef0; /* iris-8 */
+  --civic-border-popover: #d9d9e0;
+
+  /* --- Accent (Iris) ---------------------------------------------------- */
+  --civic-accent-solid: #5b5bd6; /* iris-9 */
+  --civic-accent-solid-hover: #5151cd; /* iris-10 */
+  --civic-accent-bg: #f0f1fe; /* iris-3 */
+  --civic-accent-bg-hover: #e6e7ff; /* iris-4 */
+  --civic-accent-text: #5753c6; /* iris-11 */
+  --civic-accent-on-solid: #ffffff;
+  --civic-surface-on-solid: #ffffff;
+
+  /* --- Destructive (Red) ------------------------------------------------ */
+  --civic-destructive-solid: #e5484d; /* red-9 */
+  --civic-destructive-bg: #feebec; /* red-3 */
+  --civic-destructive-text: #ce2c31; /* red-11 */
+  --civic-destructive-border: #f4a9aa; /* red-7 */
+
+  /* --- Status ----------------------------------------------------------- */
+  --civic-success-solid: #30a46c; /* green-9 */
+  --civic-success-bg: #e6f6eb; /* green-3 */
+  --civic-success-text: #218358; /* green-11 */
+  --civic-warning-solid: #ffc53d; /* amber-9 */
+  --civic-warning-bg: #fff7c2; /* amber-3 */
+  --civic-warning-text: #ab6400; /* amber-11 */
+  --civic-info-solid: #0090ff; /* blue-9 */
+  --civic-info-bg: #e6f4fe; /* blue-3 */
+  --civic-info-text: #0d74ce; /* blue-11 */
+
+  --success-foreground: #193b2d;
+  --warning-foreground: #4a2600;
+  --info-foreground: #0d2847;
+  --plum-solid-fg: #2e0639;
+  --red-solid-fg: #500f1c;
+
+  /* --- Focus & ring ----------------------------------------------------- */
+  --civic-ring-color: rgb(0 8 217 / 0.39); /* iris-a8 */
+  --civic-ring-width: 3px;
+
+  /* --- Overlay ---------------------------------------------------------- */
+  --civic-overlay-bg: rgb(0 0 0 / 0.3);
+
+  /* --- Interaction ------------------------------------------------------ */
+  --civic-disabled-opacity: 0.5;
+
+  /* --- Radix step families (subset used by badges) --------------------- */
+  --civic-green-3: #e6f6eb;
+  --civic-green-6: #adddc0;
+  --civic-green-7: #8eceaa;
+  --civic-green-9: #30a46c;
+  --civic-green-10: #2b9a66;
+  --civic-green-11: #218358;
+  --civic-red-3: #feebec;
+  --civic-red-6: #fdbdbe;
+  --civic-red-9: #e5484d;
+  --civic-red-10: #dc3e42;
+  --civic-red-11: #ce2c31;
+  --civic-orange-3: #ffefd6;
+  --civic-orange-6: #ffc182;
+  --civic-orange-9: #f76b15;
+  --civic-orange-11: #cc4e00;
+  --civic-amber-3: #fff7c2;
+  --civic-amber-6: #f3d673;
+  --civic-amber-7: #e9c162;
+  --civic-amber-9: #ffc53d;
+  --civic-amber-10: #ffba18;
+  --civic-amber-11: #ab6400;
+  --civic-blue-3: #e6f4fe;
+  --civic-blue-6: #acd8fc;
+  --civic-blue-7: #8ec8f6;
+  --civic-blue-9: #0090ff;
+  --civic-blue-10: #0588f0;
+  --civic-blue-11: #0d74ce;
+  --civic-plum-3: #fbebfb;
+  --civic-plum-4: #f7def8;
+  --civic-plum-6: #e9c2ec;
+  --civic-plum-7: #deade3;
+  --civic-plum-9: #ab4aba;
+  --civic-plum-10: #a144af;
+  --civic-plum-11: #953ea3;
+  --civic-mint-3: #ddf9f2;
+  --civic-mint-11: #027864;
+  --civic-jade-3: #edfaf3;
+  --civic-jade-6: #87d4ab;
+  --civic-jade-9: #29a383;
+  --civic-jade-11: #1d7a5f;
+  --civic-teal-3: #e0fbf3;
+  --civic-teal-6: #83cdc1;
+  --civic-teal-9: #12a594;
+  --civic-teal-11: #008573;
+  --civic-crimson-3: #feebf2;
+  --civic-crimson-6: #f3b6cd;
+  --civic-crimson-9: #e93d82;
+  --civic-crimson-11: #cb1d63;
+  --civic-indigo-3: #edf2fe;
+  --civic-indigo-6: #b4c6ff;
+  --civic-indigo-9: #3e63dd;
+  --civic-indigo-11: #3a5bc7;
+  --civic-iris-3: #f0f1fe;
+  --civic-iris-6: #c1c1f0;
+  --civic-iris-9: #5b5bd6;
+  --civic-iris-11: #5753c6;
+  --civic-violet-3: #f4f0fe;
+  --civic-violet-6: #d2c9ff;
+  --civic-violet-9: #6e56cf;
+  --civic-violet-11: #6550b9;
+  --civic-purple-3: #f4edfc;
+  --civic-purple-6: #d3b4ed;
+  --civic-purple-9: #8e4ec6;
+  --civic-purple-11: #8145b5;
+  --civic-pink-3: #fef0f6;
+  --civic-pink-6: #f3bad2;
+  --civic-pink-9: #d6409f;
+  --civic-pink-11: #cd1d8d;
+  --civic-ruby-3: #feeaee;
+  --civic-ruby-6: #f3b6c0;
+  --civic-ruby-9: #e54666;
+  --civic-ruby-11: #ca244d;
+  --civic-tomato-3: #ffefe7;
+  --civic-tomato-6: #fbb198;
+  --civic-tomato-9: #e54d2e;
+  --civic-tomato-11: #ca3214;
+  --civic-yellow-3: #fffbd1;
+  --civic-yellow-6: #f5d90a;
+  --civic-yellow-9: #ffe629;
+  --civic-yellow-11: #9e6c00;
+  --civic-grass-3: #e9f6e9;
+  --civic-grass-6: #b5d7b6;
+  --civic-grass-9: #46a758;
+  --civic-grass-11: #2a7e3b;
+  --civic-lime-3: #f4faea;
+  --civic-lime-6: #c9e29a;
+  --civic-lime-9: #bdee63;
+  --civic-lime-11: #5c7c2f;
+  --civic-cyan-3: #e1f8fd;
+  --civic-cyan-6: #9ddde7;
+  --civic-cyan-9: #00a2c7;
+  --civic-cyan-11: #0d74cf;
+  --civic-sky-3: #eaf8ff;
+  --civic-sky-6: #b7e7fa;
+  --civic-sky-9: #7ce2fe;
+  --civic-sky-11: #00749e;
+  --civic-brown-3: #f6eee7;
+  --civic-brown-6: #dcc5b2;
+  --civic-brown-9: #ad7f58;
+  --civic-brown-11: #815e46;
+  --civic-bronze-3: #f6edea;
+  --civic-bronze-6: #d4b9af;
+  --civic-bronze-9: #a18072;
+  --civic-bronze-11: #7d5e54;
+  --civic-gold-3: #f5f0e4;
+  --civic-gold-6: #d4c39b;
+  --civic-gold-9: #978365;
+  --civic-gold-11: #71624b;
+
+  /* Slate is the canonical Civic neutral. */
+  --civic-slate-3: #eeeef0;
+  --civic-slate-6: #d8d8df;
+  --civic-slate-9: #8b8d98;
+  --civic-slate-11: #60646c;
+  --civic-slate-12: #1c2024;
+
+  /* Legacy aliases — gray is an alias for slate so older consumers keep
+     resolving. New code should use --civic-slate-*. */
+  --civic-gray-3: var(--civic-slate-3);
+  --civic-gray-6: var(--civic-slate-6);
+  --civic-gray-9: var(--civic-slate-9);
+  --civic-gray-11: var(--civic-slate-11);
+  --civic-gray-100: var(--civic-slate-3);
+  --civic-gray-900: var(--civic-slate-12);
+
+  /* =====================================================================
+     Layer 3 — Program tint defaults (neutral)
+     Override by setting [data-program] on any wrapper element.
+     Mirrors the badge convention: 3=subtle bg · 6=border · 9=solid · 11=text
+     ===================================================================== */
+  --civic-program-3: #f0f0f3; /* slate-3 */
+  --civic-program-6: #d9d9e0; /* slate-6 */
+  --civic-program-9: #8b8d98; /* slate-9 */
+  --civic-program-11: #60646c; /* slate-11 */
+
+  /* --- Radius scale ----------------------------------------------------- */
+  --civic-radius-sm: 0.25rem; /* 4px  */
+  --civic-radius-md: 0.375rem; /* 6px  */
+  --civic-radius-lg: 0.5rem; /* 8px  */
+  --civic-radius-xl: 0.75rem; /* 12px */
+  --civic-radius-2xl: 1rem; /* 16px */
+  --civic-radius-3xl: 1.5rem; /* 24px */
+  --civic-radius-full: 9999px;
+
+  /* --- Shadow ----------------------------------------------------------- */
+  --civic-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --civic-shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.04);
+  --civic-shadow-lg: 0 8px 24px -4px rgb(0 0 0 / 0.1), 0 0 0 1px rgb(0 0 0 / 0.04);
+  --civic-shadow-xl: 0 16px 40px -8px rgb(0 0 0 / 0.12), 0 0 0 1px rgb(0 0 0 / 0.04);
+  --civic-shadow-2xl: 0 24px 64px -12px rgb(0 0 0 / 0.14), 0 0 0 1px rgb(0 0 0 / 0.06);
+
+  /* --- Typography ------------------------------------------------------- */
+  --civic-font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --civic-font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --civic-text-xs: 0.75rem; /* 12 */
+  --civic-text-sm: 0.875rem; /* 14 */
+  --civic-text-base: 1rem; /* 16 */
+  --civic-text-lg: 1.125rem; /* 18 */
+  --civic-text-xl: 1.25rem; /* 20 */
+  --civic-text-2xl: 1.5rem; /* 24 */
+  --civic-text-3xl: 1.875rem; /* 30 */
+
+  /* --- Spacing (4px grid) ---------------------------------------------- */
+  --civic-space-0: 0;
+  --civic-space-px: 1px;
+  --civic-space-0-5: 0.125rem;
+  --civic-space-1: 0.25rem;
+  --civic-space-1-5: 0.375rem;
+  --civic-space-2: 0.5rem;
+  --civic-space-2-5: 0.625rem;
+  --civic-space-3: 0.75rem;
+  --civic-space-4: 1rem;
+  --civic-space-5: 1.25rem;
+  --civic-space-6: 1.5rem;
+  --civic-space-8: 2rem;
+  --civic-space-10: 2.5rem;
+  --civic-space-12: 3rem;
+  --civic-space-16: 4rem;
+
+  /* --- Charts (iris ramp) ---------------------------------------------- */
+  --civic-chart-1: #b8baf8;
+  --civic-chart-2: #9b9ef0;
+  --civic-chart-3: #5b5bd6;
+  --civic-chart-4: #5151cd;
+  --civic-chart-5: #5753c6;
+
+  /* --- z-index ---------------------------------------------------------- */
+  --civic-z-base: 0;
+  --civic-z-raised: 10;
+  --civic-z-sticky: 30;
+  --civic-z-overlay: 50;
+
+  /* --- Motion ----------------------------------------------------------- */
+  --civic-duration-fast: 150ms;
+  --civic-duration-medium: 250ms;
+  --civic-duration-slow: 350ms;
+  --civic-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --civic-ease-out-expressive: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* =========================================================================
+   Dark mode — flip by adding .dark to <html>
+   ========================================================================= */
+.dark {
+  --civic-bg-app: #111113;
+  --civic-bg-card: #18191b;
+  --civic-bg-popover: #18191b;
+  --civic-bg-subtle: #212225;
+  --civic-bg-component: #212225;
+  --civic-bg-component-hover: #2e3135;
+  --civic-bg-input: #1a1d21;
+  --civic-sidebar-bg: #18191b;
+
+  --civic-text-primary: #edeef0;
+  --civic-text-secondary: #b0b4ba;
+  --civic-text-placeholder: #777b84;
+
+  --civic-border-default: #363a3f;
+  --civic-border-popover: #363a3f;
+
+  --civic-accent-bg: #202248;
+  --civic-accent-text: #b1a9ff;
+
+  --civic-ring-color: rgb(123 122 254 / 0.67);
+  --civic-overlay-bg: rgb(0 0 0 / 0.5);
+
+  --plum-solid-fg: #000000;
+  --red-solid-fg: #000000;
+
+  --civic-shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.24), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --civic-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+  --civic-shadow-xl: 0 16px 40px -8px rgb(0 0 0 / 0.36), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --civic-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+}
+
+/* =========================================================================
+   Base element styles
+   ========================================================================= */
+html {
+  font-family: var(--civic-font-sans);
+  color: var(--civic-text-primary);
+}
+body {
+  margin: 0;
+  background: var(--civic-bg-app);
+  color: var(--civic-text-primary);
+  font-family: var(--civic-font-sans);
+  font-size: var(--civic-text-sm);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Semantic type */
+h1 {
+  font-size: var(--civic-text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0;
+}
+h2 {
+  font-size: var(--civic-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  margin: 0;
+}
+h3 {
+  font-size: var(--civic-text-lg);
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0;
+}
+h4 {
+  font-size: var(--civic-text-base);
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+p {
+  font-size: var(--civic-text-sm);
+  line-height: 1.5;
+  margin: 0;
+  color: var(--civic-text-primary);
+}
+small {
+  font-size: var(--civic-text-xs);
+  color: var(--civic-text-secondary);
+}
+code,
+kbd,
+samp {
+  font-family: var(--civic-font-mono);
+  font-size: 0.875em;
+}
+a {
+  color: var(--civic-accent-text);
+  text-underline-offset: 4px;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 var(--civic-ring-width) var(--civic-ring-color);
+  border-color: var(--civic-border-focus);
+}
+
+/* =========================================================================
+   LAYER 2 — Accent theming (agency / tenant / state)
+   -------------------------------------------------------------------------
+   The accent layer brands every interactive element (primary buttons,
+   focus rings, links, sidebar active state, accent text) in one place.
+   Apply by setting `data-theme="<id>"` on <html>, <body>, or any wrapper.
+
+   To ship a new theme, add a block here that swaps:
+     --civic-accent-solid       (primary fill, *-9)
+     --civic-accent-solid-hover (primary fill hover, *-10)
+     --civic-accent-bg          (subtle accent bg, *-3)
+     --civic-accent-bg-hover    (subtle accent bg hover, *-4)
+     --civic-accent-text        (accent-colored text, *-11)
+     --civic-border-focus       (focus border, *-8)
+     --civic-ring-color         (focus ring alpha, *-a8)
+     --civic-chart-{1..5}       (charts, *-7..*-11)
+
+   Only swap from the Radix palette — every step has guaranteed contrast
+   for its companion steps. Foundation surfaces (slate) stay constant.
+   ========================================================================= */
+
+/* Default — Iris (no override needed; included for parity) */
+[data-theme='default'] {
+  --civic-accent-solid: #5b5bd6;
+  --civic-accent-solid-hover: #5151cd;
+  --civic-accent-bg: #f0f1fe;
+  --civic-accent-bg-hover: #e6e7ff;
+  --civic-accent-text: #5753c6;
+  --civic-border-focus: #9b9ef0;
+  --civic-ring-color: rgb(0 8 217 / 0.39);
+  --civic-chart-1: #b8baf8;
+  --civic-chart-2: #9b9ef0;
+  --civic-chart-3: #5b5bd6;
+  --civic-chart-4: #5151cd;
+  --civic-chart-5: #5753c6;
+}
+
+/* Iowa — Indigo (deeper civic blue) */
+[data-theme='iowa'] {
+  --civic-accent-solid: #3e63dd;
+  --civic-accent-solid-hover: #3a5bc7;
+  --civic-accent-bg: #edf2fe;
+  --civic-accent-bg-hover: #d2deff;
+  --civic-accent-text: #3a5bc7;
+  --civic-border-focus: #8da4ef;
+  --civic-ring-color: rgb(58 91 199 / 0.39);
+  --civic-chart-1: #c1d0ff;
+  --civic-chart-2: #8da4ef;
+  --civic-chart-3: #3e63dd;
+  --civic-chart-4: #3a5bc7;
+  --civic-chart-5: #3a4eaa;
+}
+
+/* Oklahoma — Crimson (state cardinal red) */
+[data-theme='oklahoma'] {
+  --civic-accent-solid: #e93d82;
+  --civic-accent-solid-hover: #d93775;
+  --civic-accent-bg: #feebf2;
+  --civic-accent-bg-hover: #fcdce7;
+  --civic-accent-text: #cb1d63;
+  --civic-border-focus: #ed75ad;
+  --civic-ring-color: rgb(233 61 130 / 0.39);
+  --civic-chart-1: #f3b6cd;
+  --civic-chart-2: #ed75ad;
+  --civic-chart-3: #e93d82;
+  --civic-chart-4: #d93775;
+  --civic-chart-5: #cb1d63;
+}
+
+/* Choctaw — Jade (heritage green) */
+[data-theme='choctaw'] {
+  --civic-accent-solid: #29a383;
+  --civic-accent-solid-hover: #26997b;
+  --civic-accent-bg: #edfaf3;
+  --civic-accent-bg-hover: #d6f1e3;
+  --civic-accent-text: #1d7a5f;
+  --civic-border-focus: #56ba9f;
+  --civic-ring-color: rgb(29 122 95 / 0.39);
+  --civic-chart-1: #aae0c9;
+  --civic-chart-2: #56ba9f;
+  --civic-chart-3: #29a383;
+  --civic-chart-4: #26997b;
+  --civic-chart-5: #1d7a5f;
+}
+
+/* Montana — Teal (big-sky teal) */
+[data-theme='montana'] {
+  --civic-accent-solid: #12a594;
+  --civic-accent-solid-hover: #0e9888;
+  --civic-accent-bg: #e0fbf3;
+  --civic-accent-bg-hover: #ccf3e4;
+  --civic-accent-text: #008573;
+  --civic-border-focus: #4cbfae;
+  --civic-ring-color: rgb(0 133 115 / 0.39);
+  --civic-chart-1: #a6e0d2;
+  --civic-chart-2: #4cbfae;
+  --civic-chart-3: #12a594;
+  --civic-chart-4: #0e9888;
+  --civic-chart-5: #008573;
+}
+
+/* =========================================================================
+   LAYER 3 — Program tint
+   -------------------------------------------------------------------------
+   Set data-program on any wrapper to tint program-specific badges, tags,
+   and accents. Layer 3 stacks independently on top of Layer 2 — different
+   programs can coexist on the same page by scoping each subtree.
+
+     data-program="snap"     → Jade   (food assistance)
+     data-program="medicaid" → Blue   (health coverage)
+     data-program="wic"      → Orange (women, infants, children)
+     data-program="tanf"     → Plum   (cash assistance)
+     data-program="chip"     → Mint   (children's health)
+     data-program="ui"       → Amber  (unemployment insurance)
+     data-program="housing"  → Crimson (housing assistance)
+     data-program="cps"      → Indigo (child protective services)
+
+   Tokens follow the badge convention so any [data-program] subtree can
+   render a tinted card / badge / row without further setup:
+
+     background: var(--civic-program-3);   /* tinted bg */
+border: var(--civic-program-6); /* tinted border */
+fill: var(--civic-program-9); /* solid dot/icon */
+color: var(--civic-program-11); /* tinted text */
+========================================================================= */ [data-program='snap'] {
+  --civic-program-3: #edfaf3;
+  --civic-program-6: #87d4ab;
+  --civic-program-9: #29a383;
+  --civic-program-11: #1d7a5f;
+}
+[data-program='medicaid'] {
+  --civic-program-3: #e6f4fe;
+  --civic-program-6: #acd8fc;
+  --civic-program-9: #0090ff;
+  --civic-program-11: #0d74ce;
+}
+[data-program='wic'] {
+  --civic-program-3: #ffefd6;
+  --civic-program-6: #ffc182;
+  --civic-program-9: #f76b15;
+  --civic-program-11: #cc4e00;
+}
+[data-program='tanf'] {
+  --civic-program-3: #fbebfb;
+  --civic-program-6: #e9c2ec;
+  --civic-program-9: #ab4aba;
+  --civic-program-11: #953ea3;
+}
+[data-program='chip'] {
+  --civic-program-3: #ddf9f2;
+  --civic-program-6: #83cdc1;
+  --civic-program-9: #12a594;
+  --civic-program-11: #027864;
+}
+[data-program='ui'] {
+  --civic-program-3: #fff7c2;
+  --civic-program-6: #f3d673;
+  --civic-program-9: #ffc53d;
+  --civic-program-11: #ab6400;
+}
+[data-program='housing'] {
+  --civic-program-3: #feebf2;
+  --civic-program-6: #f3b6cd;
+  --civic-program-9: #e93d82;
+  --civic-program-11: #cb1d63;
+}
+[data-program='cps'] {
+  --civic-program-3: #edf2fe;
+  --civic-program-6: #b4c6ff;
+  --civic-program-9: #3e63dd;
+  --civic-program-11: #3a5bc7;
+}
+
+/* Dark-mode program overrides — same hue intent, dark-palette steps */
+.dark [data-program='snap'] {
+  --civic-program-3: #0d2c22;
+  --civic-program-6: #246d57;
+  --civic-program-9: #29a383;
+  --civic-program-11: #5cd0ad;
+}
+.dark [data-program='medicaid'] {
+  --civic-program-3: #0d2847;
+  --civic-program-6: #205d9e;
+  --civic-program-9: #0090ff;
+  --civic-program-11: #70b8ff;
+}
+.dark [data-program='wic'] {
+  --civic-program-3: #2b1400;
+  --civic-program-6: #7e3b00;
+  --civic-program-9: #f76b15;
+  --civic-program-11: #ffa057;
+}
+.dark [data-program='tanf'] {
+  --civic-program-3: #2f1b3b;
+  --civic-program-6: #6d3d80;
+  --civic-program-9: #ab4aba;
+  --civic-program-11: #d864d8;
+}
+.dark [data-program='chip'] {
+  --civic-program-3: #0e2a25;
+  --civic-program-6: #1f6157;
+  --civic-program-9: #12a594;
+  --civic-program-11: #58d5c6;
+}
+.dark [data-program='ui'] {
+  --civic-program-3: #271600;
+  --civic-program-6: #6e4900;
+  --civic-program-9: #ffc53d;
+  --civic-program-11: #ffd169;
+}
+.dark [data-program='housing'] {
+  --civic-program-3: #2f0d20;
+  --civic-program-6: #872c5b;
+  --civic-program-9: #e93d82;
+  --civic-program-11: #f586b6;
+}
+.dark [data-program='cps'] {
+  --civic-program-3: #131c4a;
+  --civic-program-6: #2c4ca0;
+  --civic-program-9: #5471e1;
+  --civic-program-11: #8da4ef;
+}

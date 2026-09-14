@@ -1,0 +1,1157 @@
+/* =========================================================================
+   State Medicaid — Resident-facing theme.
+   Re-maps civic.css tokens onto the cyan/sage State palette, layers
+   Work Sans, softens shadows, and adds the subtle gradients + opacity
+   tricks that make the form feel friendly rather than bureaucratic.
+   Loaded AFTER civic.css and state-tokens.css, BEFORE app.css.
+   ========================================================================= */
+
+/* ─── Token remap (civic → iowa) ───────────────────────────────────────── */
+:root,
+[data-theme='state'] {
+  /* Surfaces — sage-tinted whites */
+  --civic-bg-app: var(--state-bg);
+  --civic-bg-card: var(--state-surface);
+  --civic-bg-popover: var(--state-surface);
+  --civic-bg-subtle: var(--state-muted);
+  --civic-bg-component: var(--state-secondary);
+  --civic-bg-component-hover: #e3e8e6;
+  --civic-bg-input: var(--state-surface);
+  --civic-sidebar-bg: var(--state-sidebar-bg);
+
+  /* Text */
+  --civic-text-primary: var(--state-text);
+  --civic-text-secondary: var(--state-text-muted);
+  --civic-text-placeholder: var(--state-text-subtle);
+
+  /* Borders */
+  --civic-border-default: var(--state-border);
+  --civic-border-subtle: var(--state-border);
+  --civic-border-component: var(--state-border);
+  --civic-border-strong: var(--state-border-strong);
+  --civic-border-focus: var(--state-accent);
+
+  /* Accent — deep cyan primary, brighter cyan ring */
+  --civic-accent-solid: var(--state-primary);
+  --civic-accent-solid-hover: var(--state-primary-dark);
+  --civic-accent-bg: var(--state-accent-light);
+  --civic-accent-bg-hover: #c8eff3;
+  --civic-accent-text: var(--state-primary);
+  --civic-accent-on-solid: #ffffff;
+
+  /* Status — keep AA contrast, sage-tinted */
+  --civic-success-solid: var(--state-green);
+  --civic-success-bg: var(--state-green-bg);
+  --civic-success-text: var(--state-green);
+  --civic-warning-solid: #f0b400;
+  --civic-warning-bg: var(--state-amber-bg);
+  --civic-warning-text: var(--state-amber);
+  --civic-info-solid: var(--state-accent);
+  --civic-info-bg: var(--state-blue-bg-soft);
+  --civic-info-text: var(--state-primary);
+  --civic-destructive-solid: var(--state-red);
+  --civic-destructive-bg: var(--state-red-bg);
+  --civic-destructive-text: var(--state-red);
+  --civic-destructive-border: #f3c2c4;
+
+  /* Ring — cyan, slightly more visible */
+  --civic-ring-color: rgba(0, 162, 199, 0.32);
+  --civic-ring-width: 3px;
+
+  /* Softer shadows — less "card stacked on card", more "lifted gently" */
+  --civic-shadow-sm: 0 1px 2px rgba(0, 74, 94, 0.04);
+  --civic-shadow-md: 0 4px 16px -4px rgba(0, 74, 94, 0.08), 0 1px 2px rgba(0, 74, 94, 0.04);
+  --civic-shadow-lg: 0 12px 32px -8px rgba(0, 74, 94, 0.12), 0 2px 6px rgba(0, 74, 94, 0.04);
+  --civic-shadow-xl: 0 24px 56px -12px rgba(0, 74, 94, 0.18), 0 4px 12px rgba(0, 74, 94, 0.06);
+  --civic-shadow-2xl: 0 32px 80px -16px rgba(0, 74, 94, 0.22), 0 8px 16px rgba(0, 74, 94, 0.08);
+
+  /* Type — Work Sans is the resident face */
+  --civic-font-sans: 'Work Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* ─── Work Sans wins across the app ───────────────────────────────────── */
+html,
+body,
+button,
+input,
+select,
+textarea {
+  font-family:
+    'Work Sans',
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+/* ─── Accessibility: bump base type sizes, ensure readable contrast ──── */
+body {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--state-text);
+}
+
+.eyebrow {
+  color: var(--state-primary-dark); /* darker cyan — 6.7:1 on white */
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  font-size: 15px; /* one notch up from 12px */
+}
+.step-counter {
+  color: var(--state-text-muted);
+  font-size: 15px;
+}
+
+.field label.field-label {
+  font-size: 15px;
+  font-weight: 500;
+}
+.field .hint {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--state-text-muted);
+}
+.field .err {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.choice .label .title {
+  font-size: 15px;
+}
+.choice .label .desc {
+  font-size: 14px;
+  color: var(--state-text-muted);
+  line-height: 1.5;
+}
+
+.fineprint {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--state-text-muted);
+}
+.muted {
+  color: var(--state-text-muted);
+}
+
+.alert {
+  font-size: 15px;
+  line-height: 1.55;
+}
+.alert .t {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tag,
+.hhm-badge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+}
+
+.spec-list .row {
+  font-size: 15px;
+}
+
+/* Pathway labels in outcome rows */
+.outcome-row .pathway {
+  font-size: 15px;
+  color: var(--state-text-muted);
+}
+.outcome-row {
+  font-size: 15px;
+}
+
+/* Coverage card readability */
+.coverage-pathway {
+  font-size: 15px;
+}
+.coverage-name {
+  font-size: 15px;
+}
+
+/* Kv pairs in Review */
+.kv {
+  font-size: 14px;
+  padding: 8px 0;
+}
+.kv-k {
+  font-size: 14px;
+}
+
+/* Rights list */
+.rights-list li {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.rights-block p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Disregard footnote should be readable, not a footnote-footnote */
+.disregard-footnote {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Step subtitle — already 16px, ensure muted color is the AA-passing one */
+.step-subtitle {
+  color: var(--state-text-muted);
+}
+
+/* Required field asterisks → gold, not red */
+.field-label .req {
+  color: var(--state-gold) !important;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* ─── App shell vibrance ──────────────────────────────────────────────── */
+body {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(0, 100, 126, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(107, 138, 26, 0.05) 0%, transparent 55%),
+    radial-gradient(circle at 50% 100%, rgba(0, 100, 126, 0.04) 0%, transparent 50%), var(--state-bg);
+  background-attachment: fixed;
+}
+
+/* ─── Yes / No paired buttons (replaces segmented control) ─────────────── */
+.yn-pair {
+  display: inline-flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.yn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 72px;
+  height: 40px;
+  padding: 0 14px;
+  background: var(--state-surface);
+  border: 1px solid var(--state-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--state-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 150ms,
+    border-color 150ms,
+    color 150ms,
+    box-shadow 150ms,
+    transform 80ms ease;
+}
+.yn-btn:hover:not(.on) {
+  background: var(--state-accent-light);
+  border-color: var(--state-primary);
+  color: var(--state-primary-dark);
+}
+.yn-btn:active:not(.on) {
+  transform: translateY(1px);
+}
+.yn-btn.on {
+  background: var(--state-primary);
+  border-color: var(--state-primary);
+  color: #fff;
+  box-shadow:
+    0 2px 6px rgba(0, 74, 94, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.yn-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 100, 126, 0.25);
+}
+
+/* ─── Login screen — prominent option cards ────────────────────────────── */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--state-text-muted);
+  font-size: 15px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--state-border);
+}
+.login-divider span {
+  padding: 0 4px;
+}
+
+.login-options {
+  display: grid;
+  gap: 14px;
+}
+.login-option {
+  display: grid;
+  grid-template-columns: 56px 1fr 32px;
+  gap: 18px;
+  align-items: center;
+  width: 100%;
+  padding: 22px 22px;
+  background: var(--state-surface);
+  border: 1px solid var(--state-border);
+  border-radius: var(--state-r-xl);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  box-shadow: var(--state-shadow-sm);
+  transition:
+    border-color 180ms var(--civic-ease-out-expressive),
+    background 180ms,
+    box-shadow 200ms,
+    transform 80ms ease;
+}
+.login-option:hover {
+  border-color: var(--state-primary);
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(255, 255, 255, 0.6) 100%);
+  box-shadow: 0 8px 20px -8px rgba(0, 100, 126, 0.2);
+  transform: translateY(-1px);
+}
+.login-option:active {
+  transform: translateY(0);
+}
+.login-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 100, 126, 0.2);
+}
+
+.login-option-ic {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-content: center;
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(0, 100, 126, 0.18) 100%);
+  color: var(--state-primary);
+}
+.login-option:nth-child(2) .login-option-ic {
+  background: linear-gradient(135deg, var(--state-olive-light) 0%, rgba(107, 138, 26, 0.2) 100%);
+  color: var(--state-olive-dark);
+}
+
+.login-option-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--state-text);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.login-option-desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--state-text-muted);
+}
+.login-option-cta {
+  color: var(--state-primary);
+  display: grid;
+  place-content: center;
+  transition: transform 180ms var(--civic-ease-out-expressive);
+}
+.login-option:hover .login-option-cta {
+  transform: translateX(3px);
+}
+
+/* ─── Proof-of-residence uploader ─────────────────────────────────────── */
+.proof-upload {
+  padding: 18px 20px;
+  background: linear-gradient(180deg, var(--state-accent-light) 0%, var(--state-surface) 70%);
+  border: 1px solid rgba(0, 100, 126, 0.18);
+  border-radius: 14px;
+}
+.proof-upload-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.proof-upload-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--state-text);
+}
+.proof-upload-sub {
+  font-size: 15px;
+  color: var(--state-text-muted);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+.dropzone {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: var(--state-surface);
+  border: 1.5px dashed var(--state-border-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    border-color 150ms,
+    background 150ms,
+    transform 80ms ease;
+}
+.dropzone:hover,
+.dropzone.dragging {
+  border-color: var(--state-primary);
+  background: var(--state-accent-light);
+}
+.dropzone.dragging {
+  transform: scale(1.01);
+}
+.dropzone.compact {
+  padding: 14px 18px;
+}
+
+.dropzone-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(0, 100, 126, 0.18) 100%);
+  color: var(--state-primary);
+}
+.dropzone-body {
+  flex: 1;
+  min-width: 0;
+}
+.dropzone-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--state-text);
+}
+.dropzone-sub {
+  font-size: 15px;
+  color: var(--state-text-muted);
+  margin-top: 2px;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px;
+  background: var(--state-surface);
+  border: 1px solid var(--state-border);
+  border-radius: 10px;
+  box-shadow: var(--state-shadow-sm);
+}
+.file-chip-ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  background: var(--state-olive-light);
+  color: var(--state-olive-dark);
+}
+.file-chip-body {
+  flex: 1;
+  min-width: 0;
+}
+.file-chip-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--state-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-chip-meta {
+  font-size: 15px;
+  color: var(--state-text-muted);
+  margin-top: 2px;
+}
+.file-chip-remove {
+  appearance: none;
+  border: none;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  color: var(--state-text-muted);
+  cursor: pointer;
+  transition:
+    background 150ms,
+    color 150ms;
+}
+.file-chip-remove:hover {
+  background: var(--state-red-bg);
+  color: var(--state-red);
+}
+
+/* ─── Inline checkbox + label (lighter weight than ChoiceCard) ─────────── */
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 4px;
+  font-size: 15px;
+  color: var(--state-text);
+  user-select: none;
+}
+.inline-check input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.inline-check-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid var(--state-border-strong);
+  background: var(--state-surface);
+  display: grid;
+  place-content: center;
+  color: transparent;
+  transition:
+    background 150ms,
+    border-color 150ms,
+    color 150ms;
+  flex-shrink: 0;
+}
+.inline-check:hover .inline-check-box {
+  border-color: var(--state-primary);
+}
+.inline-check input:checked + .inline-check-box {
+  background: var(--state-primary);
+  border-color: var(--state-primary);
+  color: #fff;
+}
+.inline-check input:focus-visible + .inline-check-box {
+  box-shadow: 0 0 0 3px rgba(0, 100, 126, 0.25);
+}
+.inline-check-label {
+  line-height: 1.4;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inline-check-hint {
+  font-size: 14px;
+  color: var(--state-text-muted);
+  line-height: 1.5;
+}
+
+/* ─── DOB input — MM / DD / YYYY trio ─────────────────────────────────── */
+.dob-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.dob-segment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dob-segment-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--state-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-left: 2px;
+}
+.dob-input .input {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  height: 44px;
+  padding: 0 8px;
+}
+.dob-mm,
+.dob-dd {
+  width: 64px;
+}
+.dob-yyyy {
+  width: 92px;
+}
+.dob-slash {
+  font-size: 22px;
+  color: var(--state-text-muted);
+  padding-bottom: 8px;
+  font-weight: 300;
+}
+.topbar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+  border-bottom: 1px solid rgba(209, 213, 219, 0.6);
+  height: 64px;
+}
+.topbar .wordmark .mark {
+  background: linear-gradient(135deg, var(--state-primary) 0%, var(--state-olive) 100%);
+  box-shadow: 0 2px 8px rgba(0, 100, 126, 0.28);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+}
+.topbar .wordmark .agency {
+  font-size: 12px;
+  color: var(--state-text-muted);
+}
+.topbar .wordmark .product {
+  font-size: 15px;
+}
+.topbar .center {
+  font-size: 14px;
+  color: var(--state-text-muted);
+}
+.topbar .save-indicator {
+  font-size: 15px;
+  color: var(--state-text-muted);
+}
+
+/* ─── Progress bar gradient ───────────────────────────────────────────── */
+.progress {
+  background: rgba(0, 0, 0, 0.05);
+  height: 3px;
+  top: 64px;
+}
+.progress > .fill {
+  background: linear-gradient(90deg, var(--state-primary) 0%, var(--state-olive) 100%);
+  box-shadow: 0 0 8px rgba(107, 138, 26, 0.35);
+}
+
+/* ─── Eyebrow / counter — gentler ─────────────────────────────────────── */
+.eyebrow {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  /* color set in the accessibility section above — keep this rule decoration-only */
+}
+
+.step-title {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--state-text);
+}
+.step-subtitle {
+  color: var(--state-text-muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ─── Welcome — vibrant hero gradient ─────────────────────────────────── */
+.welcome-stage {
+  padding-top: 56px;
+}
+.welcome-hero h1 {
+  color: var(--state-primary-dark);
+  background: linear-gradient(
+    135deg,
+    var(--state-primary-dark) 0%,
+    var(--state-primary) 45%,
+    var(--state-olive-dark) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 48px;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+.welcome-hero p {
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--state-text);
+}
+.welcome-tile {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(247, 249, 248, 0.6) 100%);
+  border: 1px solid rgba(221, 226, 224, 0.8);
+  border-radius: var(--state-r-lg);
+  box-shadow: 0 1px 2px rgba(11, 90, 110, 0.04);
+  transition:
+    transform 200ms var(--civic-ease-out-expressive),
+    box-shadow 200ms;
+}
+.welcome-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -8px rgba(0, 74, 94, 0.15);
+}
+.welcome-tile .ic {
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(0, 100, 126, 0.16) 100%);
+  color: var(--state-primary);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+}
+.welcome-tile:nth-child(2) .ic {
+  /* second tile gets the olive treatment for visual rhythm */
+  background: linear-gradient(135deg, var(--state-olive-light) 0%, rgba(107, 138, 26, 0.18) 100%);
+  color: var(--state-olive-dark);
+}
+.welcome-tile .ttl {
+  color: var(--state-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+.welcome-tile .sub {
+  color: var(--state-text-muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* ─── Buttons — more pill-y, subtle shadow on primary ─────────────────── */
+.btn {
+  border-radius: 10px;
+  font-weight: 500;
+}
+.btn--primary {
+  background: var(--state-primary);
+  box-shadow:
+    0 2px 6px rgba(0, 74, 94, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--state-primary-dark);
+  box-shadow:
+    0 4px 12px rgba(0, 74, 94, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+.btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn--outline {
+  background: var(--state-surface);
+  border-color: var(--state-border);
+  color: var(--state-primary);
+}
+.btn--outline:hover:not(:disabled) {
+  background: var(--state-accent-light);
+  border-color: var(--state-primary);
+  color: var(--state-primary-dark);
+}
+.btn--ghost {
+  color: var(--state-primary);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--state-primary-05);
+}
+
+.btn.size-lg {
+  height: 52px;
+  padding: 0 28px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+/* ─── Inputs — slightly larger, friendlier focus ──────────────────────── */
+.input,
+.select-trigger,
+.textarea {
+  height: 44px;
+  border-radius: var(--state-r-sm);
+  background: var(--state-surface);
+  border-color: var(--state-border);
+  font-size: 15px;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms,
+    background 150ms;
+}
+.input:hover,
+.select-trigger:hover {
+  border-color: var(--state-border-strong);
+}
+.input:focus,
+.select-trigger:focus,
+.textarea:focus {
+  border-color: var(--state-primary);
+  box-shadow: 0 0 0 4px rgba(0, 100, 126, 0.18);
+}
+
+/* ─── Panels — softer, optional gradient on top of white ──────────────── */
+.panel {
+  background: var(--state-surface);
+  border: 1px solid var(--state-border);
+  border-radius: var(--state-r-xl);
+  box-shadow: 0 1px 2px rgba(0, 74, 94, 0.04);
+  padding: 24px 26px;
+}
+.panel .panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--state-text);
+}
+.panel .panel-sub {
+  color: var(--state-text-muted);
+}
+
+/* ─── Choice cards — friendly shadow on selected ──────────────────────── */
+.choice {
+  border-radius: var(--state-r-lg);
+  background: var(--state-surface);
+  box-shadow: 0 0 0 1px var(--state-border);
+  padding: 12px 14px;
+  align-items: center;
+  transition:
+    box-shadow 200ms var(--civic-ease-out-expressive),
+    background 200ms,
+    transform 80ms ease;
+}
+.choice:hover {
+  box-shadow:
+    0 0 0 1px var(--state-primary),
+    0 2px 8px rgba(0, 100, 126, 0.12);
+}
+.choice.selected {
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(255, 255, 255, 0.6) 100%);
+  box-shadow:
+    0 0 0 2px var(--state-primary),
+    0 4px 12px rgba(0, 100, 126, 0.18);
+}
+.choice.selected .indicator {
+  background: var(--state-primary);
+}
+.choice .label .title {
+  color: var(--state-text);
+}
+
+/* ─── Segmented (Yes/No) — softer ─────────────────────────────────────── */
+.segmented {
+  background: var(--state-secondary);
+  border: 1px solid var(--state-border);
+}
+.segmented button.on {
+  background: var(--state-surface);
+  color: var(--state-primary);
+  box-shadow: 0 1px 3px rgba(11, 90, 110, 0.08);
+}
+
+/* ─── Alerts — paper-thin border, more breathable ─────────────────────── */
+.alert {
+  border-radius: var(--state-r-md);
+  padding: 16px 18px;
+  font-size: 15px;
+  line-height: 1.55;
+  border-width: 1px;
+}
+.alert.info {
+  background: linear-gradient(180deg, var(--state-blue-bg-soft) 0%, rgba(230, 244, 254, 0.4) 100%);
+  border-color: rgba(0, 162, 199, 0.28);
+  color: var(--state-primary);
+}
+.alert.success {
+  background: linear-gradient(180deg, var(--state-green-bg) 0%, var(--state-green-bg-soft) 100%);
+  border-color: rgba(33, 131, 88, 0.28);
+  color: var(--state-green);
+}
+.alert.warning {
+  background: linear-gradient(180deg, var(--state-amber-bg) 0%, var(--state-amber-bg-soft) 100%);
+  border-color: rgba(156, 108, 0, 0.28);
+  color: var(--state-amber);
+}
+.alert.destr {
+  background: var(--state-red-bg);
+  border-color: var(--state-red);
+  color: var(--state-red);
+}
+.alert.neutral {
+  background: linear-gradient(180deg, rgba(247, 249, 248, 1) 0%, rgba(238, 241, 240, 0.6) 100%);
+  border-color: var(--state-border);
+  color: var(--state-text);
+}
+
+/* ─── Stepper buttons — circular, primary tint ────────────────────────── */
+.stepper button {
+  border-color: var(--state-border);
+  color: var(--state-primary);
+}
+.stepper button:hover:not(:disabled) {
+  background: var(--state-accent-light);
+  border-color: var(--state-accent);
+}
+.stepper-value {
+  color: var(--state-primary);
+}
+
+/* ─── Add-link dashed CTA — accent on hover ───────────────────────────── */
+.add-link {
+  border-color: var(--state-border);
+  color: var(--state-primary);
+  font-weight: 500;
+  border-radius: var(--state-r-md);
+}
+.add-link:hover {
+  background: var(--state-accent-light);
+  border-color: var(--state-accent);
+}
+
+/* ─── HouseholdMembers cards — pinned gets gradient ───────────────────── */
+.hhm-card {
+  border-radius: var(--state-r-lg);
+  box-shadow: var(--civic-shadow-sm);
+}
+.hhm-card.pinned {
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(255, 255, 255, 0.6) 100%);
+  border-color: var(--state-primary);
+  box-shadow: 0 2px 12px rgba(0, 100, 126, 0.14);
+}
+.member-card .avatar,
+.outcome-row .avatar,
+.avatar {
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(0, 100, 126, 0.18) 100%);
+  color: var(--state-primary);
+}
+
+/* ─── Modal sheet — light entry shadow ────────────────────────────────── */
+.sheet {
+  box-shadow:
+    0 40px 80px -20px rgba(0, 74, 94, 0.25),
+    0 12px 24px rgba(0, 74, 94, 0.08);
+}
+
+/* ─── Argyle tiles — colorful and friendly ────────────────────────────── */
+.argyle-tile:hover {
+  background: var(--state-accent-light);
+  border-color: var(--state-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 100, 126, 0.18);
+}
+
+/* ─── Job/Income rows ─────────────────────────────────────────────────── */
+.job-row {
+  border-radius: var(--state-r-md);
+}
+.estimate-row {
+  background: linear-gradient(135deg, var(--state-olive-light) 0%, var(--state-accent-light) 100%);
+  border: 1px solid rgba(107, 138, 26, 0.22);
+}
+.estimate-amount {
+  color: var(--state-olive-dark);
+  font-weight: 700;
+}
+
+/* ─── Toggle switch — primary cyan ────────────────────────────────────── */
+.toggle-switch.on {
+  background: var(--state-primary);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.toggle-row.on {
+  border-color: var(--state-primary);
+  background: linear-gradient(180deg, var(--state-accent-light) 0%, var(--state-surface) 50%);
+}
+
+/* ─── MAGI card — the centerpiece, vibrant ────────────────────────────── */
+.magi-card {
+  border: 2px solid var(--state-primary);
+  background: var(--state-surface);
+  box-shadow:
+    0 24px 48px -16px rgba(0, 74, 94, 0.22),
+    0 8px 16px rgba(0, 74, 94, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+  overflow: hidden;
+}
+.magi-card-head {
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, var(--state-olive-light) 80%);
+  border-bottom-color: rgba(0, 100, 126, 0.18);
+}
+.magi-icon {
+  background: linear-gradient(135deg, var(--state-primary) 0%, var(--state-olive) 100%);
+  box-shadow: 0 4px 12px rgba(0, 100, 126, 0.3);
+  border-radius: 14px;
+}
+.magi-eyebrow {
+  color: var(--state-primary-dark);
+}
+.magi-section--accent {
+  background: linear-gradient(180deg, var(--state-accent-light) 0%, rgba(255, 255, 255, 0.6) 100%);
+}
+.magi-section--final {
+  background: linear-gradient(180deg, var(--state-muted) 0%, var(--state-surface) 100%);
+}
+.magi-verdict.ok {
+  background: linear-gradient(135deg, var(--state-green-bg) 0%, var(--state-green-bg-soft) 100%);
+  color: var(--state-green);
+}
+
+/* ─── Outcome banner — gentler gradients ──────────────────────────────── */
+.outcome-banner {
+  border-radius: var(--state-r-xl);
+  box-shadow: 0 1px 2px rgba(11, 90, 110, 0.04);
+}
+.outcome-banner.qualify {
+  background: linear-gradient(135deg, var(--state-green-bg) 0%, var(--state-green-bg-soft) 100%);
+  border-color: rgba(33, 131, 88, 0.28);
+}
+.outcome-banner.maybe {
+  background: linear-gradient(135deg, var(--state-amber-bg) 0%, var(--state-amber-bg-soft) 100%);
+  border-color: rgba(156, 108, 0, 0.28);
+}
+.outcome-banner.exceed {
+  background: linear-gradient(135deg, var(--state-accent-light) 0%, rgba(232, 245, 247, 0.4) 100%);
+  border-color: rgba(0, 100, 126, 0.28);
+}
+.outcome-banner h2 {
+  color: inherit;
+}
+
+/* Status pills — soften */
+.outcome-row .status-pill.ok {
+  background: var(--state-green-bg);
+  border-color: rgba(33, 131, 88, 0.28);
+  color: var(--state-green);
+}
+
+/* ─── Review collapsible sections ─────────────────────────────────────── */
+.rs-check {
+  background: linear-gradient(135deg, var(--state-green) 0%, #2da06c 100%);
+  box-shadow: 0 2px 4px rgba(33, 131, 88, 0.24);
+}
+
+/* ─── Sign rights scroll ──────────────────────────────────────────────── */
+.rights-scroll {
+  background: linear-gradient(180deg, var(--state-muted) 0%, var(--state-surface) 100%);
+  border-radius: var(--state-r-lg);
+}
+.rights-block.accent {
+  background: var(--state-accent-light);
+  border-color: var(--state-primary);
+  color: var(--state-primary);
+}
+.signature-glyph {
+  font-family: 'Caveat', 'Brush Script MT', cursive, serif;
+  font-style: normal;
+}
+.signature-glyph.on {
+  color: var(--state-primary);
+}
+
+/* ─── Confirmation hero — celebratory gradient ────────────────────────── */
+.confirm-card {
+  background: linear-gradient(180deg, var(--state-surface) 0%, rgba(247, 249, 250, 0.5) 100%);
+  border-color: rgba(209, 213, 219, 0.8);
+  box-shadow: 0 24px 64px -16px rgba(0, 74, 94, 0.18);
+}
+.confirm-hero {
+  border-radius: var(--state-r-xl);
+  position: relative;
+  overflow: hidden;
+}
+.confirm-hero.all {
+  background: linear-gradient(
+    135deg,
+    var(--state-green-bg) 0%,
+    var(--state-green-bg-soft) 70%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  border-color: rgba(33, 131, 88, 0.32);
+}
+.confirm-hero.all .confirm-hero-ic {
+  background: linear-gradient(135deg, var(--state-green) 0%, #2da06c 100%);
+  box-shadow: 0 4px 16px rgba(33, 131, 88, 0.28);
+}
+.confirm-hero h1 {
+  letter-spacing: -0.025em;
+  color: var(--state-text);
+  background: linear-gradient(135deg, var(--state-text) 0%, var(--state-primary-dark) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── Bottom bar — translucent shelf ──────────────────────────────────── */
+.bottom-bar {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  border-top-color: rgba(221, 226, 224, 0.5);
+}
+
+/* ─── Save & exit dialog ──────────────────────────────────────────────── */
+.bottom-bar .left {
+  color: var(--state-text-muted);
+}
+
+/* ─── Tags / badges polish ────────────────────────────────────────────── */
+.tag {
+  background: var(--state-accent-light);
+  color: var(--state-primary);
+  border-radius: 9999px;
+  font-weight: 500;
+}
+.hhm-badge.ok {
+  background: var(--state-green-bg);
+  color: var(--state-green);
+}
+.hhm-badge.accent {
+  background: var(--state-accent-light);
+  color: var(--state-primary);
+}
+
+/* ─── Misc small touches ──────────────────────────────────────────────── */
+a {
+  color: var(--state-primary);
+}
+a:hover {
+  color: var(--state-primary-dark);
+}
+
+.chip.on {
+  background: var(--state-accent-light);
+  border-color: var(--state-primary);
+  color: var(--state-primary);
+}
+
+.req-pill.ok {
+  background: linear-gradient(135deg, var(--state-green-bg) 0%, var(--state-green-bg-soft) 100%);
+  color: var(--state-green);
+  border-color: rgba(33, 131, 88, 0.28);
+}
+
+/* ─── Member strip check bubbles ──────────────────────────────────────── */
+.check-bubble.done {
+  background: linear-gradient(135deg, var(--state-green) 0%, #2da06c 100%);
+  box-shadow: 0 2px 4px rgba(33, 131, 88, 0.24);
+  border-color: transparent;
+}
+
+/* Typeahead menu — softer */
+.typeahead-menu,
+.lang-menu {
+  border-radius: var(--state-r-md);
+  box-shadow: 0 12px 24px -8px rgba(0, 74, 94, 0.18);
+  border-color: rgba(209, 213, 219, 0.7);
+}
+
+/* Reduce motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-tile,
+  .btn,
+  .choice,
+  .argyle-tile {
+    transition: none !important;
+  }
+}

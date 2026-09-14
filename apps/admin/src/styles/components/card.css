@@ -1,0 +1,81 @@
+@layer civic.components {
+  [data-slot='card'] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--civic-space-6);
+    overflow: hidden;
+    border-radius: var(--civic-radius-2xl);
+    background: var(--civic-bg-card);
+    border: 1px solid var(--civic-border-subtle);
+    padding-block: var(--civic-space-6);
+    font-size: var(--civic-text-sm);
+    color: var(--civic-text-primary);
+  }
+
+  [data-slot='card'][data-size='sm'] {
+    gap: var(--civic-space-4);
+    padding-block: var(--civic-space-4);
+  }
+
+  [data-slot='card-header'] {
+    display: grid;
+    grid-auto-rows: min-content;
+    align-items: start;
+    gap: var(--civic-space-2);
+    border-top-left-radius: var(--civic-radius-xl);
+    border-top-right-radius: var(--civic-radius-xl);
+    padding-inline: var(--civic-space-6);
+  }
+
+  [data-slot='card'][data-size='sm'] [data-slot='card-header'] {
+    padding-inline: var(--civic-space-4);
+  }
+
+  /* When card-action is present, create two-column grid */
+  [data-slot='card-header']:has([data-slot='card-action']) {
+    grid-template-columns: 1fr auto;
+  }
+
+  [data-slot='card-title'] {
+    font-size: var(--civic-text-base);
+    font-weight: 500;
+  }
+
+  [data-slot='card-description'] {
+    font-size: var(--civic-text-sm);
+    color: var(--civic-text-secondary);
+  }
+
+  [data-slot='card-action'] {
+    grid-column-start: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+    justify-self: end;
+  }
+
+  [data-slot='card-content'] {
+    padding-inline: var(--civic-space-6);
+  }
+
+  [data-slot='card'][data-size='sm'] [data-slot='card-content'] {
+    padding-inline: var(--civic-space-4);
+  }
+
+  [data-slot='card']:has([data-slot='card-footer']) {
+    padding-bottom: 0;
+  }
+
+  [data-slot='card-footer'] {
+    display: flex;
+    align-items: center;
+    border-bottom-left-radius: var(--civic-radius-xl);
+    border-bottom-right-radius: var(--civic-radius-xl);
+    padding-inline: var(--civic-space-6);
+    padding-top: var(--civic-space-4);
+    padding-bottom: var(--civic-space-4);
+  }
+
+  [data-slot='card'][data-size='sm'] [data-slot='card-footer'] {
+    padding-inline: var(--civic-space-4);
+  }
+}

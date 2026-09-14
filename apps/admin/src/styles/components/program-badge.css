@@ -1,0 +1,21 @@
+@layer civic.components {
+  [data-slot='program-badge'] {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--civic-space-1-5);
+    border-radius: var(--civic-radius-full);
+    padding: 0.1875rem var(--civic-space-2);
+    font-size: var(--civic-text-xs);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  [data-slot='program-badge-dot'] {
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border-radius: var(--civic-radius-full);
+    flex-shrink: 0;
+  }
+}

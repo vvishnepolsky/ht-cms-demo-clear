@@ -1,0 +1,14 @@
+{
+  "section1557_tagline": "La asistencia lingüística está disponible sin costo. Contáctenos para ayuda en su idioma.",
+  "language": "Idioma",
+  "submit": "Enviar",
+  "cancel": "Cancelar",
+  "back": "Atrás",
+  "next": "Siguiente",
+  "close": "Cerrar",
+  "save": "Guardar",
+  "loading": "Cargando...",
+  "error_generic": "Algo salió mal. Por favor, inténtelo de nuevo.",
+  "error_network": "No se pudo conectar. Por favor, verifique su conexión a internet.",
+  "error_session_expired": "Su sesión ha expirado. Por favor, inicie sesión de nuevo."
+}

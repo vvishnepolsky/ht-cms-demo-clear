@@ -1,0 +1,162 @@
+{
+  "tabs": {
+    "home": "Home",
+    "engagement": "Engagement",
+    "inbox": "Inbox"
+  },
+  "greeting": "Hi, {{name}}!",
+  "greetingFallback": "there",
+  "goToHome": "Go to home",
+  "banners": {
+    "hoursLeft": "{{count}} engagement hours remaining this month",
+    "hoursDueBy": "Hours must be logged by {{deadline}} to stay in compliance.",
+    "documentsStillNeeded_one": "{{count}} document still needed for your application.",
+    "documentsStillNeeded_other": "{{count}} documents still needed for your application.",
+    "upload": "Upload"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "reportChange": "Report a\nChange",
+    "uploadDocument": "Upload\nDocument",
+    "contactUs": "Contact\nUs"
+  },
+  "demo": {
+    "switchToReturning": "Switch to returning user view",
+    "switchToNew": "Switch to newly submitted view"
+  },
+  "caseStatus": {
+    "caseNumber": "Case #{{number}}",
+    "casePending": "Case pending",
+    "updated": "Updated {{date}}",
+    "benefitsActive": "Benefits Active",
+    "noActionNeeded": "No action needed at this time. Your benefits are active.",
+    "applicationReviewed": "Application Being Reviewed",
+    "estDecision": "Estimated decision within 30–45 days",
+    "actionRequired": "Action Required",
+    "uploadProofOfIncome": "Upload proof of income",
+    "uploadDocument": "Upload Document",
+    "caseClosed": "Case Closed",
+    "learnWhy": "Learn why",
+    "reApply": "Re-apply",
+    "renewalDueLabel": "Renewal due:",
+    "renewalIn45Days": "in 45 days",
+    "viewCaseDetails": "View case details"
+  },
+  "engagement": {
+    "communityEngagement": "Community Engagement",
+    "currentMonth": "{{month}} {{year}}",
+    "ofHours": "of {{total}} hrs",
+    "hoursRemaining": "{{count}} hours remaining this month",
+    "logDescription": "Log work, volunteering, education, or training hours to meet your monthly community engagement requirement.",
+    "logFirstActivity": "Log First Activity",
+    "viewAllEngagement": "View all engagement",
+    "status": {
+      "verified": "Verified",
+      "pending": "Pending",
+      "needsDoc": "Needs doc"
+    },
+    "readOnly": "Read only",
+    "requirementMet": "Requirement Met",
+    "requirementNotMet": "Requirement Not Met",
+    "hrs": "hrs",
+    "hoursOfTotal": "{{current}} of {{total}} hours",
+    "requirementMetExcl": "Requirement met! Great work.",
+    "daysLeftThisMonth": "{{count}} days left this month",
+    "deadlineBanner": "Hours must be submitted by the last day of the month. Late entries may not count toward your requirement.",
+    "monthBreakdown": "{{month}} Breakdown",
+    "noHoursLogged": "No hours logged",
+    "activityLog": "Activity Log",
+    "startLogging": "Start Logging Activities",
+    "emptyDescription": "Track your community engagement hours here. Log work, volunteering, education, or training to meet your monthly requirement.",
+    "logActivity": "Log Activity"
+  },
+  "logActivity": {
+    "title": "Log Activity",
+    "activityLogged": "Activity Logged!",
+    "hoursAddedPending_one": "{{count}} hour added (pending verification)",
+    "hoursAddedPending_other": "{{count}} hours added (pending verification)",
+    "argylePromptTitle": "Verify hours automatically?",
+    "argylePromptDesc": "Connect your employer via Argyle to automatically verify your work hours. This can speed up the verification process.",
+    "connectNow": "Connect Now",
+    "noThanks": "No thanks, I'll verify manually",
+    "activityType": "Activity Type",
+    "selectActivityType": "Select activity type...",
+    "categories": {
+      "employment": "Employment",
+      "volunteering": "Volunteering",
+      "education": "Education",
+      "jobTraining": "Job Training"
+    },
+    "date": "Date",
+    "employerOrg": "Employer / Organization",
+    "employerOrgPlaceholder": "e.g. Hy-Vee, Habitat for Humanity",
+    "hours": "Hours",
+    "hoursHint": "Enter hours in 0.5 increments (max 24)",
+    "hoursType": "Hours Type",
+    "hoursTypes": {
+      "inPerson": "In-person class hours",
+      "online": "Online / remote hours",
+      "vocational": "Vocational training hours"
+    },
+    "proofOfActivity": "Proof of Activity (optional)",
+    "uploadProof": "Upload proof document",
+    "notes": "Notes (optional)",
+    "notesPlaceholder": "Any additional details about this activity...",
+    "exceeds80Note": "This entry would bring your total over 80 hours. Extra hours are still logged and may count toward future months if your state allows carryover.",
+    "saving": "Saving\u2026",
+    "saveActivity": "Save Activity"
+  },
+  "inbox": {
+    "messages": "Messages",
+    "noMessagesYetShort": "No messages yet",
+    "viewAllMessages": "View all messages",
+    "actionNeeded": "Action Needed",
+    "respondBy": "Respond by {{deadline}}",
+    "typeMessage": "Type your message...",
+    "title": "Inbox",
+    "subtitle": "Messages from State-X HHS and your caseworker",
+    "noMessagesYet": "No Messages Yet",
+    "emptyDescription": "When your caseworker sends you a message or there's an update on your case, it will appear here.",
+    "filters": {
+      "all": "All",
+      "unread": "Unread ({{count}})",
+      "actionRequired": "Action Required ({{count}})"
+    }
+  },
+  "whatHappensNext": {
+    "title": "What Happens Next",
+    "inProgress": "In Progress",
+    "dismiss": "Dismiss",
+    "steps": {
+      "applicationReceived": {
+        "label": "Application Received",
+        "detail": "Your application has been submitted and is in the queue for review."
+      },
+      "caseworkerReview": {
+        "label": "Caseworker Review",
+        "detail": "A caseworker will review your application and may request additional documents."
+      },
+      "decisionIssued": {
+        "label": "Decision Issued",
+        "detail": "You'll receive a letter with your eligibility decision within 30–45 days."
+      }
+    }
+  },
+  "reportChange": {
+    "title": "Report a Change",
+    "description": "Online change reporting is coming soon to this app. In the meantime, you can report changes through the existing State-X HHS portal or by contacting us directly.",
+    "changesMustReport": "Changes you must report",
+    "changes": {
+      "income": "Income changes (new job, lost job, pay change)",
+      "householdSize": "Household size (someone moved in or out)",
+      "address": "Address or contact information",
+      "healthInsurance": "Health insurance coverage changes",
+      "pregnancy": "Pregnancy or new baby",
+      "immigration": "Immigration status changes"
+    },
+    "timingNotice": "Report changes within 10 days of when they happen. Late reporting may affect your benefits.",
+    "goToPortal": "Go to State-X HHS Portal",
+    "orContactUs": "Or contact us",
+    "backToConfirmation": "Back to Confirmation"
+  }
+}

@@ -1,0 +1,6 @@
+/* Vendored Civic globals — the single style entry point for this app (same
+ * vendoring model as the resident/admin apps: the css is owned source, never a
+ * package import). civic-globals.css brings Tailwind v4, the Radix palettes,
+ * Geist, and the Civic semantic tokens; theme.css re-skins the foundation. */
+@import './styles/civic-globals.css';
+@import './styles/theme.css';

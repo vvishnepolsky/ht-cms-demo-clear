@@ -1,0 +1,71 @@
+{
+  "resourcesIntro": {
+    "title": "Financial Resources",
+    "notice": "Because you're applying for Medicaid based on age, disability, or long-term care, we need to know about your financial resources. MAGI Medicaid applicants do not need to complete this section.",
+    "limitsTitle": "Current Resource Limits",
+    "individual": "Individual",
+    "couple": "Couple",
+    "readyTitle": "What to have ready",
+    "readyItems": {
+      "bankStatements": "Bank statements",
+      "investmentStatements": "Investment statements",
+      "vehicleTitle": "Vehicle title",
+      "propertyDeed": "Property deed"
+    },
+    "continue": "Continue"
+  },
+  "financialResources": {
+    "title": "Financial Accounts & Assets",
+    "subtitle": "Toggle each asset type you have, then enter the details.",
+    "section": {
+      "checking": "Checking Accounts",
+      "savings": "Savings Accounts",
+      "cash": "Cash on Hand",
+      "stocks": "Stocks, Bonds, CDs",
+      "retirement": "Retirement Accounts (IRA, 401k)",
+      "life": "Life Insurance",
+      "trusts": "Trusts",
+      "burial": "Burial Funds"
+    },
+    "burialNote": "Up to $1,500 per person is exempt",
+    "institutionLabel": "Institution *",
+    "bankNamePlaceholder": "Bank name",
+    "descriptionLabel": "Description *",
+    "wherePlaceholder": "Where",
+    "balanceLabel": "Balance *",
+    "marketValueLabel": "Market Value *",
+    "addAnother": "Add another",
+    "docPromptWithBank": "You listed an account at {{bankName}} \u2014 upload a recent bank statement to verify your balance.",
+    "docPromptGeneric": "You listed a bank account \u2014 upload a recent bank statement to verify your balance.",
+    "bankStatement": "Bank statement",
+    "sectionName": "Financial Accounts",
+    "continue": "Save & Continue"
+  },
+  "propertyVehicles": {
+    "title": "Property & Vehicles",
+    "ownsHomeQuestion": "Do you own the home you live in? *",
+    "yes": "Yes",
+    "no": "No",
+    "homeExemptNote": "Your primary home is generally exempt from resource limits.",
+    "otherPropertyQuestion": "Do you own any other real property? *",
+    "estimatedValue": "Estimated Value *",
+    "outstandingMortgage": "Outstanding Mortgage",
+    "ownsVehiclesQuestion": "Do you own any vehicles? *",
+    "vehicleNumber": "Vehicle {{number}}",
+    "makePlaceholder": "Make *",
+    "modelPlaceholder": "Model *",
+    "yearPlaceholder": "Year *",
+    "valuePlaceholder": "Value *",
+    "loanPlaceholder": "Loan",
+    "addAnotherVehicle": "Add another vehicle",
+    "ltcLookBackTitle": "Long-Term Care Look-Back Period",
+    "ltcLookBackSubtitle": "This question is important for LTC Medicaid eligibility.",
+    "transferQuestion": "Have you or anyone in your household transferred or given away assets in the last 5 years? *",
+    "transferNumber": "Transfer {{number}}",
+    "toWhomPlaceholder": "To whom *",
+    "transferValuePlaceholder": "Value *",
+    "reasonPlaceholder": "Reason for transfer *",
+    "addAnotherTransfer": "Add another transfer",
+    "continue": "Save & Continue"
+  }
+}

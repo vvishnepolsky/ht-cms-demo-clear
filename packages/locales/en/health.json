@@ -1,0 +1,90 @@
+{
+  "healthIntro": {
+    "title": "Health Insurance",
+    "description": "Even if you have other health insurance, you may still qualify for Medicaid. We ask about your current coverage to coordinate benefits and make sure you get the right coverage.",
+    "infoNote": "We'll ask about health insurance for each person in your household.",
+    "faqQuestion": "Why does Medicaid ask about other insurance?",
+    "faqAnswer": "Medicaid is often the \"payer of last resort,\" meaning it covers costs after other insurance pays first. Knowing about your existing coverage helps State-X HHS coordinate benefits properly and avoid duplicate payments.",
+    "continue": "Continue",
+    "noInsurance": "No one has health insurance"
+  },
+  "healthInsurance": {
+    "title": "Current Health Insurance",
+    "subtitle": "Tell us about any health coverage this person currently has or recently lost.",
+    "applicantFallback": "Applicant",
+    "gatingQuestion": "Does this person have health insurance?",
+    "optionYes": "Yes, currently insured",
+    "optionNo": "No insurance",
+    "optionLost": "Lost within the past 3 months",
+    "insuranceDetails": "Insurance Details",
+    "insuranceTypeLabel": "Insurance type *",
+    "selectType": "Select type...",
+    "insuranceType": {
+      "employer": "Employer plan",
+      "medicare": "Medicare",
+      "va": "VA/CHAMPVA",
+      "marketplace": "Marketplace plan",
+      "cobra": "COBRA",
+      "private": "Private/individual plan",
+      "other": "Other"
+    },
+    "companyNameLabel": "Insurance company name *",
+    "companyNamePlaceholder": "e.g., Blue Cross Blue Shield",
+    "policyNumber": "Policy number *",
+    "groupNumber": "Group number",
+    "optional": "Optional",
+    "groupNumberNote": "Found on your insurance card",
+    "differentHolderQuestion": "Is someone else the policy holder? *",
+    "yes": "Yes",
+    "no": "No",
+    "policyHolderName": "Policy holder's name *",
+    "fullNamePlaceholder": "Full name",
+    "policyHolderRelationship": "Policy holder's relationship *",
+    "select": "Select...",
+    "relationship": {
+      "spouse": "Spouse",
+      "parent": "Parent",
+      "employer": "Employer",
+      "other": "Other"
+    },
+    "monthlyPremium": "Monthly premium",
+    "premiumNote": "Enter the amount deducted from paychecks or paid directly",
+    "coverageStartDate": "Coverage start date",
+    "removeStartOver": "Remove & Start Over",
+    "lostCoverageDetails": "Lost Coverage Details",
+    "dateCoverageEnded": "Date coverage ended *",
+    "reasonCoverageEnded": "Reason coverage ended *",
+    "selectReason": "Select reason...",
+    "lossReason": {
+      "jobLoss": "Job loss",
+      "employerStopped": "Employer stopped offering",
+      "agingOff": "Aging off parent's plan",
+      "divorce": "Divorce/separation",
+      "other": "Other"
+    },
+    "lostCoverageInfo": "You may qualify for a Special Enrollment Period or retroactive Medicaid coverage. We'll check eligibility based on your loss date.",
+    "saveContinue": "Save & Continue"
+  },
+  "employerCoverage": {
+    "title": "Employer-Offered Insurance",
+    "gatingQuestion": "Is anyone in your household offered health insurance through their employer, even if they haven't enrolled?",
+    "yes": "Yes",
+    "no": "No",
+    "whoIsOffered": "Who is offered coverage? *",
+    "selectPerson": "Select person...",
+    "employerName": "Employer Name *",
+    "companyNamePlaceholder": "Company name",
+    "whenAvailable": "When is coverage available? *",
+    "waitingPeriodNote": "When does the waiting period end?",
+    "employeePremium": "Employee Premium",
+    "familyPremium": "Family Premium",
+    "whatDoesPlanCover": "What does the plan cover? *",
+    "coverageType": {
+      "medical": "Medical",
+      "dental": "Dental",
+      "vision": "Vision"
+    },
+    "cobraQuestion": "Is COBRA continuation coverage available? *",
+    "saveContinue": "Save & Continue"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "locale": "es",
+  "entries": [
+    { "term": "prior authorization", "translation": "autorización previa", "context": "prior auth" },
+    { "term": "explanation of benefits", "translation": "explicación de beneficios", "context": "EOB" },
+    { "term": "spend-down", "translation": "gasto descendente" },
+    { "term": "copayment", "translation": "copago" },
+    { "term": "formulary", "translation": "formulario" },
+    { "term": "fair hearing", "translation": "audiencia imparcial" },
+    { "term": "managed care organization", "translation": "organización de atención administrada", "context": "MCO" }
+  ]
+}

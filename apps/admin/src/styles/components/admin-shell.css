@@ -1,0 +1,468 @@
+@layer civic.components {
+  [data-slot='admin-shell'] {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--civic-bg-app);
+  }
+
+  /* ── Top banner (teal brand bar) ──────────────────────────────────────── */
+  [data-slot='admin-shell-banner'] {
+    height: 3rem;
+    flex-shrink: 0;
+    background: var(--ht-brand-banner, #3e63dd);
+    color: var(--ht-brand-on-teal, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: 1.25rem;
+    gap: 1rem;
+  }
+
+  [data-slot='admin-shell-banner-brand'] {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    line-height: 1.2;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-slot='admin-shell-banner-label'] {
+    font-size: 0.875rem;
+    font-weight: 500;
+    opacity: 0.92;
+    flex-shrink: 0;
+  }
+
+  /* ── Body row: sidebar + main ─────────────────────────────────────────── */
+  [data-slot='admin-shell-body'] {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  [data-slot='admin-shell-sidebar'] {
+    background: var(--civic-bg-app);
+    border-right: 1px solid var(--civic-border-subtle);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 4rem;
+    transition: width 180ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  /* When the banner is present, the sidebar has no internal org-header,
+     so the nav starts at the top with extra breathing room. */
+  [data-slot='admin-shell'][data-banner] [data-slot='admin-shell-nav'] {
+    padding-top: 0.75rem;
+  }
+
+  /* Avatar pinned to the bottom of the sidebar */
+  [data-slot='admin-shell-sidebar-avatar'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0;
+    flex-shrink: 0;
+  }
+
+  /* ── Banner-mode sidebar overrides ─────────────────────────────────────── */
+  /* In banner mode the sidebar is locked to icon-only — labels never expand. */
+  [data-slot='admin-shell'][data-banner] [data-slot='admin-shell-sidebar'] {
+    width: 3.5rem;
+  }
+  [data-slot='admin-shell'][data-banner] [data-slot='sidebar-nav-label'] {
+    display: none !important;
+  }
+
+  /* Nav items become centered square buttons, ~36px wide. */
+  [data-slot='admin-shell'][data-banner] [data-slot='admin-shell-nav'] {
+    padding: 0.625rem 0;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+  [data-slot='admin-shell'][data-banner] [data-slot='sidebar-nav-item'] {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border-radius: 0.5rem;
+    justify-content: center;
+    align-items: center;
+  }
+  [data-slot='admin-shell'][data-banner] [data-slot='sidebar-nav-icon-col'] {
+    width: auto;
+    height: auto;
+    padding: 0;
+  }
+  [data-slot='admin-shell'][data-banner] [data-slot='sidebar-nav-icon'] {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  /* Selected item: solid brand background + white icon (matches design) */
+  [data-slot='admin-shell'][data-banner] [data-slot='sidebar-nav-item'][data-active='true'] {
+    background: var(--ht-brand-banner, #3e63dd);
+    color: #ffffff;
+  }
+
+  [data-slot='admin-shell'][data-banner]
+    [data-slot='sidebar-nav-item'][data-active='true']
+    [data-slot='sidebar-nav-icon'] {
+    color: #ffffff;
+  }
+
+  /* Tighter icon column when sidebar is locked to icon-only */
+  [data-slot='admin-shell'][data-banner]
+    [data-slot='admin-shell-sidebar']:not([data-open])
+    [data-slot='admin-shell-nav'] {
+    padding: 0.5rem 0.5rem;
+  }
+
+  /* ── Banner-mode header simplification ─────────────────────────────────── */
+  /* When the brand lives in the top banner, the AdminShell sub-header is only
+     used to hold page-level title/actions. Make it shorter and borderless so
+     the page content can own its own header treatment. */
+  [data-slot='admin-shell'][data-banner] [data-slot='admin-shell-header'] {
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    border-bottom: none;
+    background: transparent;
+  }
+  [data-slot='admin-shell'][data-banner] [data-slot='admin-shell-header']:empty,
+  [data-slot='admin-shell'][data-banner] [data-slot='admin-shell-header']:has(> :only-child:empty) {
+    display: none;
+  }
+
+  [data-slot='admin-shell-sidebar'][data-open] {
+    width: 248px;
+  }
+
+  [data-slot='admin-shell-org-header'] {
+    height: 4rem;
+    border-bottom: 1px solid var(--civic-border-subtle);
+    display: flex;
+    align-items: center;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  [data-slot='admin-shell-org-trigger'] {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 4rem;
+    border-radius: 0;
+    text-align: left;
+    transition: background 200ms;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  [data-slot='admin-shell-org-trigger']:hover {
+    background: var(--civic-bg-component);
+  }
+
+  [data-slot='admin-shell-org-static'] {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 4rem;
+  }
+
+  [data-slot='admin-shell-logo-col'] {
+    width: 4rem;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  [data-slot='admin-shell-org-name'] {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    transition:
+      opacity 180ms cubic-bezier(0.2, 0, 0, 1),
+      width 180ms cubic-bezier(0.2, 0, 0, 1);
+    overflow: hidden;
+    min-width: 0;
+    opacity: 0;
+    width: 0;
+    padding-inline: 0;
+  }
+
+  [data-slot='admin-shell-org-name'][data-open] {
+    opacity: 1;
+    flex: 1;
+    padding-inline: 0.5rem;
+  }
+
+  [data-slot='admin-shell-org-name-text'] {
+    font-size: var(--civic-text-sm);
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--civic-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-slot='admin-shell-org-chevron'] {
+    margin-left: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--civic-text-secondary);
+    flex-shrink: 0;
+  }
+
+  [data-slot='admin-shell-nav'] {
+    flex: 1;
+    padding: 1rem 0.75rem;
+  }
+
+  [data-slot='admin-shell-recents'] {
+    margin-top: 0.75rem;
+  }
+
+  [data-slot='admin-shell-recents-separator'] {
+    padding-bottom: 0.75rem;
+  }
+
+  [data-slot='admin-shell-recents-label'] {
+    padding-inline: 0.5rem;
+    padding-bottom: 0.375rem;
+  }
+
+  [data-slot='admin-shell-recents-label'] span {
+    font-size: var(--civic-text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--civic-text-secondary);
+  }
+
+  [data-slot='admin-shell-recents-list'] {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  [data-slot='admin-shell-recent-item'] {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    border-radius: var(--civic-radius-md);
+    text-align: left;
+    transition:
+      background 150ms,
+      color 150ms;
+    font-size: var(--civic-text-sm);
+    font-weight: 400;
+    color: var(--civic-text-secondary);
+    padding: 0.375rem 0.5rem;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+  }
+
+  [data-slot='admin-shell-recent-item']:hover {
+    background: var(--civic-bg-component);
+    color: var(--civic-text-primary);
+  }
+
+  [data-slot='admin-shell-recent-name'] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--civic-text-sm);
+  }
+
+  [data-slot='admin-shell-main'] {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  [data-slot='admin-shell-header'] {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: 4rem;
+    border-bottom: 1px solid var(--civic-border-subtle);
+    background: var(--civic-bg-app);
+    display: flex;
+    align-items: center;
+    padding-inline: 1.5rem;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  [data-slot='admin-shell-header-left'] {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  [data-slot='admin-shell-history-nav'] {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  [data-slot='admin-shell-icon-btn'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--civic-radius-md);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 150ms;
+  }
+
+  [data-slot='admin-shell-icon-btn']:hover {
+    background: var(--civic-bg-component);
+  }
+
+  [data-slot='admin-shell-header-icon'] {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--civic-text-secondary);
+  }
+
+  [data-slot='admin-shell-title-area'] {
+    min-width: 0;
+    flex: 1;
+  }
+
+  [data-slot='admin-shell-title-loading'] {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  [data-slot='admin-shell-skeleton-title'] {
+    height: 1.5rem;
+    width: 40%;
+  }
+
+  [data-slot='admin-shell-skeleton-subtitle'] {
+    height: 1rem;
+    width: 25%;
+  }
+
+  [data-slot='admin-shell-title-block'] {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  [data-slot='admin-shell-title-primary'] {
+    font-size: var(--civic-text-xl);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    color: var(--civic-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+    margin: 0;
+  }
+
+  [data-slot='admin-shell-secondary-title-group'] {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  [data-slot='admin-shell-title-secondary'] {
+    font-size: var(--civic-text-base);
+    font-weight: 400;
+    line-height: 1.25;
+    color: var(--civic-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  [data-slot='admin-shell-copy-btn'] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--civic-radius-sm);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--civic-text-secondary);
+    flex-shrink: 0;
+    transition:
+      background 150ms,
+      color 150ms;
+  }
+
+  [data-slot='admin-shell-copy-btn']:hover {
+    background: var(--civic-bg-component);
+    color: var(--civic-text-primary);
+  }
+
+  [data-slot='admin-shell-copy-icon'] {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  [data-slot='admin-shell-page-title-row'] {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  [data-slot='admin-shell-status-pill'] {
+    flex-shrink: 0;
+  }
+
+  [data-slot='admin-shell-header-right'] {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  [data-slot='admin-shell-left-actions'] {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  [data-slot='admin-shell-secondary-actions'] {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  [data-slot='admin-shell-content'] {
+    flex: 1;
+    overflow: auto;
+    background: var(--civic-bg-subtle);
+  }
+}

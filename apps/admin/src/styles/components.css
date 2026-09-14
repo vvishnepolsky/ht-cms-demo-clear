@@ -1,0 +1,18 @@
+/* Civic component CSS barrel -- imports only the components used by cms-demo-admin */
+@import './components/admin-shell.css';
+@import './components/sidebar-nav.css';
+@import './components/button.css';
+@import './components/badge.css';
+@import './components/card.css';
+@import './components/table.css';
+@import './components/avatar.css';
+@import './components/tooltip.css';
+@import './components/separator.css';
+@import './components/skeleton.css';
+@import './components/dialog.css';
+@import './components/confirmation-modal.css';
+@import './components/program-badge.css';
+@import './components/status-badge.css';
+@import './components/dashboard.css';
+@import './components/login.css';
+@import './components/workspace.css';

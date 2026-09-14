@@ -1,0 +1,174 @@
+{
+  "welcome": {
+    "header": {
+      "agency": "State-X HHS",
+      "agencyFull": "Health & Human Services"
+    },
+    "hero": {
+      "title": "Apply for Benefits",
+      "subtitle": "One application for Medicaid, HAWK-I, Food Assistance, FIP, and more."
+    },
+    "availablePrograms": "Available programs:",
+    "programs": {
+      "medicaid": "Medicaid",
+      "medicaidDesc": "Health coverage",
+      "hawki": "HAWK-I",
+      "hawkiDesc": "Kids' health insurance",
+      "foodAssistance": "Food Assistance",
+      "foodAssistanceDesc": "SNAP benefits",
+      "fip": "FIP",
+      "fipDesc": "Family investment"
+    },
+    "startApplication": "Start Application",
+    "checkStatus": "Check Application Status",
+    "screen": {
+      "eyebrow": "State-X HHS · Health Coverage",
+      "title": "Apply for State-X Medicaid",
+      "desc": "Health coverage for you and your family. Most people finish in 20–25 minutes. We'll check what programs you may qualify for and walk you through the next steps.",
+      "tile1Title": "Who's covered",
+      "tile1Desc": "Children, adults, parents, and pregnant residents on a single application.",
+      "tile2Title": "Private & secure",
+      "tile2Desc": "Your information is encrypted and shared only with State-X HHS.",
+      "tile3Title": "Saves as you go",
+      "tile3Desc": "Step away and pick up where you left off — saved on your device.",
+      "alertTitle": "What to gather before you start",
+      "alertDesc": "Date of birth and Social Security Number for everyone applying · most recent pay stubs or a recent tax return · current health insurance details if anyone in your household has coverage.",
+      "getStarted": "Get started",
+      "continueExisting": "Continue an existing application",
+      "seeSample": "See a sample completed",
+      "fineprint": "By continuing, you agree that the information you provide is true and complete to the best of your knowledge. Knowingly providing false information may be a federal offense."
+    },
+    "legal": {
+      "toggle": "Non-Discrimination & Language Access Notices",
+      "nonDiscrimination": "State-X HHS does not discriminate on the basis of race, color, national origin, sex, age, or disability. Free language assistance services are available.",
+      "contact": "Contact: 1-877-347-5678 | TTY: 1-800-735-2942"
+    }
+  },
+  "login": {
+    "title": "Get Started",
+    "subtitle": "Create an account to save your progress, or continue as a guest.",
+    "mobileId": {
+      "title": "Sign In with State-X Mobile ID",
+      "comingSoon": "COMING SOON",
+      "description": "Instantly verify your identity with your State-X digital ID"
+    },
+    "signIn": {
+      "title": "Sign In",
+      "description": "Use your email and password"
+    },
+    "createAccount": {
+      "title": "Create an Account",
+      "description": "Save your progress and check your application status anytime"
+    },
+    "guest": {
+      "title": "Continue as Guest",
+      "description": "No account needed — you won't be able to save progress"
+    },
+    "whyCreateAccount": {
+      "title": "Why create an account?",
+      "items": [
+        "Save and resume your application anytime",
+        "Track your application status online",
+        "Manage renewals and updates"
+      ]
+    }
+  },
+  "signIn": {
+    "back": "Back",
+    "title": "Sign In",
+    "subtitle": "Enter your email and password to continue.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submitButton": "Sign In",
+    "signingIn": "Signing in…",
+    "noAccount": "Don't have an account?",
+    "createOne": "Create one",
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required"
+    },
+    "errors": {
+      "unableToSignIn": "Unable to sign in. Please try again.",
+      "invalidCredentials": "Invalid email or password."
+    }
+  },
+  "createAccount": {
+    "back": "Back",
+    "title": "Create an Account",
+    "subtitle": "Save your progress and check your status anytime.",
+    "firstName": "First Name",
+    "firstNamePlaceholder": "First",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Last",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "Create a password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Create Account",
+    "creating": "Creating account…",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "validation": {
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 12 characters",
+      "passwordNeedsLetter": "Password must contain at least one letter",
+      "passwordNeedsDigit": "Password must contain at least one number"
+    },
+    "errors": {
+      "generic": "Unable to create account. Please try again.",
+      "emailExists": "An account with this email already exists."
+    },
+    "passwordRequirements": {
+      "minLength": "At least 12 characters",
+      "letter": "At least one letter (a–z)",
+      "digit": "At least one number (0–9)"
+    }
+  },
+  "programSelection": {
+    "title": "What would you like to apply for?",
+    "subtitle": "Select all that apply. You can apply for more than one program at once.",
+    "programs": {
+      "medicaid": {
+        "name": "State-X Medicaid",
+        "desc": "Health coverage for adults and families with low income"
+      },
+      "hawki": {
+        "name": "HAWK-I",
+        "desc": "Health insurance for children under 19"
+      },
+      "snap": {
+        "name": "Food Assistance (SNAP)",
+        "desc": "Monthly benefits for purchasing food"
+      },
+      "fip": {
+        "name": "Family Investment Program",
+        "desc": "Cash assistance for families with children"
+      },
+      "childcare": {
+        "name": "Child Care Assistance",
+        "desc": "Help paying for child care while you work or attend school"
+      },
+      "familyPlanning": {
+        "name": "Family Planning Services",
+        "desc": "Reproductive health services coverage"
+      },
+      "rma": {
+        "name": "Refugee Medical Assistance",
+        "desc": "Health coverage for eligible refugees"
+      }
+    },
+    "snapNotice": "Since you selected Food Assistance, we'll ask a few quick questions next to check if you qualify for faster processing.",
+    "continue": "Continue"
+  }
+}

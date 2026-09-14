@@ -1,0 +1,19 @@
+@layer civic.components {
+  [data-slot='separator'] {
+    display: block;
+    flex-shrink: 0;
+    background: var(--civic-border-subtle);
+  }
+
+  [data-slot='separator'][aria-orientation='horizontal'],
+  [data-slot='separator']:not([aria-orientation]) {
+    height: 1px;
+    width: 100%;
+  }
+
+  [data-slot='separator'][aria-orientation='vertical'] {
+    height: 100%;
+    width: 1px;
+    align-self: stretch;
+  }
+}

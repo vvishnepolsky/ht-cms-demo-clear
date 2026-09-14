@@ -1,0 +1,52 @@
+@layer civic.components {
+  [data-slot='badge'] {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--civic-space-1);
+    border-radius: var(--civic-radius-full);
+    padding: 0.1875rem var(--civic-space-2);
+    font-size: var(--civic-text-xs);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    background: var(--civic-bg-component);
+    color: var(--civic-text-primary);
+    border: 1px solid transparent;
+    text-decoration: none;
+  }
+
+  [data-slot='badge'][data-variant='secondary'] {
+    background: var(--civic-bg-component);
+    color: var(--civic-text-secondary);
+  }
+
+  [data-slot='badge'][data-variant='destructive'] {
+    background: var(--civic-red-3);
+    color: var(--civic-red-11);
+  }
+
+  [data-slot='badge'][data-variant='outline'] {
+    background: transparent;
+    border-color: var(--civic-border-subtle);
+    color: var(--civic-text-primary);
+  }
+
+  [data-slot='badge'][data-variant='ghost'] {
+    background: transparent;
+    color: var(--civic-text-secondary);
+  }
+
+  [data-slot='badge'][data-variant='link'] {
+    background: transparent;
+    color: var(--civic-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 0;
+  }
+
+  [data-slot='badge'][data-size='sm'] {
+    padding: 0.125rem var(--civic-space-1-5);
+    font-size: 0.625rem;
+  }
+}

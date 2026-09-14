@@ -1,0 +1,9 @@
+node_modules
+dist
+playwright-report
+test-results
+.env.local
+# Playwright auth storage state. Contains live JWT cookies; regenerate via
+# `pnpm --filter @ht/cms-demo-admin e2e:auth` (or see e2e/README) before
+# running the live e2e suite. Never commit.
+.auth/

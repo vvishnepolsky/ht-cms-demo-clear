@@ -1,0 +1,17 @@
+@keyframes civic-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@layer civic.components {
+  [data-slot='skeleton'] {
+    border-radius: var(--civic-radius-md);
+    background: var(--civic-bg-component);
+    animation: civic-pulse 1.8s ease-in-out infinite;
+  }
+}

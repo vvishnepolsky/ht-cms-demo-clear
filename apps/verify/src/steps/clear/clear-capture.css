@@ -1,0 +1,187 @@
+/* Mock CLEAR hosted UI — scoped styles, ported from the legacy GA demo
+ * (legacy/ga-gateway-demo/app/globals.css § CLEAR hosted UI) via the resident
+ * app's /clear-verify page. Deliberately self-contained: this step mimics
+ * CLEAR's hosted verification and must not inherit or leak into the flow's
+ * Civic styling. Rendered embedded inside the FlowShell rather than as a
+ * full page, so the wrapper is .clear-embed (no 100vh, no page background). */
+
+.clear-embed {
+  --clear-navy: #041a55;
+  --clear-blue: #1437d8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.clear-embed .clear-topbar {
+  width: 100%;
+  max-width: 430px;
+  background: var(--clear-navy);
+  color: #fff;
+  text-align: center;
+  padding: 12px 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.clear-embed .clear-wordmark {
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+}
+
+.clear-embed .clear-topbar-note {
+  font-size: 11.5px;
+  color: #aab4d4;
+  margin-top: 2px;
+}
+
+.clear-embed .clear-card {
+  background: #fff;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 18px rgba(10, 20, 60, 0.12);
+  max-width: 430px;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 26px 28px 30px;
+  text-align: center;
+}
+
+.clear-embed .clear-card h2 {
+  font-size: 20px;
+  color: #0c1633;
+  margin: 0 0 8px;
+}
+
+.clear-embed .clear-card p {
+  color: #5a6478;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.clear-embed .clear-card input[type='text'],
+.clear-embed .clear-card input[type='tel'] {
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  font-size: 17px;
+  letter-spacing: 2px;
+  padding: 11px;
+  margin: 10px 0 4px;
+  border: 1px solid #c9cfdd;
+  border-radius: 8px;
+}
+
+.clear-embed .clear-primary {
+  width: 100%;
+  background: var(--clear-blue);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+.clear-embed .clear-primary:hover {
+  background: #0f2bb0;
+}
+
+.clear-embed .clear-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.clear-embed .clear-secondary {
+  width: 100%;
+  background: #fff;
+  color: var(--clear-blue);
+  border: 1.5px solid var(--clear-blue);
+  border-radius: 999px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.clear-embed .clear-video-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0c1633;
+  margin: 14px 0;
+}
+
+.clear-embed .clear-video-wrap video,
+.clear-embed .clear-video-wrap canvas,
+.clear-embed .clear-video-wrap img {
+  display: block;
+  width: 100%;
+}
+
+.clear-embed .selfie-oval {
+  position: absolute;
+  inset: 6% 18%;
+  border: 3px dashed rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.clear-embed .id-frame {
+  position: absolute;
+  inset: 16% 8%;
+  border: 3px dashed rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.clear-embed .clear-progress {
+  height: 5px;
+  background: #e4e7f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+
+.clear-embed .clear-progress > div {
+  height: 100%;
+  background: var(--clear-blue);
+  transition: width 0.4s ease;
+}
+
+.clear-embed .clear-spinner {
+  width: 46px;
+  height: 46px;
+  border: 5px solid #e4e7f0;
+  border-top-color: var(--clear-blue);
+  border-radius: 50%;
+  margin: 24px auto;
+  animation: clear-spin 0.9s linear infinite;
+}
+
+@keyframes clear-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.clear-embed .clear-sandbox-pill {
+  display: inline-block;
+  background: #fff3cd;
+  color: #7a5a00;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 10px;
+}
+
+.clear-embed .clear-error {
+  color: #b3261e;
+  font-size: 12.5px;
+}

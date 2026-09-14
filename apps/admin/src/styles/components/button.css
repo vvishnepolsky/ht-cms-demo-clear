@@ -1,0 +1,169 @@
+@layer civic.components {
+  [data-slot='button'] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    gap: var(--civic-space-1-5);
+    border: none;
+    border-radius: 0.25rem;
+    font-size: var(--civic-text-sm);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+    transition: all 150ms ease;
+  }
+
+  /* Focus ring */
+  [data-slot='button']:focus-visible {
+    outline: var(--civic-ring-width) solid var(--civic-ring-color);
+    outline-offset: 2px;
+  }
+
+  /* Disabled */
+  [data-slot='button']:disabled,
+  [data-slot='button'][data-disabled] {
+    pointer-events: none;
+    opacity: var(--civic-disabled-opacity);
+  }
+
+  /* Active press */
+  [data-slot='button']:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  /* Icon sizing inside buttons */
+  [data-slot='button'] svg {
+    pointer-events: none;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* --- Variants --- */
+
+  [data-slot='button'][data-variant='default'] {
+    background: var(--civic-accent-solid);
+    color: var(--civic-accent-on-solid);
+  }
+  [data-slot='button'][data-variant='default']:hover {
+    background: var(--civic-accent-solid-hover);
+  }
+
+  [data-slot='button'][data-variant='outline'] {
+    border: 1px solid var(--civic-border-component);
+    background: transparent;
+    color: var(--civic-text-primary);
+  }
+  [data-slot='button'][data-variant='outline']:hover {
+    background: var(--civic-bg-subtle);
+  }
+
+  [data-slot='button'][data-variant='secondary'] {
+    background: var(--civic-bg-component);
+    color: var(--civic-text-primary);
+  }
+  [data-slot='button'][data-variant='secondary']:hover {
+    background: var(--civic-bg-component-hover);
+  }
+
+  [data-slot='button'][data-variant='ghost'] {
+    background: transparent;
+    color: var(--civic-text-primary);
+  }
+  [data-slot='button'][data-variant='ghost']:hover {
+    background: var(--civic-bg-component);
+  }
+
+  [data-slot='button'][data-variant='destructive'] {
+    background: var(--civic-destructive-solid);
+    color: var(--civic-surface-on-solid);
+  }
+  [data-slot='button'][data-variant='destructive']:hover {
+    background: var(--civic-destructive-solid-hover);
+  }
+  [data-slot='button'][data-variant='destructive']:focus-visible {
+    outline: var(--civic-ring-width) solid var(--civic-ring-color-destructive);
+    outline-offset: 2px;
+  }
+
+  [data-slot='button'][data-variant='link'] {
+    background: transparent;
+    color: var(--civic-accent-text);
+    text-underline-offset: 4px;
+  }
+  [data-slot='button'][data-variant='link']:hover {
+    text-decoration: underline;
+  }
+
+  /* --- Sizes --- */
+
+  [data-slot='button'][data-size='default'] {
+    height: 2.25rem; /* 36px */
+    padding-inline: var(--civic-space-3);
+  }
+  [data-slot='button'][data-size='xs'] {
+    height: 1.5rem; /* 24px */
+    gap: var(--civic-space-1);
+    padding-inline: var(--civic-space-2-5);
+    font-size: var(--civic-text-xs);
+  }
+  [data-slot='button'][data-size='xs'] svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  [data-slot='button'][data-size='sm'] {
+    height: 2rem; /* 32px */
+    gap: var(--civic-space-1);
+    padding-inline: var(--civic-space-3);
+  }
+  [data-slot='button'][data-size='lg'] {
+    height: 2.5rem; /* 40px */
+    padding-inline: var(--civic-space-4);
+  }
+
+  /* Icon-only sizes */
+  [data-slot='button'][data-size='icon'] {
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+  }
+  [data-slot='button'][data-size='icon-xs'] {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+  }
+  [data-slot='button'][data-size='icon-xs'] svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+  [data-slot='button'][data-size='icon-sm'] {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+  }
+  [data-slot='button'][data-size='icon-lg'] {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+  }
+
+  /* --- Loading --- */
+
+  [data-slot='button'][data-loading] {
+    cursor: wait;
+  }
+
+  [data-slot='button-spinner'] {
+    flex-shrink: 0;
+  }
+} /* end @layer civic.components */
+
+@keyframes civic-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

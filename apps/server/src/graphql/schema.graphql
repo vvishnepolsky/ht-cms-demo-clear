@@ -1,0 +1,923 @@
+# State-X E&E demo — pruned single-service replica of the ht-platform
+# supergraph (identity-service, household-service, medicaid-ee-service,
+# document-service) plus the Verify Assist / Case Assist additions documented in
+# docs/api-contract.md. Field names, nullability and enums follow the supergraph.
+
+scalar JSON
+scalar DateTime
+
+# ── shared ───────────────────────────────────────────────────────────────────────
+
+input PaginationInput {
+  page: Int
+  limit: Int
+}
+
+type PaginationInfo {
+  currentPage: Int!
+  totalPages: Int!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# ── identity-service ─────────────────────────────────────────────────────────────
+
+enum AddressUse { HOME WORK TEMP OLD BILLING }
+enum AddressType { POSTAL PHYSICAL BOTH }
+enum PhoneUse { HOME WORK MOBILE TEMP OLD }
+enum PersonStatus { ACTIVE INACTIVE DECEASED MERGED }
+
+input AddressInput {
+  use: AddressUse!
+  type: AddressType!
+  line: [String!]!
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
+  isPrimary: Boolean
+}
+
+input PhoneInput {
+  use: PhoneUse!
+  value: String!
+  isPrimary: Boolean
+}
+
+input PersonEmailInput {
+  value: String!
+}
+
+input CreatePersonInput {
+  firstName: String!
+  lastName: String!
+  middleName: String
+  suffix: String
+  preferredName: String
+  preferredLanguage: String
+  dateOfBirth: String
+  ssn: String
+  ssnLast4: String
+  addresses: [AddressInput!]
+  phones: [PhoneInput!]
+  emails: [PersonEmailInput!]
+}
+
+input UpdatePersonInput {
+  personId: ID!
+  firstName: String
+  lastName: String
+  middleName: String
+  suffix: String
+  preferredName: String
+  preferredLanguage: String
+  dateOfBirth: String
+  ssn: String
+  ssnLast4: String
+  addresses: [AddressInput!]
+  phones: [PhoneInput!]
+  emails: [PersonEmailInput!]
+}
+
+type Address {
+  use: AddressUse!
+  type: AddressType!
+  line: [String!]!
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
+  isPrimary: Boolean!
+}
+
+type Phone {
+  use: PhoneUse!
+  value: String!
+  isPrimary: Boolean!
+}
+
+type PersonEmail {
+  value: String!
+}
+
+type Person {
+  personId: ID!
+  status: PersonStatus!
+  firstName: String
+  lastName: String
+  middleName: String
+  suffix: String
+  preferredName: String
+  preferredLanguage: String
+  dateOfBirth: String
+  addresses: [Address!]!
+  phones: [Phone!]!
+  emails: [PersonEmail!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type MutationError {
+  code: String!
+  message: String!
+  field: String
+}
+
+type CreatePersonPayload {
+  person: Person
+  errors: [MutationError!]!
+}
+
+type UpdatePersonPayload {
+  person: Person
+  errors: [MutationError!]!
+}
+
+"""identity-service PersonRecord as federated onto MedicaidEeDetermination.person."""
+type PersonRecord {
+  policyId: ID!
+  engagementId: ID!
+  personId: ID!
+  customerId: ID!
+  firstName: String
+  lastName: String
+  middleName: String
+  suffix: String
+  preferredName: String
+  dateOfBirth: String
+  preferredLanguage: String
+  ssnLast4: String
+  addresses: [PersonAddress!]!
+  emails: [PersonRecordEmail!]!
+  phones: [PersonRecordPhone!]!
+}
+
+type PersonAddress {
+  street: String
+  city: String
+  state: String
+  zip: String
+}
+
+type PersonRecordEmail { value: String! }
+type PersonRecordPhone { value: String! }
+
+# ── household-service ─────────────────────────────────────────────────────────────
+
+enum HouseholdMemberRole { HEAD SPOUSE CHILD OTHER_ADULT OTHER_DEPENDENT }
+
+enum HouseholdErrorCode { NOT_FOUND DUPLICATE_SSN INVALID_INPUT CONFLICT UNAUTHORIZED }
+
+type HouseholdError {
+  code: HouseholdErrorCode!
+  message: String!
+  field: String
+}
+
+input HouseholdMemberInput {
+  personId: ID!
+  role: HouseholdMemberRole!
+  relationshipToHead: String
+  startDate: DateTime!
+}
+
+input CreateHouseholdInput {
+  customerId: ID!
+  members: [HouseholdMemberInput!]!
+}
+
+input AddHouseholdMemberInput {
+  householdId: ID!
+  customerId: ID!
+  personId: ID!
+  role: HouseholdMemberRole!
+  relationshipToHead: String
+  startDate: DateTime!
+}
+
+input RemoveHouseholdMemberInput {
+  householdId: ID!
+  personId: ID!
+  customerId: ID!
+}
+
+type HouseholdMember {
+  id: ID!
+  role: HouseholdMemberRole!
+  relationshipToHead: String
+  startDate: DateTime!
+  person: Person
+}
+
+type Household {
+  id: ID!
+  customerId: ID!
+  members: [HouseholdMember!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type HouseholdConnection {
+  data: [Household!]!
+  pagination: PaginationInfo!
+}
+
+type CreateHouseholdPayload {
+  household: Household
+  errors: [HouseholdError!]!
+}
+
+type AddHouseholdMemberPayload {
+  household: Household
+  errors: [HouseholdError!]!
+}
+
+type RemoveHouseholdMemberPayload {
+  household: Household
+  errors: [HouseholdError!]!
+}
+
+# ── medicaid-ee-service ───────────────────────────────────────────────────────────
+
+enum MedicaidEeCaseStatus { PENDING_VERIFICATION IN_REVIEW APPROVED DENIED CANCELED }
+enum MedicaidEeCaseType { INITIAL RENEWAL REDETERMINATION APPEAL }
+enum DeterminationStatus { PENDING ELIGIBLE INELIGIBLE DEFERRED }
+enum EligibilityCategory { MAGI NON_MAGI }
+enum IncomeVerificationStatus { PENDING CONNECTED VERIFIED FAILED }
+enum AssetVerificationStatus { PENDING VERIFIED FAILED }
+
+enum MedicaidEeErrorCode {
+  NOT_FOUND
+  VALIDATION_ERROR
+  UNIQUE_CONSTRAINT
+  INVALID_STATUS_TRANSITION
+  CONCURRENT_MODIFICATION
+  DOCUMENT_COPY_FAILED
+  DOCUMENT_SCAN_PENDING
+  RFI_ALREADY_PENDING
+  EVALUATION_FAILED
+}
+
+type MedicaidEeError {
+  code: MedicaidEeErrorCode!
+  field: String
+  message: String!
+}
+
+type MedicaidEeRfiDetails {
+  itemsRequested: [String!]!
+  deadline: DateTime!
+  noteToApplicant: String
+  issuedAt: DateTime!
+  """Opaque actor identifier of the caseworker who issued the RFI."""
+  issuedBy: ID!
+  renewalFormDocumentId: String
+}
+
+type IncomeVerificationEmployer {
+  name: String!
+  logoUrl: String
+}
+
+type IncomeVerification {
+  status: IncomeVerificationStatus!
+  employer: IncomeVerificationEmployer
+  employmentType: String
+  """Annual gross income in cents."""
+  incomeAnnual: Int
+  """Monthly gross income in cents."""
+  incomeMonthly: Int
+  hoursPerWeek: Float
+  payFrequency: String
+  lastPaystubDate: String
+  verifiedAt: String
+}
+
+type AssetAccount {
+  institutionName: String!
+  accountType: String!
+  """Balance in dollars."""
+  balance: Int!
+}
+
+type AssetVerification {
+  status: AssetVerificationStatus!
+  totalAssets: Int
+  accounts: [AssetAccount!]!
+  verifiedAt: String
+}
+
+type MedicaidEeDetermination {
+  id: ID!
+  customerId: ID!
+  caseId: ID!
+  personId: ID
+  coverageGroup: String
+  person: PersonRecord
+  status: DeterminationStatus!
+  category: EligibilityCategory!
+  effectiveDate: DateTime
+  expirationDate: DateTime
+  denialReason: String
+  notes: String
+  determinedAt: DateTime
+  determinedBy: String
+  noticeDocumentId: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type MedicaidEeCaseDocument {
+  id: ID!
+  caseId: ID!
+  s3Key: String!
+  documentCategory: String!
+  createdAt: DateTime!
+}
+
+type MedicaidEeCase {
+  id: ID!
+  customerId: ID!
+  householdId: ID!
+  applicantPersonId: ID!
+  household: Household!
+  caseNumber: String
+  caseType: MedicaidEeCaseType!
+  status: MedicaidEeCaseStatus!
+  statusReason: String
+  notes: String
+  flagReason: String
+  intakeData: JSON
+  ruleEvaluations: JSON
+  rfiDetails: MedicaidEeRfiDetails
+  documentId: ID
+  linkedCaseId: ID
+  linkedCase: MedicaidEeCase
+  """Case Assist narrative (template, or Claude when ANTHROPIC_API_KEY is set)."""
+  caseAssistNarrative: String
+  determinations: [MedicaidEeDetermination!]!
+  documents: [MedicaidEeCaseDocument!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  incomeVerification: IncomeVerification
+  assetVerification: AssetVerification
+  """CLEAR / Verify Assist identity verification linked to this case. Null until linked."""
+  identityVerification: IdentityVerification
+  """Rule-based Case Assist findings + optional Claude narrative."""
+  caseAssist: CaseAssistResult!
+}
+
+type MedicaidEeCaseConnection {
+  data: [MedicaidEeCase!]!
+  pagination: PaginationInfo!
+}
+
+input MedicaidEeCaseFilter {
+  status: MedicaidEeCaseStatus
+  caseType: MedicaidEeCaseType
+  householdId: ID
+  """Filter to cases whose applicant is this identity-service personId."""
+  applicantPersonId: ID
+}
+
+input MedicaidEeCaseDocumentInput {
+  s3Key: String!
+  documentCategory: String!
+}
+
+input CreateMedicaidEeCaseInput {
+  householdId: ID!
+  """Supergraph: ID!. Demo relaxation: defaults to the household HEAD (the admin's CreateEECase omits it)."""
+  applicantPersonId: ID
+  caseType: MedicaidEeCaseType
+  notes: String
+  documentId: ID
+  intakeData: JSON
+  draftId: ID
+  documents: [MedicaidEeCaseDocumentInput!]
+  """Demo addition: Verify Assist verification to link. Falls back to the caller's latest completed applicant verification."""
+  identityVerificationId: ID
+}
+
+type CreateMedicaidEeCasePayload {
+  case: MedicaidEeCase
+  errors: [MedicaidEeError!]!
+}
+
+input CaseTransitionInput {
+  id: ID!
+}
+
+input CaseTransitionWithReasonInput {
+  id: ID!
+  reason: String!
+}
+
+input IssueMedicaidEeCaseRfiInput {
+  id: ID!
+  itemsRequested: [String!]!
+  deadline: DateTime!
+  noteToApplicant: String
+}
+
+input ResolveMedicaidEeCaseRfiInput {
+  id: ID!
+  resolution: String
+}
+
+type CaseTransitionPayload {
+  case: MedicaidEeCase
+  errors: [MedicaidEeError!]!
+}
+
+# Argyle (mocked)
+input CreateArgyleUserInput { caseId: ID! }
+input GetPayrollLinkTokenInput { caseId: ID! }
+input RequestIncomeVerificationInput { caseId: ID! }
+input GetBankingConnectUrlInput { caseId: ID! }
+input RequestAssetVerificationInput { caseId: ID! }
+
+type CreateArgyleUserPayload {
+  success: Boolean!
+  errors: [MedicaidEeError!]!
+}
+type GetPayrollLinkTokenPayload {
+  linkToken: String
+  errors: [MedicaidEeError!]!
+}
+type RequestIncomeVerificationPayload {
+  success: Boolean!
+  errors: [MedicaidEeError!]!
+}
+type GetBankingConnectUrlPayload {
+  connectUrl: String
+  errors: [MedicaidEeError!]!
+}
+type RequestAssetVerificationPayload {
+  success: Boolean!
+  errors: [MedicaidEeError!]!
+}
+
+# Eligibility notice
+enum EligibilityNoticeErrorCode { NOT_FOUND STORAGE_FAILED INTERNAL_ERROR }
+
+type EligibilityNoticeError {
+  code: EligibilityNoticeErrorCode!
+  message: String!
+}
+
+type EligibilityNoticePayload {
+  noticeUrl: String
+  documentId: ID
+  errors: [EligibilityNoticeError!]!
+}
+
+# Audit log
+enum AuditOutcome { success failure }
+
+input AuditLogFilter {
+  """Inclusive UTC start. Required."""
+  startDate: DateTime!
+  """Exclusive UTC end. Required."""
+  endDate: DateTime!
+  eventType: String
+  actorId: String
+  action: String
+  resourceType: String
+  resourceId: String
+  outcome: AuditOutcome
+  serviceId: String
+}
+
+type AuditLogEntry {
+  id: ID!
+  timestamp: DateTime!
+  serviceId: String!
+  eventType: String!
+  actorId: String!
+  customerId: ID!
+  action: String!
+  resourceType: String!
+  resourceId: String!
+  outcome: AuditOutcome!
+  traceId: String
+  metadata: JSON
+}
+
+type AuditLogPage {
+  entries: [AuditLogEntry!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+}
+
+# ── document-service ─────────────────────────────────────────────────────────────
+
+enum DocumentFileType { PDF IMAGE SPREADSHEET CSV WORD_DOC OTHER }
+enum DocumentPurpose {
+  VERIFICATION_CERTIFICATE
+  INCOME_PROOF
+  ID_VERIFICATION
+  ELIGIBILITY_DOCUMENT
+  ELIGIBILITY_NOTICE
+  RENEWAL_FORM
+  APPEAL_DOCUMENT
+  OTHER
+  MESSAGE_ATTACHMENT
+}
+enum DocumentSensitivityLevel { STANDARD CONFIDENTIAL RESTRICTED }
+enum DocumentRetentionPolicy { STANDARD_1_YEAR HIPAA_6_YEAR HIPAA_7_YEAR LEGAL_HOLD }
+enum DocumentProgram {
+  MEDICAID_EE
+  MEDICAID_CEV
+  SUN_BUCKS
+  SNAP
+  ALIGN
+  COMMUNITY_ENGAGEMENT
+  """Legacy value still sent by older resident builds."""
+  IOWA_MEDICAID_EE
+  MISSOURI_SUN_BUCKS
+}
+enum DocumentExtractionCategory {
+  APPLICATION_FORM
+  INCOME_PAYSTUB
+  INCOME_W2
+  INCOME_1099
+  INCOME_BENEFIT_LETTER
+  IDENTITY_PHOTO_ID
+  IDENTITY_PASSPORT
+  ADDRESS_PROOF
+  BANK_STATEMENT
+  ENROLLMENT
+}
+
+enum DocumentErrorCode {
+  UNAUTHENTICATED
+  RATE_LIMITED
+  BAD_USER_INPUT
+  NOT_FOUND
+  FORBIDDEN
+  VALIDATION_ERROR
+  UNIQUE_CONSTRAINT
+  CONFIGURATION_ERROR
+  SCAN_NOT_COMPLETE
+  SCAN_FAILED
+  COPY_FAILED
+  PDF_GENERATION_FAILED
+  STORAGE_FAILED
+  PERSISTENCE_FAILED
+  DELETE_FAILED
+  CHECK_UNAVAILABLE
+  CHECK_FAILED
+}
+
+type DocumentError {
+  code: DocumentErrorCode!
+  message: String!
+  field: String
+}
+
+input CreateDocumentInput {
+  fileName: String!
+  mimeType: String!
+  fileType: DocumentFileType!
+  documentPurpose: DocumentPurpose!
+  sensitivityLevel: DocumentSensitivityLevel!
+  retentionPolicy: DocumentRetentionPolicy!
+  sizeBytes: Int!
+  program: DocumentProgram!
+  programId: String
+}
+
+type CreateDocumentPayload {
+  documentId: ID
+  uploadUrl: String
+  s3Key: String
+  expiresAt: DateTime
+  errors: [DocumentError!]!
+}
+
+input ConfirmDocumentUploadInput {
+  documentId: ID!
+  sizeBytes: Int!
+  checksumSha256: String!
+}
+
+type ConfirmDocumentUploadPayload {
+  documentId: ID
+  errors: [DocumentError!]!
+}
+
+input ExtractDocumentFieldsInput {
+  fileDataUrl: String!
+  category: DocumentExtractionCategory!
+}
+
+type ExtractedApplicationFormFields {
+  firstName: String
+  lastName: String
+  middleName: String
+  dateOfBirth: String
+  ssn: String
+  street: String
+  apt: String
+  city: String
+  state: String
+  zip: String
+  phone: String
+  email: String
+}
+
+type ExtractedIncomeFields {
+  employerName: String
+  employeeName: String
+  grossMonthlyIncome: Float
+  netMonthlyIncome: Float
+  payPeriod: String
+  employerStreet: String
+  employerCity: String
+  employerState: String
+  employerZip: String
+}
+
+type ExtractedAddressFields {
+  street: String
+  apt: String
+  city: String
+  state: String
+  zip: String
+}
+
+type ExtractedDocumentFields {
+  applicationForm: ExtractedApplicationFormFields
+  income: ExtractedIncomeFields
+  address: ExtractedAddressFields
+  confidence: Float
+  fullApplicationJson: String
+}
+
+type ExtractDocumentFieldsPayload {
+  fields: ExtractedDocumentFields
+  errors: [DocumentError!]!
+}
+
+input RequestDraftUploadUrlInput {
+  draftId: ID!
+  sectionKey: String!
+  documentCategory: String!
+  mimeType: String!
+  program: DocumentProgram!
+}
+
+type RequestDraftUploadUrlPayload {
+  uploadUrl: String
+  uploadFields: String
+  s3Key: String
+  expiresAt: DateTime
+  errors: [DocumentError!]!
+}
+
+# ── Verify Assist / Case Assist (demo additions) ──────────────────────────────────
+
+type IdentityVerification {
+  id: ID!
+  """Always CLEAR."""
+  provider: String!
+  """awaiting_user | in_progress | success | failed | expired"""
+  status: String!
+  """mock | sandbox"""
+  mode: String!
+  subjectName: String
+  createdAt: String!
+  completedAt: String
+  checks: [VerificationCheck!]!
+  traits: IdentityTraits
+  determination: CoverageDetermination
+  """ended_submit_proof | confirm_enrolled | null"""
+  resolution: String
+  """Staff-only; null for residents."""
+  flag: VerifyAssistFlag
+}
+
+type VerificationCheck {
+  name: String!
+  status: String!
+}
+
+type IdentityTraits {
+  document: DocumentTraits
+  phone: String
+  ssnLast4: String
+}
+
+type DocumentTraits {
+  first_name: String
+  middle_name: String
+  last_name: String
+  date_of_birth: String
+  address_line1: String
+  address_line2: String
+  city: String
+  state: String
+  postal_code: String
+  document_type: String
+  issuing_state: String
+  document_number_last4: String
+  expiration_date: String
+  gender: String
+}
+
+type CoverageDetermination {
+  """issue_found | clear"""
+  result: String!
+  duplicate_enrollment: Boolean!
+  payer_state: String
+  payer_state_name: String
+  """Staff-only (null for residents)."""
+  coverage: HealthInsuranceTraits
+}
+
+type HealthInsuranceTraits {
+  payer_id: String
+  payer_name: String
+  plan_status: String
+  insurance_member_id: String
+  policy_holder_first_name: String
+  policy_holder_last_name: String
+  coverage_start_date: String
+}
+
+type VerifyAssistFlag {
+  id: ID!
+  type: String!
+  status: String!
+  assignee: String
+  dispositionReason: String
+  details: JSON
+  notes: [FlagNote!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type FlagNote {
+  id: ID!
+  author: String!
+  body: String!
+  createdAt: String!
+}
+
+type CaseAssistResult {
+  recommendations: [CaseAssistRecommendation!]!
+  narrative: String
+  """claude | template"""
+  narrativeSource: String!
+  generatedAt: String!
+}
+
+type CaseAssistRecommendation {
+  id: ID!
+  """guidance | draft_task | draft_notice"""
+  type: String!
+  """1 act now, 2 soon, 3 fyi"""
+  priority: Int!
+  """critical | warning | info"""
+  severity: String!
+  """verify_assist | rules | intake"""
+  source: String!
+  title: String!
+  body: String!
+  rationale: CaseAssistRationale!
+  suggestedActions: [String!]!
+}
+
+type CaseAssistRationale {
+  summary: String!
+  citedFieldPaths: [String!]!
+}
+
+input UpdateVerifyAssistFlagInput {
+  flagId: ID!
+  status: String
+  dispositionReason: String
+  note: String
+  assignee: String
+}
+
+type PayloadError {
+  code: String!
+  message: String!
+  field: String
+}
+
+type UpdateVerifyAssistFlagPayload {
+  flag: VerifyAssistFlag
+  errors: [PayloadError!]!
+}
+
+# ── session helpers (resident-app GraphQL auth shapes, kept for operation parity) ───
+
+type MeUser {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  status: String!
+  customerId: ID
+  role: String!
+}
+
+type ResidentUser {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  customerId: ID!
+  status: String!
+  personId: ID
+}
+
+type ResidentAuthError {
+  code: String!
+  message: String!
+}
+
+input LoginResidentInput {
+  email: String!
+  password: String!
+}
+
+input CreateResidentAccountInput {
+  email: String!
+  password: String!
+  firstName: String!
+  lastName: String!
+}
+
+type ResidentAuthPayload {
+  resident: ResidentUser
+  expiresIn: Int
+  errors: [ResidentAuthError!]!
+}
+
+type LogoutResidentPayload {
+  success: Boolean!
+  errors: [ResidentAuthError!]!
+}
+
+type RefreshTokenPayload {
+  expiresIn: Int
+  errors: [ResidentAuthError!]!
+}
+
+# ── roots ─────────────────────────────────────────────────────────────────────────
+
+type Query {
+  me: MeUser
+  residentMe: ResidentUser
+  person(personId: ID!): Person
+  household(id: ID!, customerId: ID!): Household
+  householdList(customerId: ID!, pagination: PaginationInput): HouseholdConnection!
+  medicaidEeCase(id: ID!): MedicaidEeCase
+  medicaidEeCases(filter: MedicaidEeCaseFilter, pagination: PaginationInput): MedicaidEeCaseConnection!
+  medicaidAuditLog(filter: AuditLogFilter!, pagination: PaginationInput): AuditLogPage!
+  eligibilityNotice(caseId: ID!): EligibilityNoticePayload!
+}
+
+type Mutation {
+  createPerson(input: CreatePersonInput!): CreatePersonPayload!
+  updatePerson(input: UpdatePersonInput!): UpdatePersonPayload!
+
+  createHousehold(input: CreateHouseholdInput!): CreateHouseholdPayload!
+  addHouseholdMember(input: AddHouseholdMemberInput!): AddHouseholdMemberPayload!
+  removeHouseholdMember(input: RemoveHouseholdMemberInput!): RemoveHouseholdMemberPayload!
+
+  createMedicaidEeCase(input: CreateMedicaidEeCaseInput!): CreateMedicaidEeCasePayload!
+  queueForReviewMedicaidEeCase(input: CaseTransitionInput!): CaseTransitionPayload!
+  approveMedicaidEeCase(input: CaseTransitionInput!): CaseTransitionPayload!
+  denyMedicaidEeCase(input: CaseTransitionWithReasonInput!): CaseTransitionPayload!
+  cancelMedicaidEeCase(input: CaseTransitionWithReasonInput!): CaseTransitionPayload!
+  issueMedicaidEeCaseRfi(input: IssueMedicaidEeCaseRfiInput!): CaseTransitionPayload!
+  resolveMedicaidEeCaseRfi(input: ResolveMedicaidEeCaseRfiInput!): CaseTransitionPayload!
+
+  createArgyleUser(input: CreateArgyleUserInput!): CreateArgyleUserPayload!
+  getPayrollLinkToken(input: GetPayrollLinkTokenInput!): GetPayrollLinkTokenPayload!
+  requestIncomeVerification(input: RequestIncomeVerificationInput!): RequestIncomeVerificationPayload!
+  getArgyleBankingConnectUrl(input: GetBankingConnectUrlInput!): GetBankingConnectUrlPayload!
+  requestAssetVerification(input: RequestAssetVerificationInput!): RequestAssetVerificationPayload!
+
+  createDocument(input: CreateDocumentInput!): CreateDocumentPayload!
+  confirmDocumentUpload(input: ConfirmDocumentUploadInput!): ConfirmDocumentUploadPayload!
+  extractDocumentFields(input: ExtractDocumentFieldsInput!): ExtractDocumentFieldsPayload!
+  requestDraftUploadUrl(input: RequestDraftUploadUrlInput!): RequestDraftUploadUrlPayload!
+
+  """Caseworker works the out-of-state Medicaid flag from the Case Assist panel."""
+  updateVerifyAssistFlag(input: UpdateVerifyAssistFlagInput!): UpdateVerifyAssistFlagPayload!
+
+  # Resident GraphQL auth (the ported resident app uses the identity REST; these
+  # exist so every document in apps/resident/src/lib/operations.ts validates).
+  loginResident(input: LoginResidentInput!): ResidentAuthPayload!
+  createResidentAccount(input: CreateResidentAccountInput!): ResidentAuthPayload!
+  logoutResident: LogoutResidentPayload!
+  refreshResidentToken: RefreshTokenPayload!
+  refreshToken: RefreshTokenPayload!
+}

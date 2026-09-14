@@ -1,0 +1,47 @@
+@layer civic.components {
+  [data-slot='confirmation-modal-items'] {
+    border-radius: var(--civic-radius-xl);
+    border: 1px solid var(--civic-border-subtle);
+    background: color-mix(in srgb, var(--civic-bg-component) 30%, transparent);
+    padding: 1rem;
+  }
+
+  [data-slot='confirmation-modal-list'] {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    font-size: var(--civic-text-sm);
+  }
+
+  [data-slot='confirmation-modal-term'] {
+    font-weight: 500;
+    color: var(--civic-text-secondary);
+    white-space: nowrap;
+  }
+
+  [data-slot='confirmation-modal-detail'] {
+    color: var(--civic-text-primary);
+  }
+
+  [data-slot='confirmation-modal-loading'] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  [data-slot='confirmation-modal-spinner'] {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: var(--civic-radius-full);
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    animation: spin 0.6s linear infinite;
+  }
+} /* end @layer civic.components */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

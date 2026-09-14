@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" width="200" height="48" role="img" aria-label="CIVIC">
+  
+  <g>
+    <rect class="mark" x="0" y="8" width="32" height="32" rx="8"></rect>
+    <path d="M8 24 L14 18 L14 22 L24 22 L24 26 L14 26 L14 30 Z" fill="white"></path>
+  </g>
+  <text class="word" x="44" y="32">CIVIC</text>
+</svg>

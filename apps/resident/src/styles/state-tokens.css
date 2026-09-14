@@ -1,0 +1,74 @@
+/* State Medicaid — palette v2.
+   Deep teal primary + olive accent. Cooler neutral bg.
+   --state-primary  is the interactive teal (AA 6.4:1 on white).
+   --state-olive    is the secondary accent — use on surfaces and dots,
+                   NOT for body text against white (contrast ~3.6:1).
+   --state-olive-dark is text-safe (AA 4.8:1 on white). */
+
+@font-face {
+  font-family: 'Work Sans';
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src:
+    local('Work Sans'),
+    url('https://fonts.gstatic.com/s/worksans/v19/QGY_z_wNahGAdqQ43RhVcIgYT2Xz5u32K0nXNigDp6_cOyA.woff2')
+      format('woff2');
+}
+
+:root {
+  /* Brand — deep teal */
+  --state-primary: #00647e;
+  --state-primary-dark: #004a5e;
+  --state-primary-05: rgba(0, 100, 126, 0.05);
+  --state-primary-10: rgba(0, 100, 126, 0.1);
+  --state-primary-15: rgba(0, 100, 126, 0.18);
+  --state-accent: #00647e; /* alias kept for legacy refs */
+  --state-accent-light: #e8f5f7; /* pale teal surface */
+
+  /* Olive secondary accent — state-seal warmth */
+  --state-olive: #6b8a1a;
+  --state-olive-dark: #506710; /* text-safe on white */
+  --state-olive-light: #f3f7e3;
+  --state-olive-10: rgba(107, 138, 26, 0.12);
+
+  /* Required-field asterisk */
+  --state-gold: #9c6c00;
+
+  /* Neutrals — cool gray (per shadcn-style spec) */
+  --state-bg: #f0f2f5;
+  --state-surface: #ffffff;
+  --state-sidebar-bg: #f7f9fa;
+  --state-muted: #f0f2f5;
+  --state-secondary: #e8eaed;
+  --state-input-bg: #f9fafb;
+  --state-border: #d1d5db;
+  --state-border-strong: #9ca3af;
+
+  /* Text */
+  --state-text: #1a2e3a; /* deep slate-teal, ~14:1 on white */
+  --state-text-muted: #6b7280; /* gray-500, ~5.7:1 on white */
+  --state-text-subtle: #9ca3af; /* placeholder only */
+
+  /* Status */
+  --state-green: #218358;
+  --state-green-bg: #e6f6eb;
+  --state-green-bg-soft: #f0faf4;
+  --state-amber: #9c6c00;
+  --state-amber-bg: #fff4d5;
+  --state-amber-bg-soft: #fffbeb;
+  --state-red: #dc2626;
+  --state-red-bg: #fee2e2;
+  --state-red-bg-soft: #fef2f2;
+  --state-blue-bg-soft: #e8f5f7;
+
+  /* Radius (matches --radius: 0.625rem = 10px) */
+  --state-r-sm: 8px;
+  --state-r-md: 10px;
+  --state-r-lg: 12px;
+  --state-r-xl: 16px;
+
+  /* Shadows — tinted with primary teal for cohesion */
+  --state-shadow-sm: 0 1px 2px rgba(0, 74, 94, 0.05);
+  --state-shadow-md: 0 4px 12px -2px rgba(0, 74, 94, 0.08), 0 0 0 1px rgba(0, 74, 94, 0.03);
+}

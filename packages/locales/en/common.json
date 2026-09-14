@@ -1,0 +1,43 @@
+{
+  "buttons": {
+    "continue": "Continue",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "edit": "Edit",
+    "remove": "Remove",
+    "saveAndContinue": "Save & Continue",
+    "startOver": "Remove / Start over",
+    "addAnother": "Add another",
+    "submit": "Submit",
+    "goBack": "Go Back"
+  },
+  "labels": {
+    "required": "Required",
+    "optional": "Optional",
+    "saving": "Saving\u2026",
+    "loading": "Loading\u2026",
+    "saved": "Saved",
+    "suggested": "Suggested",
+    "uploading": "Uploading...",
+    "verified": "Verified",
+    "pending": "Pending",
+    "needsDoc": "Needs doc",
+    "comingSoon": "COMING SOON",
+    "uploaded": "Uploaded",
+    "connected": "Connected"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "unableToSave": "Unable to save. Please try again.",
+    "networkError": "A network error occurred. Please check your connection and try again."
+  },
+  "currency": {
+    "symbol": "$",
+    "perMonth": "/mo",
+    "perMonthFull": "/month"
+  }
+}

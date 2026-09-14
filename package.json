@@ -1,0 +1,24 @@
+{
+  "name": "ht-cms-demo-clear",
+  "version": "0.1.0",
+  "private": true,
+  "description": "State-X Eligibility & Enrollment demo with CLEAR Verify Assist identity verification and Case Assist caseworker guidance. Single Render web service.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,resident,admin,verify -c blue,green,magenta,cyan \"npm run dev -w @demo/server\" \"npm run dev -w @demo/resident\" \"npm run dev -w @demo/admin\" \"npm run dev -w @demo/verify\"",
+    "build": "npm run build -w @demo/server && npm run build -w @demo/resident && npm run build -w @demo/admin && npm run build -w @demo/verify",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "seed": "npm run seed -w @demo/server",
+    "start": "npm run start -w @demo/server"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

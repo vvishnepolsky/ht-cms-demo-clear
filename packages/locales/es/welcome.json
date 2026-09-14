@@ -1,0 +1,174 @@
+{
+  "welcome": {
+    "header": {
+      "agency": "State-X HHS",
+      "agencyFull": "Salud y Servicios Humanos"
+    },
+    "hero": {
+      "title": "Solicitar Beneficios",
+      "subtitle": "Una solicitud para Medicaid, HAWK-I, Asistencia Alimentaria, FIP y más."
+    },
+    "availablePrograms": "Programas disponibles:",
+    "programs": {
+      "medicaid": "Medicaid",
+      "medicaidDesc": "Cobertura de salud",
+      "hawki": "HAWK-I",
+      "hawkiDesc": "Seguro de salud para niños",
+      "foodAssistance": "Asistencia Alimentaria",
+      "foodAssistanceDesc": "Beneficios SNAP",
+      "fip": "FIP",
+      "fipDesc": "Inversión familiar"
+    },
+    "startApplication": "Iniciar Solicitud",
+    "checkStatus": "Verificar Estado de Solicitud",
+    "screen": {
+      "eyebrow": "HHS Estatal · Cobertura de Salud",
+      "title": "Solicitar Medicaid Estatal",
+      "desc": "Cobertura de salud para usted y su familia. La mayoría de las personas terminan en 20–25 minutos. Verificaremos para qué programas puede calificar y le guiaremos por los próximos pasos.",
+      "tile1Title": "Quiénes están cubiertos",
+      "tile1Desc": "Niños, adultos, padres y residentes embarazadas en una sola solicitud.",
+      "tile2Title": "Privado y seguro",
+      "tile2Desc": "Su información está cifrada y se comparte solo con el HHS Estatal.",
+      "tile3Title": "Se guarda mientras avanza",
+      "tile3Desc": "Salga y retome donde lo dejó — guardado en su dispositivo.",
+      "alertTitle": "Qué reunir antes de comenzar",
+      "alertDesc": "Fecha de nacimiento y Número de Seguro Social para todos los que soliciten · talones de pago más recientes o declaración de impuestos reciente · detalles del seguro de salud actual si alguien en su hogar tiene cobertura.",
+      "getStarted": "Comenzar",
+      "continueExisting": "Continuar una solicitud existente",
+      "seeSample": "Ver un ejemplo completo",
+      "fineprint": "Al continuar, usted acepta que la información que proporcione es verdadera y completa según su mejor conocimiento. Proporcionar intencionalmente información falsa puede ser un delito federal."
+    },
+    "legal": {
+      "toggle": "Avisos de No Discriminación y Acceso al Idioma",
+      "nonDiscrimination": "State-X HHS no discrimina por raza, color, origen nacional, sexo, edad o discapacidad. Servicios de asistencia de idiomas gratuitos disponibles.",
+      "contact": "Contacto: 1-877-347-5678 | TTY: 1-800-735-2942"
+    }
+  },
+  "login": {
+    "title": "Comenzar",
+    "subtitle": "Cree una cuenta para guardar su progreso, o continúe como invitado.",
+    "mobileId": {
+      "title": "Ingresar con State-X Mobile ID",
+      "comingSoon": "PRÓXIMAMENTE",
+      "description": "Verifique su identidad instantáneamente con su ID digital de State-X"
+    },
+    "signIn": {
+      "title": "Iniciar Sesión",
+      "description": "Use su correo electrónico y contraseña"
+    },
+    "createAccount": {
+      "title": "Crear una Cuenta",
+      "description": "Guarde su progreso y verifique el estado de su solicitud en cualquier momento"
+    },
+    "guest": {
+      "title": "Continuar como Invitado",
+      "description": "No necesita cuenta — no podrá guardar su progreso"
+    },
+    "whyCreateAccount": {
+      "title": "¿Por qué crear una cuenta?",
+      "items": [
+        "Guarde y reanude su solicitud en cualquier momento",
+        "Verifique el estado de su solicitud en línea",
+        "Administre renovaciones y actualizaciones"
+      ]
+    }
+  },
+  "signIn": {
+    "back": "Atrás",
+    "title": "Iniciar Sesión",
+    "subtitle": "Ingrese su correo electrónico y contraseña para continuar.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "usted@ejemplo.com",
+    "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "Contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "submitButton": "Iniciar Sesión",
+    "signingIn": "Iniciando sesión…",
+    "noAccount": "¿No tiene una cuenta?",
+    "createOne": "Crear una",
+    "validation": {
+      "emailRequired": "El correo electrónico es requerido",
+      "emailInvalid": "Por favor ingrese una dirección de correo electrónico válida",
+      "passwordRequired": "La contraseña es requerida"
+    },
+    "errors": {
+      "unableToSignIn": "No se pudo iniciar sesión. Por favor intente de nuevo.",
+      "invalidCredentials": "Correo electrónico o contraseña incorrectos."
+    }
+  },
+  "createAccount": {
+    "back": "Atrás",
+    "title": "Crear una Cuenta",
+    "subtitle": "Guarde su progreso y verifique su estado en cualquier momento.",
+    "firstName": "Nombre",
+    "firstNamePlaceholder": "Nombre",
+    "lastName": "Apellido",
+    "lastNamePlaceholder": "Apellido",
+    "email": "Correo electrónico",
+    "emailPlaceholder": "usted@ejemplo.com",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Crear una contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "submit": "Crear Cuenta",
+    "creating": "Creando cuenta…",
+    "alreadyHaveAccount": "¿Ya tiene una cuenta?",
+    "signIn": "Iniciar sesión",
+    "validation": {
+      "firstNameRequired": "El nombre es requerido",
+      "lastNameRequired": "El apellido es requerido",
+      "emailRequired": "El correo electrónico es requerido",
+      "emailInvalid": "Por favor ingrese una dirección de correo electrónico válida",
+      "passwordRequired": "La contraseña es requerida",
+      "passwordMinLength": "La contraseña debe tener al menos 12 caracteres",
+      "passwordNeedsLetter": "La contraseña debe contener al menos una letra",
+      "passwordNeedsDigit": "La contraseña debe contener al menos un número"
+    },
+    "errors": {
+      "generic": "No se pudo crear la cuenta. Por favor intente de nuevo.",
+      "emailExists": "Ya existe una cuenta con este correo electrónico."
+    },
+    "passwordRequirements": {
+      "minLength": "Al menos 12 caracteres",
+      "letter": "Al menos una letra (a–z)",
+      "digit": "Al menos un número (0–9)"
+    }
+  },
+  "programSelection": {
+    "title": "¿Para qué desea solicitar?",
+    "subtitle": "Seleccione todas las que apliquen. Puede solicitar más de un programa a la vez.",
+    "programs": {
+      "medicaid": {
+        "name": "State-X Medicaid",
+        "desc": "Cobertura de salud para adultos y familias con ingresos bajos"
+      },
+      "hawki": {
+        "name": "HAWK-I",
+        "desc": "Seguro de salud para niños menores de 19 años"
+      },
+      "snap": {
+        "name": "Asistencia Alimentaria (SNAP)",
+        "desc": "Beneficios mensuales para comprar alimentos"
+      },
+      "fip": {
+        "name": "Programa de Inversión Familiar",
+        "desc": "Asistencia en efectivo para familias con hijos"
+      },
+      "childcare": {
+        "name": "Asistencia para Cuidado Infantil",
+        "desc": "Ayuda para pagar el cuidado infantil mientras trabaja o estudia"
+      },
+      "familyPlanning": {
+        "name": "Servicios de Planificación Familiar",
+        "desc": "Cobertura de servicios de salud reproductiva"
+      },
+      "rma": {
+        "name": "Asistencia Médica para Refugiados",
+        "desc": "Cobertura de salud para refugiados elegibles"
+      }
+    },
+    "snapNotice": "Ya que seleccionó Asistencia Alimentaria, le haremos algunas preguntas rápidas para verificar si califica para un procesamiento más rápido.",
+    "continue": "Continuar"
+  }
+}

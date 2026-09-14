@@ -1,0 +1,49 @@
+# Render Blueprint — one web service serving the State-X E&E demo:
+#   resident wizard at /, Verify Assist hosted flow at /verify, caseworker admin at /admin,
+#   REST at /api and GraphQL at /graphql, SQLite on a persistent disk.
+#
+# First deploy is self-contained (mock CLEAR, template Case Assist narratives).
+# Real services are enabled by setting secrets in the Render dashboard:
+#   MOCK_CLEAR=false + CLEAR_API_KEY + CLEAR_PROJECT_ID   → real CLEAR sandbox
+#   DEMO_ENRICHMENT=true                                  → deterministic SC Medicaid storyline on sandbox runs
+#   ANTHROPIC_API_KEY                                     → Claude-written Case Assist narratives
+# Register <service-url>/verify/flow as the CLEAR project's redirect URL.
+services:
+  - type: web
+    name: ht-cms-demo-clear
+    runtime: node
+    plan: starter
+    branch: main
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: ht-cms-demo-clear-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_STATIC
+        value: "true"
+      - key: DATABASE_PATH
+        value: /var/data/demo.db
+      - key: VERIFY_ASSIST_TENANT_STATE
+        value: SX
+      # ── CLEAR ── sandbox mode with the deterministic demo overlay (user decision 2026-09-14).
+      # Until CLEAR_API_KEY / CLEAR_PROJECT_ID are set in the dashboard, the server
+      # falls back to mock mode automatically and logs a warning.
+      - key: MOCK_CLEAR
+        value: "false"
+      - key: DEMO_ENRICHMENT
+        value: "true"
+      - key: CLEAR_API_KEY
+        sync: false
+      - key: CLEAR_PROJECT_ID
+        sync: false
+      # ── Case Assist narrative ── optional
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CASE_ASSIST_MODEL
+        value: claude-opus-5

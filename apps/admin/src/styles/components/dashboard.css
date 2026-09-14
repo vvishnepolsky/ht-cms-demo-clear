@@ -1,0 +1,206 @@
+@layer civic.components {
+  /* ── Page container ────────────────────────────────────────────────────── */
+  /* Matches storyboard's Dashboard wrapper: max-w-[1280px] mx-auto px-1 py-5.
+     `margin-inline: auto` centers the page inside admin-shell-content so the
+     content reads as a centered column rather than left-anchored against the
+     sidebar. Horizontal padding is tight (4px) because the inner cards carry
+     their own padding. */
+  .ht-dashboard {
+    padding: 1.25rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 1280px;
+    margin-inline: auto;
+  }
+
+  /* ── Page header ───────────────────────────────────────────────────────── */
+  .ht-dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .ht-dashboard-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--civic-text-primary);
+    margin: 0 0 0.375rem 0;
+  }
+
+  .ht-dashboard-subtitle {
+    font-size: 0.9375rem;
+    color: var(--civic-text-secondary);
+    margin: 0;
+    max-width: 36rem;
+    line-height: 1.45;
+  }
+
+  .ht-dashboard-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ── KPI tiles row ─────────────────────────────────────────────────────── */
+  .ht-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  @media (max-width: 1100px) {
+    .ht-kpi-row {
+      grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    }
+  }
+
+  .ht-kpi {
+    background: var(--civic-bg-card);
+    border: 1px solid var(--civic-border-subtle);
+    border-radius: 6px;
+    padding: 1.125rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: border-color 150ms;
+  }
+
+  /* Polish overrides moved to theme.css so they apply across every page
+     (dashboard, workspace ActionBar, modals, etc.) — see "Civic primitives
+     polish" there. */
+
+  .ht-kpi:hover {
+    border-color: var(--civic-border-default);
+  }
+
+  .ht-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .ht-kpi-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--civic-text-secondary);
+    line-height: 1.25;
+  }
+
+  .ht-kpi-icon {
+    color: var(--civic-text-secondary);
+    flex-shrink: 0;
+  }
+
+  .ht-kpi-value {
+    font-size: 2.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--civic-text-primary);
+  }
+
+  .ht-kpi[data-tone='warning'] .ht-kpi-value {
+    color: var(--civic-warning-text);
+  }
+  .ht-kpi[data-tone='warning'] .ht-kpi-icon {
+    color: var(--civic-warning-text);
+  }
+  .ht-kpi[data-tone='danger'] .ht-kpi-value {
+    color: var(--civic-destructive-text);
+  }
+  .ht-kpi[data-tone='danger'] .ht-kpi-icon {
+    color: var(--civic-destructive-text);
+  }
+  .ht-kpi[data-tone='success'] .ht-kpi-value {
+    color: var(--civic-success-text);
+  }
+  .ht-kpi[data-tone='success'] .ht-kpi-icon {
+    color: var(--civic-success-text);
+  }
+
+  /* Accent tone — indigo on the CMS demo theme. Storyboard uses this for
+     "Auto-Processed Today" so the success metric reads as a positive
+     informational signal (accent) rather than approval (green). */
+  .ht-kpi[data-tone='accent'] .ht-kpi-value {
+    color: var(--civic-accent-text);
+  }
+  .ht-kpi[data-tone='accent'] .ht-kpi-icon {
+    color: var(--civic-accent-text);
+  }
+
+  /* ── Tabs row ──────────────────────────────────────────────────────────── */
+  .ht-tab-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--civic-border-subtle);
+  }
+
+  .ht-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0.875rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--civic-text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition:
+      color 150ms,
+      border-color 150ms;
+  }
+
+  .ht-tab:hover {
+    color: var(--civic-text-primary);
+  }
+
+  .ht-tab[data-active] {
+    color: var(--civic-accent-solid, #3e63dd);
+    border-bottom-color: var(--civic-accent-solid, #3e63dd);
+  }
+
+  .ht-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.25rem;
+    padding: 0 0.4375rem;
+    border-radius: 999px;
+    background: var(--civic-bg-component);
+    color: var(--civic-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .ht-tab[data-active] .ht-tab-count {
+    background: color-mix(in srgb, var(--civic-accent-solid, #3e63dd) 12%, transparent);
+    color: var(--civic-accent-solid, #3e63dd);
+  }
+
+  /* ── Sidebar avatar pill ───────────────────────────────────────────────── */
+  [data-slot='admin-shell-user-pill'] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    background: var(--civic-bg-component);
+    color: var(--civic-text-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+}
