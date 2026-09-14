@@ -15,6 +15,7 @@ import { config, CUSTOMER_ID } from "../config.js";
 import { db, fromJson } from "../db.js";
 import { ensureCaseAssist, kickOffCaseAssist } from "../case-assist/index.js";
 import { checkPassed } from "../case-assist/rules.js";
+import { curateChecks, summarizeChecks } from "../clear/check-curation.js";
 import type { Determination as CoverageDetermination, SessionTraits, VerificationCheck } from "../clear/types.js";
 import { queryMedicaidAudit, type AuditLogFilter } from "../ee/audit.js";
 import {
@@ -128,7 +129,8 @@ function identityVerificationView(row: VerificationRow, staff: boolean) {
   const traits = fromJson<SessionTraits>(row.traits);
   const doc = traits?.document ?? null;
   const det = fromJson<CoverageDetermination>(row.determination);
-  const checks = fromJson<VerificationCheck[]>(row.checks) ?? [];
+  const curated = curateChecks(fromJson<VerificationCheck[]>(row.checks) ?? []);
+  const checks = curated.shown;
   const phone = traits?.phone?.number ?? null;
   const flagRow = staff ? primaryFlagForVerification(row.id) : undefined;
   return {
@@ -143,6 +145,7 @@ function identityVerificationView(row: VerificationRow, staff: boolean) {
       name: c.name,
       status: checkPassed(c) ? "success" : c.value === false ? "failed" : c.status,
     })),
+    checksSummary: summarizeChecks(curated),
     traits: traits
       ? {
           document: doc

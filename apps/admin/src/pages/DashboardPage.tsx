@@ -183,27 +183,21 @@ function FlagBadge({ flag }: { flag: string }) {
 
 /**
  * Verify Assist indicator — shield icon summarising the CLEAR identity
- * verification linked to the case: red when active out-of-state Medicaid
- * coverage was found (and the flag is still open), green when CLEAR verified
- * the identity cleanly, muted when the finding was resolved/dismissed.
+ * verification linked to the case: red while active out-of-state Medicaid
+ * coverage is an open finding, green ("CLEAR verified") once CLEAR verified the
+ * identity and any coverage finding has been resolved/dismissed.
  */
 function VerifyAssistCell({ iv }: { iv: IdentityVerificationListSummary | null | undefined }) {
   if (!iv) return <span className="text-xs text-muted-foreground">—</span>;
-  if (hasOutOfStateCoverage(iv)) {
-    const open = hasOpenOutOfStateFlag(iv);
+  // Red only while the finding still needs caseworker action; once the flag is
+  // resolved/dismissed the row reads as a plain CLEAR-verified identity.
+  if (hasOpenOutOfStateFlag(iv)) {
     return (
       <span
-        className={cn(
-          'inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap',
-          open ? 'text-red-700' : 'text-muted-foreground',
-        )}
-        title={
-          open
-            ? `Out-of-state Medicaid coverage (${iv.determination?.payer_state ?? '—'}) — flag ${iv.flag?.status ?? 'open'}`
-            : `Out-of-state coverage finding ${iv.flag?.status ?? 'closed'}`
-        }
+        className="inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap text-red-700"
+        title={`Out-of-state Medicaid coverage (${iv.determination?.payer_state ?? '—'}) — flag ${iv.flag?.status ?? 'open'}`}
         data-slot="verify-assist-cell"
-        data-state={open ? 'oos-open' : 'oos-closed'}
+        data-state="oos-open"
       >
         <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />
         Out-of-state coverage
@@ -211,10 +205,15 @@ function VerifyAssistCell({ iv }: { iv: IdentityVerificationListSummary | null |
     );
   }
   if (isIdentityVerified(iv)) {
+    const resolved = hasOutOfStateCoverage(iv);
     return (
       <span
         className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 whitespace-nowrap"
-        title="Identity verified by CLEAR"
+        title={
+          resolved
+            ? `Identity verified by CLEAR — out-of-state coverage finding ${iv.flag?.status ?? 'closed'}`
+            : 'Identity verified by CLEAR'
+        }
         data-slot="verify-assist-cell"
         data-state="verified"
       >

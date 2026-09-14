@@ -690,7 +690,10 @@ type IdentityVerification {
   subjectName: String
   createdAt: String!
   completedAt: String
+  """Curated identity-relevant CLEAR checks (see server clear/check-curation.ts); category headers, phone/device and NFC rows are folded into checksSummary."""
   checks: [VerificationCheck!]!
+  """e.g. "8 identity checks passed · 13 additional CLEAR checks passed · 3 not applicable"; null when no checks."""
+  checksSummary: String
   traits: IdentityTraits
   determination: CoverageDetermination
   """ended_submit_proof | confirm_enrolled | null"""

@@ -85,6 +85,13 @@ describe('buildAuditSummary', () => {
     expect(
       buildAuditSummary({ ...base, action: 'VERIFY_ASSIST_FLAG_UPDATED', metadata: { toStatus: 'dismissed' } }),
     ).toBe('Sarah Mitchell dismissed the Verify Assist flag');
+    expect(
+      buildAuditSummary({
+        ...base,
+        action: 'CASE_FLAG_UPDATED',
+        metadata: { flag: 'OOS-MCD', flagAction: 'removed', verifyAssistFlagStatus: 'resolved' },
+      }),
+    ).toBe('Sarah Mitchell cleared the OOS-MCD case flag — Verify Assist finding resolved');
     expect(buildAuditSummary({ ...base, action: 'VERIFY_ASSIST_FLAG_UPDATED', metadata: {} })).toBe(
       'Sarah Mitchell updated the Verify Assist flag',
     );

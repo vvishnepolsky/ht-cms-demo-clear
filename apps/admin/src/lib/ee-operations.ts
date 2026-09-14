@@ -218,6 +218,7 @@ export const GET_EE_CASE_QUERY: TypedDocumentNode<{ medicaidEeCase: EECase | nul
           name
           status
         }
+        checksSummary
         traits {
           phone
           ssnLast4

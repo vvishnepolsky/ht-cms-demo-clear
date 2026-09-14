@@ -509,7 +509,7 @@ const CASE_ASSIST_QUERY = `query CaseAssist($id: ID!) {
     id
     identityVerification {
       id provider status mode subjectName createdAt completedAt
-      checks { name status }
+      checks { name status } checksSummary
       traits { document { first_name last_name date_of_birth city state document_type issuing_state document_number_last4 } phone ssnLast4 }
       determination { result duplicate_enrollment payer_state payer_state_name coverage { payer_id payer_name plan_status insurance_member_id coverage_start_date } }
       resolution
@@ -535,10 +535,19 @@ let flagId;
   const ca = d.medicaidEeCase.caseAssist;
   const ids = ca.recommendations.map((x) => x.id);
   assert(ids[0] === "oos-medicaid", "oos-medicaid first", ids);
-  assert(ids.includes("identity-verified") && ids.includes("applicant-resolution") && ids.includes("income-unverified"), "expected recommendations", ids);
+  // The applicant's hosted-flow response is folded INTO the single oos-medicaid
+  // finding — no separate applicant-resolution recommendation any more.
+  assert(ids.includes("identity-verified") && ids.includes("income-unverified") && !ids.includes("applicant-resolution"), "expected recommendations", ids);
+  assert(ids.filter((x) => x === "oos-medicaid").length === 1, "oos finding stated once", ids);
   assert(ca.narrativeSource === "template" && typeof ca.narrative === "string", "template narrative", ca);
+  assert(/One open Verify Assist finding — active South Carolina Medicaid/.test(ca.narrative) && !/Issue RFI/.test(ca.narrative), "narrative is a status summary, not a restated recommendation", ca.narrative);
   const oos = ca.recommendations[0];
   assert(oos.title === "Active out-of-state Medicaid coverage detected (South Carolina)" && oos.suggestedActions.length === 3, "oos rec content", oos);
+  assert(/confirmed the South Carolina coverage is still active/.test(oos.body) && oos.rationale.citedFieldPaths.includes("identityVerification.resolution"), "applicant response merged into the oos finding", oos);
+  const idv = ca.recommendations.find((x) => x.id === "identity-verified");
+  assert(/\d+\/\d+ identity checks passed/.test(idv.body), "identity-verified counts curated checks", idv.body);
+  assert(Array.isArray(iv.checks) && iv.checks.length <= 9 && !iv.checks.some((c) => /phone|device|nfc/i.test(c.name)), "checks curated", iv.checks);
+  assert(typeof iv.checksSummary === "string" && /identity checks passed/.test(iv.checksSummary), "checksSummary", iv.checksSummary);
   log(`caseAssist (staff): recs=${JSON.stringify(ids)} narrativeSource=${ca.narrativeSource}`);
   console.log(`    narrative: ${ca.narrative}`);
 }
@@ -603,6 +612,26 @@ let flagId;
   const dres = noGqlErrors(res, "ResolveRfiEECase");
   assert(dres.resolveMedicaidEeCaseRfi.case?.flagReason === null && dres.resolveMedicaidEeCaseRfi.case.status === "IN_REVIEW", "rfi resolved", dres);
   log("queueForReview → issueRfi (RFI_ALREADY_PENDING on repeat) → resolveRfi ok");
+}
+
+// resolve the Verify Assist flag → the case's OOS-MCD chip / flagReason clear, the finding leaves Case Assist
+{
+  const r = await staff.gql(
+    `mutation UpdateFlag($input: UpdateVerifyAssistFlagInput!) { updateVerifyAssistFlag(input: $input) { flag { id status dispositionReason } errors { code message field } } }`,
+    { input: { flagId, status: "resolved", dispositionReason: "disenrollment_confirmed", note: "SCDHHS confirmed termination effective 08/31/2026." } },
+  );
+  const d = noGqlErrors(r, "updateVerifyAssistFlag resolved");
+  assert(d.updateVerifyAssistFlag.errors.length === 0 && d.updateVerifyAssistFlag.flag.status === "resolved", "flag resolved", d);
+  const c = noGqlErrors(await staff.gql(adminOps.GetEECase, { id: caseId }, "GetEECase"), "GetEECase after resolve").medicaidEeCase;
+  assert(!(c.intakeData.displayMeta.flags ?? []).includes("OOS-MCD") && c.flagReason === null, "OOS-MCD chip + flagReason cleared on the case", { flags: c.intakeData.displayMeta.flags, flagReason: c.flagReason });
+  const ca = noGqlErrors(await staff.gql(CASE_ASSIST_QUERY, { id: caseId }, "CaseAssist"), "CaseAssist after resolve").medicaidEeCase;
+  const ids = ca.caseAssist.recommendations.map((x) => x.id);
+  assert(!ids.includes("oos-medicaid") && !ids.includes("applicant-resolution"), "no out-of-state recommendation once resolved", ids);
+  assert(/finding was resolved on .* \(disenrollment confirmed by the other state\)/.test(ca.caseAssist.narrative), "narrative regenerated with the resolution", ca.caseAssist.narrative);
+  assert(ca.identityVerification.flag.status === "resolved", "flag still on record", ca.identityVerification.flag);
+  const rest = await staff.get(`/api/admin/verifications/${applicantVerification.id}`);
+  assert(rest.status === 200 && Array.isArray(rest.json.verification.checks) && rest.json.curatedChecks?.shown?.length <= 9, "staff REST keeps raw checks + curatedChecks", Object.keys(rest.json));
+  log(`flag resolved → OOS-MCD cleared, no oos recommendation; narrative: ${ca.caseAssist.narrative}`);
 }
 {
   // Argyle mocks (staff)

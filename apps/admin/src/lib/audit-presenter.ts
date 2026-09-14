@@ -23,7 +23,8 @@
  * allowlisted and must NEVER be read or rendered. The Verify Assist flag rows
  * (`VERIFY_ASSIST_FLAG_UPDATED`) add `noteAdded` (boolean) next to the existing
  * `fromStatus`/`toStatus` enums; their `assignee` (an email) and `flagId` are
- * NOT rendered. Free-form, operator-entered
+ * NOT rendered. `CASE_FLAG_UPDATED` adds `flag` (chip code), `flagAction`
+ * (added | removed) and `verifyAssistFlagStatus` — all closed enums. Free-form, operator-entered
  * values (`reason`, `noteToApplicant`, `resolution`) are NEVER read or rendered
  * either, even though `metadata` now flows to the client. Adding a new key to a
  * handler is a deliberate, reviewable act — keep free-form prose out.
@@ -334,6 +335,18 @@ function coreSentence(input: AuditSummaryInput, ctx: AuditSummaryContext): strin
 
     case 'CREATE_LINKED_CASE':
       return `${actor} created a linked case`;
+
+    // The case's OOS-MCD chip / flagReason following the Verify Assist flag.
+    // Metadata: flag (chip code), flagAction (added | removed), verifyAssistFlagStatus.
+    case 'CASE_FLAG_UPDATED': {
+      const chip = str(metadata, 'flag') ?? 'case flag';
+      const flagAction = str(metadata, 'flagAction');
+      const vaStatus = str(metadata, 'verifyAssistFlagStatus');
+      const because = vaStatus ? ` — Verify Assist finding ${vaStatus.replace(/_/g, ' ')}` : '';
+      if (flagAction === 'removed') return `${actor} cleared the ${chip} case flag${because}`;
+      if (flagAction === 'added') return `${actor} re-applied the ${chip} case flag${because}`;
+      return `${actor} updated the ${chip} case flag${because}`;
+    }
 
     // Verify Assist (CLEAR) out-of-state coverage flag worked from Case Assist.
     // Metadata: fromStatus/toStatus (open | in_review | resolved | dismissed),

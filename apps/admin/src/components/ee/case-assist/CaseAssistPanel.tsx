@@ -3,8 +3,9 @@
  *
  *   ┌ Case Assist ✦   Narrative by Claude · 2 hours ago ┐
  *   │ narrative paragraph                               │
- *   │ [Verify Assist flag card — status, actions, notes]│
- *   │ recommendation cards ordered by priority          │
+ *   │ [Out-of-state coverage card — ONE finding: status, │
+ *   │  evidence, suggested actions, flag controls, notes]│
+ *   │ other recommendation cards ordered by priority    │
  *   └───────────────────────────────────────────────────┘
  *
  * Data comes from `medicaidEeCase.caseAssist` (rule-based recommendations
@@ -21,7 +22,7 @@ import type { CaseAssistRecommendation, CaseAssistResult, EECase, IdentityVerifi
 import { hasOutOfStateCoverage } from '../../../types/ee';
 import { formatRelativeTime } from '../../../lib/format-relative-time';
 import { RecommendationCard } from './RecommendationCard';
-import { VerifyAssistFlagCard } from './VerifyAssistFlagCard';
+import { OutOfStateCoverageCard } from './OutOfStateCoverageCard';
 
 /** Recommendation id the server uses for the out-of-state Medicaid finding. */
 export const OOS_MEDICAID_RECOMMENDATION_ID = 'oos-medicaid' as const;
@@ -64,7 +65,11 @@ export function CaseAssistPanel({
   const recommendations = [...(caseAssist?.recommendations ?? [])].sort(
     (a, b) => a.priority - b.priority || severityRank(a.severity) - severityRank(b.severity),
   );
-  const oos = hasOutOfStateCoverage(iv);
+  // The out-of-state finding is stated exactly once, by OutOfStateCoverageCard
+  // (which also owns the flag controls); it is pulled out of the generic list.
+  const oos = hasOutOfStateCoverage(iv) || !!iv?.flag;
+  const oosRecommendation = recommendations.find((r) => r.id === OOS_MEDICAID_RECOMMENDATION_ID) ?? null;
+  const otherRecommendations = recommendations.filter((r) => r.id !== OOS_MEDICAID_RECOMMENDATION_ID);
 
   function canPerform(rec: CaseAssistRecommendation, action: string): boolean {
     if (rec.id === OOS_MEDICAID_RECOMMENDATION_ID && isRfiAction(action)) return true;
@@ -132,11 +137,15 @@ export function CaseAssistPanel({
       )}
 
       <div className="space-y-2.5">
-        {/* Flag card sits above the recommendations when the finding exists */}
-        {oos && iv?.flag && (
-          <VerifyAssistFlagCard
+        {/* The out-of-state finding — one card, first, whatever its state */}
+        {oos && iv && (
+          <OutOfStateCoverageCard
+            recommendation={oosRecommendation}
             flag={iv.flag}
             determination={iv.determination}
+            resolution={iv.resolution}
+            canPerform={canPerform}
+            onAction={handleAction}
             actorEmail={actorEmail}
             onUpdated={onFlagUpdated}
           />
@@ -148,7 +157,7 @@ export function CaseAssistPanel({
           </p>
         )}
 
-        {recommendations.map((rec) => (
+        {otherRecommendations.map((rec) => (
           <RecommendationCard
             key={rec.id}
             recommendation={rec}

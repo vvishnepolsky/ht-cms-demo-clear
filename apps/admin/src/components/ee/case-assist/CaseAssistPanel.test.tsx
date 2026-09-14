@@ -4,9 +4,11 @@
  *
  *   1. Header shows the narrative source + the narrative paragraph.
  *   2. Recommendations render ordered by priority with severity + cited paths.
- *   3. The oos-medicaid RFI action opens the RFI pre-filled with the
- *      disenrollment-proof item; the flag card shows status + notes.
+ *   3. The out-of-state finding is stated ONCE, by OutOfStateCoverageCard: the
+ *      RFI action opens the RFI pre-filled with the disenrollment-proof item;
+ *      the card carries the flag status, evidence, controls and (collapsed) notes.
  *   4. "Mark flag in review" fires updateVerifyAssistFlag and calls onFlagUpdated.
+ *   5. A resolved flag collapses the card to one muted summary line.
  */
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -156,15 +158,28 @@ describe('CaseAssistPanel', () => {
     expect(screen.getByText(/Rule-based/)).toBeDefined();
   });
 
-  it('orders recommendations by priority and shows severity + cited field paths', () => {
+  it('states the out-of-state finding exactly once, first, and lists other recommendations after it', () => {
     renderPanel();
     const articles = screen.getAllByRole('article');
     expect(articles).toHaveLength(2);
-    expect(within(articles[0]!).getByText(/Active out-of-state Medicaid coverage detected/)).toBeDefined();
+    expect(articles[0]!.getAttribute('data-slot')).toBe('out-of-state-coverage-card');
+    expect(articles[0]!.getAttribute('data-state')).toBe('open');
     expect(articles[0]!.getAttribute('data-severity')).toBe('critical');
-    // Critical cards are expanded by default → rationale + cited paths visible.
+    expect(within(articles[0]!).getByText(/Active out-of-state Medicaid coverage detected/)).toBeDefined();
+    // Cited paths render inside the single card.
     expect(screen.getByText('identityVerification.determination.payer_state')).toBeDefined();
     expect(within(articles[1]!).getByText(/Income not yet verified/)).toBeDefined();
+    // The finding's title appears exactly once on the panel.
+    expect(screen.queryAllByText(/Active out-of-state Medicaid coverage detected/)).toHaveLength(1);
+  });
+
+  it('shows the evidence block with payer, plan status, member id and the applicant response', () => {
+    renderPanel({ identityVerification: { ...IV, resolution: 'confirm_enrolled' } });
+    const evidence = screen.getByLabelText('Coverage evidence');
+    expect(within(evidence).getByText('South Carolina Medicaid')).toBeDefined();
+    expect(within(evidence).getByText('ACTIVE')).toBeDefined();
+    expect(within(evidence).getByText('123485135')).toBeDefined();
+    expect(within(evidence).getByText(/Still enrolled/)).toBeDefined();
   });
 
   it('wires the RFI suggested action to onIssueRfi with the disenrollment-proof item', async () => {
@@ -174,14 +189,20 @@ describe('CaseAssistPanel', () => {
     expect(onIssueRfi).toHaveBeenCalledWith([OOS_RFI_ITEM]);
   });
 
-  it('renders the flag card with status, notes, and actions', () => {
+  it('carries the flag status, controls, and a collapsed notes thread on the same card', async () => {
+    const user = userEvent.setup();
     renderPanel();
-    const card = screen.getByRole('region', { name: 'Verify Assist flag' });
+    const card = screen.getByRole('article', { name: 'Out-of-state coverage finding' });
     expect(within(card).getByText('Open')).toBeDefined();
-    expect(within(card).getByText('Flag raised by Verify Assist.')).toBeDefined();
     expect(within(card).getByRole('button', { name: 'Mark flag in review' })).toBeDefined();
     expect(within(card).getByRole('button', { name: 'Resolve flag' })).toBeDefined();
     expect(within(card).getByRole('button', { name: 'Dismiss flag' })).toBeDefined();
+    // Notes are collapsed by default and expand on demand.
+    expect(within(card).queryByText('Flag raised by Verify Assist.')).toBeNull();
+    await user.click(within(card).getByRole('button', { name: /1 note/ }));
+    expect(within(card).getByText('Flag raised by Verify Assist.')).toBeDefined();
+    // No separate flag card exists any more.
+    expect(screen.queryByRole('region', { name: 'Verify Assist flag' })).toBeNull();
   });
 
   it('"Mark flag in review" calls updateVerifyAssistFlag and refetches', async () => {
@@ -223,12 +244,40 @@ describe('CaseAssistPanel', () => {
     expect(submit).not.toBeDisabled();
   });
 
-  it('hides the flag card when the verification found no coverage', () => {
+  it('collapses to a single muted summary line once the flag is resolved (no open finding, no RFI action)', () => {
+    renderPanel({
+      identityVerification: {
+        ...IV,
+        flag: {
+          ...IV.flag!,
+          status: 'resolved',
+          dispositionReason: 'disenrollment_confirmed',
+          updatedAt: '2026-09-14T18:00:00Z',
+          notes: [...IV.flag!.notes, { id: 'n2', author: 'caseworker@state-x.gov', body: 'SCDHHS confirmed.', createdAt: '2026-09-14T18:00:00Z' }],
+        },
+      },
+      // The server emits no oos-medicaid recommendation once the flag is closed.
+      caseAssist: { ...CASE_ASSIST, recommendations: CASE_ASSIST.recommendations.filter((r) => r.id !== 'oos-medicaid') },
+    });
+    const card = screen.getByRole('article', { name: 'Out-of-state coverage finding' });
+    expect(card.getAttribute('data-state')).toBe('closed');
+    expect(within(card).getByText('Resolved')).toBeDefined();
+    expect(within(card).getByText(/Out-of-state coverage finding resolved/)).toBeDefined();
+    expect(within(card).getByText(/Disenrollment confirmed by the other state/)).toBeDefined();
+    expect(within(card).queryByText(/Active out-of-state Medicaid coverage detected/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Issue RFI for proof/ })).toBeNull();
+    expect(within(card).queryByRole('button', { name: 'Resolve flag' })).toBeNull();
+    expect(within(card).getByRole('button', { name: /2 notes/ })).toBeDefined();
+    // The other recommendation still renders normally.
+    expect(screen.getByText(/Income not yet verified/)).toBeDefined();
+  });
+
+  it('hides the out-of-state card when the verification found no coverage', () => {
     renderPanel({
       identityVerification: { ...IV, determination: { ...IV.determination!, duplicate_enrollment: false }, flag: null },
       caseAssist: { ...CASE_ASSIST, recommendations: [] },
     });
-    expect(screen.queryByRole('region', { name: 'Verify Assist flag' })).toBeNull();
+    expect(screen.queryByRole('article', { name: 'Out-of-state coverage finding' })).toBeNull();
     expect(screen.getByText('No recommendations for this case.')).toBeDefined();
   });
 });

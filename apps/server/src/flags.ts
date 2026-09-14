@@ -3,6 +3,7 @@ import { audit } from "./audit.js";
 import type { User } from "./auth.js";
 import { db, fromJson, now, toJson } from "./db.js";
 import { medicaidAudit } from "./ee/audit.js";
+import { syncOutOfStateCaseFlag } from "./ee/cases.js";
 import { getFlagRow, getVerificationRow, toFlag, type Flag, type FlagNote, type FlagRow } from "./verifications.js";
 
 /**
@@ -120,6 +121,13 @@ export function updateFlag(flagId: string, input: FlagUpdateInput, actor: User):
         noteAdded: changes.note === true,
       },
     });
+    // Resolved/dismissed → drop the OOS-MCD chip + flagReason from the case
+    // (the Case Assist narrative cache is keyed on status + recommendation ids,
+    // so it regenerates on the next read). Reopening puts them back.
+    if (changes.status !== undefined) {
+      const open = nextStatus === "open" || nextStatus === "in_review";
+      syncOutOfStateCaseFlag(verification.case_id, open, nextStatus, actor);
+    }
   }
 
   return toFlag(getFlagRow(row.id)!);

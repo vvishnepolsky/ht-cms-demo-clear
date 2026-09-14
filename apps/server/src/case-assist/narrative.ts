@@ -9,17 +9,36 @@ import type { CaseAssistRecommendation } from "./rules.js";
  * the template — a narrative can never fail a GraphQL request.
  *
  * PHI posture: the prompt carries the applicant's first name, household size,
- * requested program, case status, and the recommendation titles/bodies. No
- * SSN, DOB, address, member ids or document numbers are ever sent.
+ * requested program, case status, identity/coverage-finding status and the
+ * recommendation titles. No SSN, DOB, address, member ids or document numbers
+ * are ever sent.
  */
 
 export type NarrativeSource = "claude" | "template";
+
+export interface NarrativeOutOfStateSummary {
+  /** e.g. "South Carolina" */
+  stateName: string;
+  /** e.g. "South Carolina Medicaid" */
+  payer: string;
+  /** open | in_review | resolved | dismissed */
+  flagStatus: string;
+  /** ISO timestamp of the last flag update (the resolution time once closed). */
+  updatedAt: string | null;
+  /** Disposition code once closed, e.g. disenrollment_confirmed. */
+  dispositionReason: string | null;
+}
 
 export interface NarrativeCaseSummary {
   applicantFirstName: string;
   householdSize: number | null;
   requestedProgram: string;
   status: string;
+  /** null = no linked verification yet. */
+  identityVerified: boolean | null;
+  /** The CLEAR out-of-state coverage finding, when the verification raised one. */
+  outOfState: NarrativeOutOfStateSummary | null;
+  rfiPending: boolean;
 }
 
 export interface NarrativeResult {
@@ -39,59 +58,103 @@ const STATUS_LABEL: Record<string, string> = {
   CANCELED: "canceled",
 };
 
+const DISPOSITION_LABELS: Record<string, string> = {
+  disenrollment_confirmed: "disenrollment confirmed by the other state",
+  proof_received: "applicant submitted proof coverage ended",
+  coverage_terminated_by_applicant: "applicant terminated the other coverage",
+  false_positive: "false positive — not the same person",
+  coverage_inactive: "coverage record is stale / inactive",
+  not_medicaid: "payer is not a Medicaid program",
+  other: "other",
+};
+
+function dispositionLabel(code: string | null): string | null {
+  if (!code) return null;
+  return DISPOSITION_LABELS[code] ?? code.replace(/_/g, " ");
+}
+
+function shortDate(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+/**
+ * Short status summary — deliberately does NOT restate the recommendation
+ * bodies (the cards below the narrative carry those). Two to three sentences:
+ * where the case stands, whether identity is verified, and the single most
+ * important open item (or that the out-of-state finding was resolved).
+ */
 export function templateNarrative(summary: NarrativeCaseSummary, recs: CaseAssistRecommendation[]): string {
   const who = summary.applicantFirstName || "The applicant";
-  const hh = summary.householdSize ? ` for a household of ${summary.householdSize}` : "";
+  const hh = summary.householdSize ? ` (household of ${summary.householdSize})` : "";
   const status = STATUS_LABEL[summary.status] ?? summary.status.toLowerCase();
-  const lead = `${who}'s ${summary.requestedProgram} application${hh} is ${status}.`;
+  const parts: string[] = [`${who}'s ${summary.requestedProgram} application${hh} is ${status}.`];
 
-  const critical = recs.find((r) => r.severity === "critical");
-  const warnings = recs.filter((r) => r.severity === "warning");
-  const infos = recs.filter((r) => r.severity === "info");
+  if (summary.identityVerified === true) parts.push("Identity verified by CLEAR.");
+  else if (summary.identityVerified === false) parts.push("Identity not yet verified by CLEAR.");
+  else if (recs.some((r) => r.id === "identity-unverified")) parts.push("No CLEAR identity verification is linked.");
 
-  const parts: string[] = [lead];
-  if (critical) {
+  const oos = summary.outOfState;
+  const oosOpen = oos && (oos.flagStatus === "open" || oos.flagStatus === "in_review");
+  if (oos && oosOpen) {
     parts.push(
-      `${critical.title}: ${critical.suggestedActions[0] ? `${critical.suggestedActions[0].replace(/\.$/, "")}, then ${critical.suggestedActions.slice(1, 2).join("").replace(/^./, (c) => c.toLowerCase()) || "hold the determination until resolved"}.` : "review before proceeding."}`,
+      `One open Verify Assist finding — active ${oos.payer} — must be resolved before determination${
+        summary.rfiPending ? "; an RFI for proof of disenrollment is outstanding" : ""
+      }.`,
     );
-  } else if (warnings.length) {
-    parts.push(`Before deciding: ${warnings.map((w) => w.title.replace(/\.$/, "")).join("; ")}.`);
+  } else if (oos) {
+    const verb = oos.flagStatus === "dismissed" ? "dismissed" : "resolved";
+    const when = shortDate(oos.updatedAt);
+    const why = dispositionLabel(oos.dispositionReason);
+    parts.push(`The out-of-state coverage finding was ${verb}${when ? ` on ${when}` : ""}${why ? ` (${why})` : ""}.`);
+    if (summary.rfiPending) parts.push("An RFI is still outstanding.");
+  } else if (summary.rfiPending) {
+    parts.push("An RFI is outstanding; the case cannot be decided until the applicant responds.");
+  } else if (summary.status === "APPROVED" || summary.status === "DENIED") {
+    parts.push("The determination has been recorded.");
   } else {
-    parts.push("No blocking findings — the case is ready for the caseworker's determination.");
-  }
-  if (critical && warnings.length) {
-    parts.push(`Also note: ${warnings.map((w) => w.title.replace(/\.$/, "")).join("; ")}.`);
-  } else if (infos.length) {
-    const verified = infos.find((i) => i.id === "identity-verified");
-    const rest = infos.filter((i) => i !== verified);
-    const bits: string[] = [];
-    if (verified) bits.push("identity is already verified by CLEAR");
-    // Lower-case only the leading letter so proper nouns (CLEAR, South Carolina) survive mid-sentence.
-    if (rest.length) bits.push(rest.map((i) => i.title.replace(/\.$/, "").replace(/^./, (c) => c.toLowerCase())).join("; "));
-    if (bits.length) parts.push(`${bits.join("; ").replace(/^./, (c) => c.toUpperCase())}.`);
+    const blocking = recs.filter((r) => r.severity !== "info");
+    parts.push(
+      blocking.length
+        ? `${blocking.length} item${blocking.length === 1 ? "" : "s"} need attention before determination.`
+        : "No blocking findings — ready for the caseworker's determination.",
+    );
   }
   return parts.join(" ");
 }
 
-const SYSTEM = `You write the context paragraph of a Case Assist panel for a state Medicaid caseworker portal.
-Write 2-3 plain-prose sentences for the caseworker: state the most important finding first, then the concrete next step.
-Ground every statement ONLY in the CASE SUMMARY and RECOMMENDATIONS you are given — never invent facts, figures, dates, names or policies.
-Do not include SSNs, dates of birth, addresses or member IDs. Do not use markdown, headings, bullets or quotes. Respond with the paragraph only.`;
+const SYSTEM = `You write the short status paragraph at the top of a Case Assist panel for a state Medicaid caseworker portal.
+Write exactly 2 sentences of plain prose: (1) where the case stands and whether identity is verified, (2) the single most important open item, or that the out-of-state coverage finding was resolved (with the date and disposition when given).
+Do NOT restate or list the recommendations — the cards below the paragraph carry their bodies and actions. No bullets, no markdown, no headings, no quotes.
+Ground every statement ONLY in the CASE SUMMARY and the recommendation TITLES you are given — never invent facts, figures, dates, names or policies.
+Do not include SSNs, dates of birth, addresses or member IDs. Respond with the paragraph only.`;
 
 function buildPrompt(summary: NarrativeCaseSummary, recs: CaseAssistRecommendation[]): string {
+  const oos = summary.outOfState;
   const lines = [
     "CASE SUMMARY",
     `- Applicant first name: ${summary.applicantFirstName || "unknown"}`,
     `- Household size: ${summary.householdSize ?? "unknown"}`,
     `- Requested program: ${summary.requestedProgram}`,
     `- Case status: ${summary.status}`,
+    `- Identity verified by CLEAR: ${summary.identityVerified === null ? "no verification linked" : summary.identityVerified ? "yes" : "no"}`,
+    `- Out-of-state coverage finding: ${
+      oos
+        ? `${oos.payer} (${oos.stateName}); Verify Assist flag ${oos.flagStatus}${
+            oos.flagStatus === "resolved" || oos.flagStatus === "dismissed"
+              ? ` on ${shortDate(oos.updatedAt) ?? "unknown date"}${oos.dispositionReason ? `, disposition: ${dispositionLabel(oos.dispositionReason)}` : ""}`
+              : ""
+          }`
+        : "none"
+    }`,
+    `- RFI outstanding: ${summary.rfiPending ? "yes" : "no"}`,
     "",
-    "RECOMMENDATIONS (highest priority first)",
+    "OPEN RECOMMENDATION TITLES (highest priority first) — for context only, do not list them",
   ];
-  if (!recs.length) lines.push("- (none — no findings)");
-  for (const r of recs) {
-    lines.push(`- [${r.severity.toUpperCase()}] ${r.title}: ${r.body}`);
-  }
+  if (!recs.length) lines.push("- (none)");
+  for (const r of recs) lines.push(`- [${r.severity.toUpperCase()}] ${r.title}`);
   return lines.join("\n");
 }
 

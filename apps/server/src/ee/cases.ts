@@ -674,6 +674,55 @@ export function argyleVerifyAssets(id: string, actor: User): CaseRow {
   return updated;
 }
 
+// --- Verify Assist flag ↔ case flag sync ------------------------------------------------------
+
+/**
+ * Keep the case's `OOS-MCD` chip and `flagReason` in step with the Verify
+ * Assist flag. Called by `updateFlag` (REST PATCH and the GraphQL mutation):
+ * a flag that is resolved/dismissed clears the chip and the reason; a flag
+ * that (re)opens puts them back. No-op when nothing changes. Writes a
+ * `CASE_FLAG_UPDATED` audit row so the timeline shows the case update.
+ */
+export function syncOutOfStateCaseFlag(caseId: string, flagOpen: boolean, flagStatus: string, actor: User): CaseRow | null {
+  const row = getCaseRow(caseId);
+  if (!row) return null;
+  const intake = fromJson<Record<string, unknown>>(row.intake_data) ?? {};
+  const displayMeta = { ...((intake.displayMeta as Record<string, unknown> | undefined) ?? {}) };
+  const flags = Array.isArray(displayMeta.flags) ? (displayMeta.flags as unknown[]).filter((f): f is string => typeof f === "string") : [];
+  const hasChip = flags.includes(OOS_FLAG);
+  const hasReason = row.flag_reason === OOS_FLAG_REASON;
+
+  const patch: Partial<Record<keyof CaseRow, unknown>> = {};
+  if (flagOpen && !hasChip) {
+    displayMeta.flags = [...flags, OOS_FLAG];
+    patch.intake_data = toJson({ ...intake, displayMeta });
+    if (!row.flag_reason) patch.flag_reason = OOS_FLAG_REASON;
+  } else if (!flagOpen && (hasChip || hasReason)) {
+    if (hasChip) {
+      displayMeta.flags = flags.filter((f) => f !== OOS_FLAG);
+      patch.intake_data = toJson({ ...intake, displayMeta });
+    }
+    if (hasReason) patch.flag_reason = null;
+  }
+  if (Object.keys(patch).length === 0) return row;
+
+  const updated = touch(caseId, patch);
+  medicaidAudit({
+    eventType: "RECORD_UPDATE",
+    action: "CASE_FLAG_UPDATED",
+    resourceType: RESOURCE_TYPE,
+    resourceId: caseId,
+    actorId: actor.id,
+    metadata: {
+      actorType: "CASEWORKER",
+      flag: OOS_FLAG,
+      flagAction: flagOpen ? "added" : "removed",
+      verifyAssistFlagStatus: flagStatus,
+    },
+  });
+  return updated;
+}
+
 // --- Case Assist cache ------------------------------------------------------------------------
 
 export function saveCaseAssistNarrative(id: string, narrative: string, source: string, recIds: string[]): void {

@@ -1,3 +1,4 @@
+import { curateChecks } from "../clear/check-curation.js";
 import { Router, type Request, type Response } from "express";
 import { nanoid } from "nanoid";
 import { audit, auditForSubject, recentAudit } from "../audit.js";
@@ -95,6 +96,8 @@ adminRoutes.get("/api/admin/verifications/:id", (req: Request, res: Response) =>
   audit(user.email, user.role, "admin.viewed_verification", row.id, {});
   res.json({
     verification: toVerification(row),
+    // Staff keep CLEAR's raw list; the curated identity view rides alongside.
+    curatedChecks: curateChecks(toVerification(row).checks),
     clearSessionId: row.clear_session_id,
     // Biometric imagery is staff-only: only on this detail read.
     images: fromJson(row.images),

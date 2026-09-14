@@ -1,3 +1,4 @@
+import { curateChecks } from "./clear/check-curation.js";
 import { db, fromJson } from "./db.js";
 import type {
   Determination,
@@ -69,9 +70,12 @@ export type ResidentVerification = Omit<Verification, "traits"> & {
 
 export function toResidentVerification(row: VerificationRow): ResidentVerification {
   const { traits, ...rest } = toVerification(row);
-  if (!traits) return { ...rest, traits: null };
+  // Applicants (and the hosted flow's Results step) see only the curated
+  // identity checks — never the phone-line / device / NFC noise.
+  const checks = curateChecks(rest.checks).shown;
+  if (!traits) return { ...rest, checks, traits: null };
   const { health_insurance: _healthInsurance, ...identityTraits } = traits;
-  return { ...rest, traits: identityTraits };
+  return { ...rest, checks, traits: identityTraits };
 }
 
 export function toVerification(row: VerificationRow): Verification {

@@ -1,11 +1,11 @@
 /**
  * CaseActionBanner -- "Intelligent Case Assist" banner (ENG-1670, ENG-1828).
  *
- * Tone, eyebrow, and action copy are derived deterministically by
- * `deriveCaseAssistBanner`. The context paragraph is overridden by the
- * server's Case Assist narrative (`caseAssist.narrative`, falling back to the
- * legacy `eeCase.caseAssistNarrative`) when populated; otherwise falls back to
- * the deterministic string.
+ * Tone, eyebrow, action and context copy are derived deterministically by
+ * `deriveCaseAssistBanner`. The banner deliberately does NOT echo the server's
+ * Case Assist narrative any more: the Case Assist panel (right rail) owns that
+ * paragraph, and repeating it here restated the same finding twice on one
+ * screen. The banner is a one-line status + action; the panel is the detail.
  *
  * When the linked CLEAR verification found out-of-state Medicaid coverage and
  * the Verify Assist flag is still open, the derivation returns the red
@@ -75,14 +75,11 @@ export interface CaseActionBannerProps {
 }
 
 export function CaseActionBanner({ eeCase, determinations, ddsFlowState }: CaseActionBannerProps) {
-  const narrative = eeCase.caseAssist?.narrative ?? eeCase.caseAssistNarrative ?? null;
   const derived = deriveCaseAssistBanner(eeCase, determinations, {
     ddsFlowState,
     identityVerification: eeCase.identityVerification ?? null,
-    narrative,
   });
-  const { tone, eyebrow, action } = derived;
-  const context = narrative ?? derived.context;
+  const { tone, eyebrow, action, context } = derived;
   const s = TONE_STYLES[tone];
   const Icon = TONE_ICON[tone];
 
@@ -100,6 +97,8 @@ export function CaseActionBanner({ eeCase, determinations, ddsFlowState }: CaseA
         // landmark role is the right semantic, not the polite live region.
         role="region"
         aria-label={`Case assist: ${eyebrow}`}
+        data-slot="case-action-banner"
+        data-tone={tone}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-4 px-5 py-4">

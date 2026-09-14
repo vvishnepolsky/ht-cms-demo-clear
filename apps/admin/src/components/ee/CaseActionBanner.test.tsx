@@ -37,14 +37,22 @@ function makeCase(overrides: Partial<EECase> = {}): EECase {
   };
 }
 
-describe('CaseActionBanner — caseAssistNarrative overlay (ENG-1828)', () => {
-  it('renders the LLM narrative when caseAssistNarrative is populated', () => {
+describe('CaseActionBanner — context copy (ENG-1828, consolidated)', () => {
+  it('does not echo the Case Assist narrative — the panel owns it; the banner keeps its derived one-liner', () => {
     const eeCase = makeCase({
       status: 'IN_REVIEW',
+      intakeData: { applicantName: 'Test Person', householdSize: 1 },
       caseAssistNarrative: 'LLM-generated context paragraph for this case.',
+      caseAssist: {
+        recommendations: [],
+        narrative: 'LLM-generated context paragraph for this case.',
+        narrativeSource: 'claude',
+        generatedAt: '2026-09-01T00:05:00Z',
+      },
     });
     render(<CaseActionBanner eeCase={eeCase} determinations={[]} />);
-    expect(screen.getByText('LLM-generated context paragraph for this case.')).toBeDefined();
+    expect(screen.queryByText('LLM-generated context paragraph for this case.')).toBeNull();
+    expect(screen.getByRole('region', { name: /Case assist:/ })).toBeDefined();
   });
 
   it('falls back to derived context when caseAssistNarrative is null', () => {
@@ -62,7 +70,7 @@ describe('CaseActionBanner — caseAssistNarrative overlay (ENG-1828)', () => {
 });
 
 describe('CaseActionBanner — CLEAR out-of-state coverage finding', () => {
-  it('renders the red ACTION NEEDED banner with the Case Assist narrative when the flag is open', () => {
+  it('renders the red ACTION NEEDED banner with its own derived context (not the narrative) when the flag is open', () => {
     const eeCase = makeCase({
       status: 'PENDING_VERIFICATION',
       intakeData: { applicantName: 'Jordan Rivera' },
@@ -106,6 +114,8 @@ describe('CaseActionBanner — CLEAR out-of-state coverage finding', () => {
     render(<CaseActionBanner eeCase={eeCase} determinations={[]} />);
     expect(screen.getByRole('region', { name: /Case assist: ACTION NEEDED/ })).toBeDefined();
     expect(screen.getByText('Resolve out-of-state Medicaid coverage before determination')).toBeDefined();
-    expect(screen.getByText('Jordan appears to hold active South Carolina Medicaid.')).toBeDefined();
+    expect(screen.getByText(/has active South Carolina Medicaid coverage/)).toBeDefined();
+    expect(screen.queryByText('Jordan appears to hold active South Carolina Medicaid.')).toBeNull();
+    expect(screen.getByRole('region', { name: /Case assist:/ }).getAttribute('data-tone')).toBe('red');
   });
 });

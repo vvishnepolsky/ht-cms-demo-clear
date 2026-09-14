@@ -88,6 +88,42 @@ describe('IdentityVerificationCard', () => {
     expect(within(note).getByText(/coverage has ended and will submit proof/)).toBeDefined();
   });
 
+  it('renders the server-curated checks summary footer under the list', () => {
+    render(
+      <IdentityVerificationCard
+        identityVerification={{ ...BASE, checksSummary: '8 identity checks passed · 13 additional CLEAR checks passed · 3 not applicable' }}
+      />,
+    );
+    expect(screen.getByText('8 identity checks passed · 13 additional CLEAR checks passed · 3 not applicable')).toBeDefined();
+  });
+
+  it('renders the coverage block neutral with a Resolved tag once the flag is resolved', () => {
+    render(
+      <IdentityVerificationCard
+        identityVerification={{
+          ...BASE,
+          flag: {
+            id: 'flag-1',
+            type: 'out_of_state_medicaid',
+            status: 'resolved',
+            assignee: 'caseworker@state-x.gov',
+            dispositionReason: 'disenrollment_confirmed',
+            details: null,
+            notes: [],
+            createdAt: '2026-09-01T00:05:00Z',
+            updatedAt: '2026-09-14T18:00:00Z',
+          },
+        }}
+      />,
+    );
+    const note = screen.getByRole('note', { name: 'Coverage discovered' });
+    expect(note.getAttribute('data-state')).toBe('closed');
+    expect(within(note).getByText('Resolved')).toBeDefined();
+    expect(within(note).getByText(/Finding resolved/)).toBeDefined();
+    // Evidence stays.
+    expect(within(note).getByText('123485135')).toBeDefined();
+  });
+
   it('omits the coverage sub-card when no duplicate enrollment was found', () => {
     render(
       <IdentityVerificationCard
@@ -112,6 +148,25 @@ describe('identityVerificationStep (Auto-Processing Pipeline row)', () => {
     expect(step?.label).toBe(STEP_LABEL_IDENTITY_CLEAR);
     expect(step?.status).toBe('warn');
     expect(step?.note).toMatch(/South Carolina Medicaid/);
+  });
+
+  it('passes (with a note) once the out-of-state flag has been resolved', () => {
+    const step = identityVerificationStep({
+      ...BASE,
+      flag: {
+        id: 'flag-1',
+        type: 'out_of_state_medicaid',
+        status: 'resolved',
+        assignee: null,
+        dispositionReason: 'disenrollment_confirmed',
+        details: null,
+        notes: [],
+        createdAt: '2026-09-01T00:05:00Z',
+        updatedAt: '2026-09-14T18:00:00Z',
+      },
+    });
+    expect(step?.status).toBe('pass');
+    expect(step?.note).toMatch(/resolved/);
   });
 
   it('is an info row for a clean success and a block row for a failed session', () => {

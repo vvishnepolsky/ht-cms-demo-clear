@@ -3,6 +3,8 @@
  * verification, flag). See docs/api-contract.md § Case Assist rules.
  */
 
+import { checkPassed, curateChecks } from "../clear/check-curation.js";
+
 export type RecommendationType = "guidance" | "draft_task" | "draft_notice";
 export type Severity = "critical" | "warning" | "info";
 export type Source = "verify_assist" | "rules" | "intake";
@@ -46,10 +48,7 @@ export interface CaseAssistFlagView {
   dispositionReason?: string | null;
 }
 
-export function checkPassed(c: { status: string; value?: boolean | null }): boolean {
-  if (typeof c.value === "boolean") return c.value;
-  return c.status === "success" || c.status === "completed" || c.status === "passed";
-}
+export { checkPassed };
 
 function firstName(intake: Record<string, unknown> | null): string {
   const raw = intake && typeof intake.applicantName === "string" ? intake.applicantName.trim() : "";
@@ -67,62 +66,53 @@ export function deriveRecommendations(
   const stateName = det?.payer_state_name ?? "another state";
   const flagOpen = flag ? flag.status === "open" || flag.status === "in_review" : false;
 
-  if (det?.duplicate_enrollment || (verification && flagOpen)) {
+  // One finding, stated once. Merges the applicant's hosted-flow response
+  // (formerly separate `applicant-resolution*` recommendations) into the body
+  // and rationale. Emitted only while the Verify Assist flag is open / in
+  // review — once resolved or dismissed the flag card's history is the record.
+  const flagClosed = !!flag && !flagOpen; // resolved | dismissed
+  if ((det?.duplicate_enrollment || (verification && flagOpen)) && !flagClosed) {
     const payer = det?.coverage?.payer_name ?? `${stateName} Medicaid`;
+    const stateCode = det?.payer_state ?? "SC";
     const memberSuffix = det?.coverage?.insurance_member_id ? ` (member ID ending ${det.coverage.insurance_member_id.slice(-4)})` : "";
-    const citedFieldPaths = [
-      "identityVerification.determination.duplicate_enrollment",
-      "identityVerification.determination.payer_state",
-      "identityVerification.determination.coverage.payer_name",
-      "identityVerification.determination.coverage.plan_status",
-      "intakeData.applicant.stateOfResidence",
-    ];
-    const flagClosed = !!flag && !flagOpen; // resolved | dismissed
-    if (flagClosed) {
-      // The finding stays on record (the caseworker worked it), but it no longer
-      // blocks the determination — so it must not keep asking for the RFI.
-      const verb = flag.status === "dismissed" ? "dismissed" : "resolved";
-      recs.push({
-        id: "oos-medicaid",
-        type: "guidance",
-        priority: 3,
-        severity: "info",
-        source: "verify_assist",
-        title: `Out-of-state Medicaid finding ${verb} (${stateName})`,
-        body: `CLEAR's coverage discovery had found an ACTIVE ${payer} enrollment for ${name}${memberSuffix}. The Verify Assist flag was ${verb}${flag.dispositionReason ? ` (${flag.dispositionReason.replace(/_/g, " ")})` : ""}, so the determination is no longer blocked by this finding.`,
-        rationale: {
-          summary: `Payer state ${det?.payer_state ?? "?"} ≠ tenant state SX; flag status is ${flag.status}.`,
-          citedFieldPaths: [...citedFieldPaths, "identityVerification.flag.status"],
-        },
-        suggestedActions: [
-          verb === "resolved"
-            ? `Keep the ${stateName} disenrollment evidence in the case file`
-            : "Note why the finding was dismissed in the case file",
+    const response =
+      verification?.resolution === "confirm_enrolled"
+        ? `In the Verify Assist flow ${name} confirmed the ${stateName} coverage is still active and asked to continue with caseworker review — State-X coverage can start only after the ${stateName} case terminates.`
+        : verification?.resolution === "ended_submit_proof"
+          ? `In the Verify Assist flow ${name} said the ${stateName} coverage has ended and uploaded proof of disenrollment — verify the termination date before approving.`
+          : `${name} did not record a response in the Verify Assist flow.`;
+    recs.push({
+      id: "oos-medicaid",
+      type: "draft_task",
+      priority: 1,
+      severity: "critical",
+      source: "verify_assist",
+      title: `Active out-of-state Medicaid coverage detected (${stateName})`,
+      body: `CLEAR's coverage discovery found an ACTIVE ${payer} enrollment for ${name}${memberSuffix}. Federal rules bar concurrent Medicaid enrollment in two states, so State-X coverage cannot be approved until the ${stateName} case is closed. ${response}`,
+      rationale: {
+        summary: `Payer state ${det?.payer_state ?? "?"} ≠ tenant state SX and plan_status is ACTIVE. Applicant response: ${verification?.resolution ?? "none"}. Verify Assist flag: ${flag?.status ?? "open"}.`,
+        citedFieldPaths: [
+          "identityVerification.determination.duplicate_enrollment",
+          "identityVerification.determination.payer_state",
+          "identityVerification.determination.coverage.payer_name",
+          "identityVerification.determination.coverage.plan_status",
+          "identityVerification.resolution",
+          "identityVerification.flag.status",
+          "intakeData.applicant.stateOfResidence",
         ],
-      });
-    } else {
-      recs.push({
-        id: "oos-medicaid",
-        type: "draft_task",
-        priority: 1,
-        severity: "critical",
-        source: "verify_assist",
-        title: `Active out-of-state Medicaid coverage detected (${stateName})`,
-        body: `CLEAR's coverage discovery found an ACTIVE ${payer} enrollment for ${name}${memberSuffix}. Federal rules bar concurrent Medicaid enrollment in two states, so State-X coverage cannot be approved until the ${stateName} case is closed.`,
-        rationale: {
-          summary: `Payer state ${det?.payer_state ?? "?"} ≠ tenant state SX and plan_status is ACTIVE.`,
-          citedFieldPaths,
-        },
-        suggestedActions: [
-          `Issue RFI for proof of ${det?.payer_state ?? "SC"} Medicaid disenrollment`,
-          `Contact ${stateName} DHHS to confirm termination date`,
-          "Hold determination until resolved",
-        ],
-      });
-    }
+      },
+      suggestedActions: [
+        `Issue RFI for proof of ${stateCode} Medicaid disenrollment`,
+        `Contact ${stateName} DHHS to confirm termination date`,
+        "Hold determination until resolved",
+      ],
+    });
   }
 
-  if (verification && verification.status === "success" && verification.checks.length > 0 && verification.checks.every(checkPassed)) {
+  // Only the curated identity checks count — the raw sandbox list carries
+  // skipped rows and an NFC-passport false that would otherwise never "all pass".
+  const shownChecks = verification ? curateChecks(verification.checks).shown : [];
+  if (verification && verification.status === "success" && shownChecks.length > 0 && shownChecks.every(checkPassed)) {
     recs.push({
       id: "identity-verified",
       type: "guidance",
@@ -130,9 +120,9 @@ export function deriveRecommendations(
       severity: "info",
       source: "verify_assist",
       title: "Identity verified by CLEAR — no manual ID review needed",
-      body: `${name} completed CLEAR identity verification: ${verification.checks.length}/${verification.checks.length} checks passed (selfie liveness, document authenticity, selfie–document match). The identity step of the auto-processing pipeline is satisfied.`,
+      body: `${name} completed CLEAR identity verification: ${shownChecks.length}/${shownChecks.length} identity checks passed (selfie liveness, document authenticity, selfie–document match). The identity step of the auto-processing pipeline is satisfied.`,
       rationale: {
-        summary: "Verification status is success and every CLEAR check passed.",
+        summary: "Verification status is success and every identity-relevant CLEAR check passed.",
         citedFieldPaths: ["identityVerification.status", "identityVerification.checks"],
       },
       suggestedActions: ["Skip the manual ID document request", "Proceed to income and residency review"],
@@ -153,41 +143,6 @@ export function deriveRecommendations(
         citedFieldPaths: ["identityVerification", "identityVerification.status"],
       },
       suggestedActions: ["Issue RFI for a government-issued photo ID", "Send a new Verify Assist link"],
-    });
-  }
-
-  if (verification?.resolution === "confirm_enrolled") {
-    recs.push({
-      id: "applicant-resolution",
-      type: "guidance",
-      priority: 2,
-      severity: "warning",
-      source: "verify_assist",
-      title: `Applicant confirmed they are still enrolled in ${det?.payer_state ?? "SC"} Medicaid`,
-      body: `In the Verify Assist flow ${name} confirmed the ${stateName} coverage is still active and asked to continue with caseworker review. Coordinate the transfer: State-X coverage can start only after the ${stateName} case terminates.`,
-      rationale: {
-        summary: "resolution === 'confirm_enrolled' recorded at the end of the hosted flow.",
-        citedFieldPaths: ["identityVerification.resolution"],
-      },
-      suggestedActions: [
-        `Advise ${name} to request closure of the ${stateName} case`,
-        "Set the State-X effective date after the out-of-state termination",
-      ],
-    });
-  } else if (verification?.resolution === "ended_submit_proof") {
-    recs.push({
-      id: "applicant-resolution-proof",
-      type: "draft_task",
-      priority: 2,
-      severity: "info",
-      source: "verify_assist",
-      title: `Applicant says ${det?.payer_state ?? "SC"} coverage ended and submitted proof — verify disenrollment date`,
-      body: `${name} stated the ${stateName} coverage has ended and uploaded proof of disenrollment. Verify the termination date before approving.`,
-      rationale: {
-        summary: "resolution === 'ended_submit_proof' recorded at the end of the hosted flow.",
-        citedFieldPaths: ["identityVerification.resolution"],
-      },
-      suggestedActions: ["Review the uploaded disenrollment letter", "Confirm the termination date with the other state"],
     });
   }
 

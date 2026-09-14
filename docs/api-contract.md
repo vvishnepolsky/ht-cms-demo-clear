@@ -178,7 +178,7 @@ terminal case); `resolveMedicaidEeCaseRfi` clears both. Domain errors come back 
 
 Lifecycle mutations write `medicaid_audit_log` rows that `GetCaseAuditLog`
 returns (`action`: `STATUS_TRANSITION`, `ISSUE_RFI`, `RESOLVE_RFI`, `CASE_CREATED`,
-`BRE_EVALUATED`, `IDENTITY_VERIFICATION_LINKED`, `VERIFY_ASSIST_FLAG_UPDATED`, plus
+`BRE_EVALUATED`, `IDENTITY_VERIFICATION_LINKED`, `VERIFY_ASSIST_FLAG_UPDATED`, `CASE_FLAG_UPDATED`, plus
 `RECEIVE_VERIFICATION` from the Argyle mocks; `resourceType: 'MedicaidEeCase'`;
 `outcome: 'success'|'failure'`; `metadata` JSON with `fromStatus/toStatus/reason`,
 `actorType: SYSTEM|CASEWORKER|APPLICANT`, etc.). `medicaidAuditLog` is staff-only
@@ -207,7 +207,8 @@ type IdentityVerification {
   subjectName: String
   createdAt: String!
   completedAt: String
-  checks: [VerificationCheck!]!      # { name, status }  e.g. selfie_liveness, document_authenticity, selfie_document_match
+  checks: [VerificationCheck!]!      # CURATED identity checks (see below), { name, status: success|failed }
+  checksSummary: String              # "8 identity checks passed · 13 additional CLEAR checks passed · 3 not applicable" | null
   traits: IdentityTraits             # identity only; staff also get coverage below
   determination: CoverageDetermination
   resolution: String                 # ended_submit_proof | confirm_enrolled | null
@@ -274,11 +275,9 @@ type UpdateVerifyAssistFlagPayload { flag: VerifyAssistFlag, errors: [PayloadErr
 
 | id | trigger | severity | title |
 |---|---|---|---|
-| `oos-medicaid` | linked verification `determination.duplicate_enrollment` | critical while the flag is `open`/`in_review` (or no flag row); downgraded to **info** (priority 3, title `Out-of-state Medicaid finding resolved|dismissed (South Carolina)`, single file-keeping action, no RFI action) once the flag is `resolved`/`dismissed` | Active out-of-state Medicaid coverage detected (South Carolina) |
-| `identity-verified` | verification `status === 'success'` and all checks success | info | Identity verified by CLEAR — no manual ID review needed |
+| `oos-medicaid` | linked verification `determination.duplicate_enrollment` (or an open flag) **while the Verify Assist flag is `open`/`in_review`** — nothing is emitted once the flag is `resolved`/`dismissed` (the flag card's history is the record). The applicant's hosted-flow response (`resolution`) is folded into the body and `rationale.summary`; there are no separate applicant-response recommendations any more. | critical | Active out-of-state Medicaid coverage detected (South Carolina) |
+| `identity-verified` | verification `status === 'success'` and every **curated** check passed (`clear/check-curation.ts` — category headers, phone/device and NFC rows are ignored); body says "N/N identity checks passed" using the curated count | info | Identity verified by CLEAR — no manual ID review needed |
 | `identity-unverified` | no linked verification, or status failed/expired | warning | Identity not verified — request ID documents |
-| `applicant-resolution` | `resolution === 'confirm_enrolled'` | warning | Applicant confirmed they are still enrolled in SC Medicaid |
-| `applicant-resolution-proof` | `resolution === 'ended_submit_proof'` | info | Applicant says SC coverage ended and submitted proof — verify disenrollment date |
 | `rfi-pending` | `flagReason` starts with `rfi:` | warning | RFI outstanding |
 | `income-unverified` | `incomeVerification.status !== 'VERIFIED'` | info | Income not yet verified electronically |
 
@@ -290,18 +289,53 @@ type UpdateVerifyAssistFlagPayload { flag: VerifyAssistFlag, errors: [PayloadErr
 
 `IdentityVerification.mode` is per verification (`sandbox` when a CLEAR session id
 is recorded, else `mock`); `checks[].status` is normalised to `success|failed`
-from CLEAR's `value` flag. `DocumentTraits.document_number_last4` and
+from CLEAR's `value` flag.
+
+**Check curation** (`apps/server/src/clear/check-curation.ts`, `curateChecks`) — the
+real CLEAR sandbox returns ~26 rows mixing category headers, phone/device signals,
+NFC passport reads and skipped rows with the identity checks. One server-side
+function decides what everyone sees: `shown` = the identity-relevant checks in a
+fixed order (`Selfie passes liveness check`, `Selfie matches portrait on Gov ID`,
+`Gov ID is likely authentic`, `Gov ID front is not suspicious`, `Gov ID back is not
+suspicious`, `Gov ID is not expired`, `Gov ID captured image is acceptable`,
+`Gov ID matches DMV records`, `User's information matches a trusted source`), deduped
+by normalized name (straight/curly apostrophes equal), skipped rows dropped, plus
+any completed-false check that is not NFC/passport related (real failures are
+never hidden). Everything else is hidden: completed+true → `hiddenPassed`, skipped
+or NFC/passport false → `notApplicable`. Applied to GraphQL `checks`/`checksSummary`,
+the hosted flow `/api/flow/sessions/:token`, the resident `/api/verifications/:id`
+(and `/mine`), and the `identity-verified` rule; the staff REST detail
+`/api/admin/verifications/:id` keeps the raw `verification.checks` and adds
+`curatedChecks: { shown, hiddenPassed, notApplicable }` alongside. `DocumentTraits.document_number_last4` and
 `IdentityTraits.ssnLast4` are the only identifier fragments exposed.
 
-Narrative: when `ANTHROPIC_API_KEY` is set, one non-streaming `messages.create`
-(`@anthropic-ai/sdk`, model `claude-opus-5`, `max_tokens: 1024`, `thinking: { type: "adaptive" }`) writes a
-2–3 sentence caseworker-facing paragraph grounded ONLY in the recommendations
-list and the case summary (applicant first name, household size, program,
-status). No SSN, no full DOB, no address in the prompt. Result cached in
-`medicaid_ee_cases.case_assist_narrative`; regenerated when the cache key —
-the case status plus each recommendation's `id@severity` — changes (so working
-the Verify Assist flag or moving the case to IN_REVIEW/APPROVED refreshes it). Otherwise the template narrative is used and
+Narrative: a **short status summary** (2–3 sentences) that never restates the
+recommendation bodies — e.g. "Jordan's State Medicaid application (household of
+1) is pending verification. Identity verified by CLEAR. One open Verify Assist
+finding — active South Carolina Medicaid — must be resolved before
+determination." and, once worked, "… The out-of-state coverage finding was
+resolved on Sep 14, 2026 (disenrollment confirmed by the other state)." When
+`ANTHROPIC_API_KEY` is set, one non-streaming `messages.create`
+(`@anthropic-ai/sdk`, model `claude-opus-5`, `max_tokens: 1024`, `thinking: { type: "adaptive" }`)
+writes it with the same guidance (2 sentences, no bullet restating) grounded ONLY in
+the case summary (applicant first name, household size, program, status,
+identity/coverage-finding status, RFI state) and the recommendation titles. No SSN,
+no full DOB, no address in the prompt. Result cached in
+`medicaid_ee_cases.case_assist_narrative`; regenerated when the cache key — case
+status, Verify Assist flag status, RFI pending, plus each recommendation's
+`id@severity` — changes. Otherwise the template narrative is used and
 `narrativeSource = "template"`. Any API error → template fallback, never a 500.
+
+### Verify Assist flag ↔ case sync
+
+`updateVerifyAssistFlag` / `PATCH /api/admin/flags/:id` moving the flag to
+`resolved` or `dismissed` also updates the linked case (`ee/cases.ts`
+`syncOutOfStateCaseFlag`): removes `OOS-MCD` from `intakeData.displayMeta.flags`,
+nulls `flagReason` when it is `verify_assist:out_of_state_medicaid`, and writes a
+`CASE_FLAG_UPDATED` audit row (`metadata: { flag: 'OOS-MCD', flagAction:
+'removed'|'added', verifyAssistFlagStatus }`). A flag returning to `open`/`in_review`
+re-adds them. The admin therefore shows the chip, the red banner and the
+critical recommendation only while the finding is open.
 
 ## Verify Assist REST (unchanged from ht-clear unless noted)
 

@@ -303,7 +303,10 @@ export interface IdentityVerification {
   subjectName: string | null;
   createdAt: string;
   completedAt: string | null;
+  /** Curated identity-relevant checks (server folds the rest into checksSummary). */
   checks: VerificationCheck[];
+  /** e.g. "8 identity checks passed · 13 additional CLEAR checks passed · 3 not applicable" */
+  checksSummary?: string | null;
   traits: IdentityTraits | null;
   determination: CoverageDetermination | null;
   /** Applicant's self-resolution in the hosted flow: ended_submit_proof | confirm_enrolled | null */

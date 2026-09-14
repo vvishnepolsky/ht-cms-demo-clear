@@ -242,13 +242,23 @@ const panelText = await panel.innerText();
 check(/Active out-of-state Medicaid coverage detected \(South Carolina\)/.test(panelText), 'Case Assist lists the critical SC Medicaid recommendation');
 check(/CRITICAL/.test(panelText), 'recommendation is marked CRITICAL');
 check((await admin.locator('[data-slot=case-assist-narrative]').count()) > 0, 'Case Assist narrative rendered');
-check((await admin.locator('[data-slot=verify-assist-flag-card]').count()) > 0, 'Verify Assist flag card rendered');
+check((await admin.locator('[data-slot=out-of-state-coverage-card]').count()) > 0, 'out-of-state coverage card rendered');
 check((await flagBadge()) === 'Open', `flag status is Open (${await flagBadge()})`);
 const banner = admin.locator('[aria-label^="Case assist:"]');
 const bannerText = (await banner.count()) ? await banner.innerText() : '';
 check(/ACTION NEEDED/i.test(bannerText) && /out-of-state Medicaid/i.test(bannerText), 'CaseActionBanner shows ACTION NEEDED for the out-of-state coverage');
+const oosCards = panel.locator('article').filter({ hasText: 'South Carolina' });
+check((await oosCards.count()) === 1, `Case Assist shows exactly ONE card mentioning South Carolina (${await oosCards.count()})`);
+check((await panel.locator('[data-slot=out-of-state-coverage-card][data-state=open]').count()) === 1, 'the finding card is the open out-of-state coverage card');
+check((await panel.locator('[data-slot=verify-assist-flag-card]').count()) === 0 && (await panel.locator('article').filter({ hasText: /Applicant confirmed they are still enrolled/ }).count()) === 0, 'no separate flag card or applicant-response card duplicates the finding');
+check((await admin.locator('[data-slot=case-action-banner]').getAttribute('data-tone')) === 'red', 'CaseActionBanner tone is red while the flag is open');
 const ivCard = admin.locator('[data-slot=identity-verification-card]');
 const ivText = await ivCard.innerText();
+const checkRows = ivCard.getByRole('list', { name: 'Verification checks' }).getByRole('listitem');
+check((await checkRows.count()) <= 9 && (await checkRows.count()) > 0, `identity card lists ≤ 9 curated checks (${await checkRows.count()})`);
+check(!/Phone/.test(await ivCard.getByRole('list', { name: 'Verification checks' }).innerText()), 'no Phone/device rows in the checks list');
+check((await ivCard.locator('[data-slot=checks-summary]').count()) === 1 && /identity checks passed/.test(await ivCard.locator('[data-slot=checks-summary]').innerText()), `checks summary footer present (${(await ivCard.locator('[data-slot=checks-summary]').innerText().catch(() => '')).trim()})`);
+check((await ivCard.locator('[data-slot=coverage-discovered][data-state=open]').count()) === 1, 'identity card coverage block is red/open before resolution');
 check(/Selfie passes liveness check/.test(ivText) && /Passed/.test(ivText), 'Identity verification card lists CLEAR checks as Passed');
 check(/COVERAGE DISCOVERED/i.test(ivText) && /South Carolina Medicaid/.test(ivText) && /123485135/.test(ivText), 'Identity verification card shows coverage discovered (payer + member id)');
 check(/•••-••-6789/.test(ivText), 'Identity card shows masked SSN last-4 only');
@@ -261,7 +271,7 @@ await shot(admin, 'p4-case-detail-open-flag');
 await admin.getByRole('button', { name: 'Mark flag in review' }).click();
 await admin.locator('[data-slot=verify-assist-flag-status]', { hasText: 'In review' }).waitFor({ timeout: 15000 });
 check(true, 'flag refetched as In review');
-check(/caseworker@state-x\.gov/.test(await admin.locator('[data-slot=verify-assist-flag-card]').innerText()), 'flag assigned to the signed-in caseworker');
+check(/caseworker@state-x\.gov/.test(await admin.locator('[data-slot=out-of-state-coverage-card]').innerText()), 'flag assigned to the signed-in caseworker');
 
 // Issue RFI from the suggested action
 await admin.getByRole('button', { name: /Issue RFI for proof of SC Medicaid disenrollment/ }).click();
@@ -288,13 +298,23 @@ await dialog.getByText('Resolve Verify Assist flag').waitFor();
 await dialog.getByText('Disenrollment confirmed by the other state').click();
 await admin.locator('#flag-disposition-note').fill('SCDHHS confirmed termination effective 08/31/2026.');
 await dialog.getByRole('button', { name: 'Resolve flag' }).click();
-await admin.locator('[data-slot=verify-assist-flag-status]', { hasText: 'Resolved' }).waitFor({ timeout: 15000 });
-check(true, 'flag refetched as Resolved');
-check(/SCDHHS confirmed termination/.test(await admin.locator('[data-slot=verify-assist-flag-card]').innerText()), 'disposition note appears in the flag notes thread');
-const bannerAfter = await admin.locator('[aria-label^="Case assist:"]').innerText().catch(() => '');
-check(!/Resolve out-of-state Medicaid coverage before determination/.test(bannerAfter), 'red out-of-state banner no longer shown once the flag is resolved');
-check(/finding resolved/i.test(await panel.innerText()), 'Case Assist narrative regenerated to say the finding is resolved (no stale RFI guidance)');
+await admin.locator('[data-slot=out-of-state-coverage-card][data-state=closed]').waitFor({ timeout: 15000 });
+check(true, 'flag refetched as Resolved — Case Assist card collapsed to the closed state');
+await sleep(500);
+const closedCard = admin.locator('[data-slot=out-of-state-coverage-card]');
+check(/Out-of-state coverage finding resolved/.test(await closedCard.innerText()) && /Disenrollment confirmed by the other state/.test(await closedCard.innerText()), 'Case Assist shows the resolved summary line with the disposition');
+check((await panel.locator('article').filter({ hasText: /Active out-of-state Medicaid coverage detected/ }).count()) === 0, 'no open finding card remains after resolution');
 check(!/Issue RFI for proof of SC Medicaid disenrollment/.test(await panel.innerText()), 'resolved finding no longer offers the RFI action');
+await closedCard.getByRole('button', { name: /notes?$/ }).click();
+check(/SCDHHS confirmed termination/.test(await closedCard.innerText()), 'disposition note appears in the (expanded) notes thread');
+const pageAfter = await admin.locator('body').innerText();
+check(!/OOS-MCD/.test(pageAfter), 'no OOS-MCD chip anywhere on the page after resolution');
+const bannerEl = admin.locator('[data-slot=case-action-banner]');
+const bannerAfter = await bannerEl.innerText().catch(() => '');
+check((await bannerEl.getAttribute('data-tone')) !== 'red' && !/out-of-state/i.test(bannerAfter), `banner is not red and has no out-of-state text (tone=${await bannerEl.getAttribute('data-tone')})`);
+check(/finding was resolved/i.test(await admin.locator('[data-slot=case-assist-narrative]').innerText()), 'Case Assist narrative regenerated to a status summary saying the finding was resolved');
+check((await ivCard.locator('[data-slot=coverage-discovered][data-state=closed]').count()) === 1 && /Resolved/.test(await ivCard.locator('[data-slot=coverage-discovered]').innerText()), 'identity card coverage block shows Resolved (neutral) after resolution');
+check(!/resolve the flag before determination/i.test(pageAfter), 'bottom ActionBar no longer asks to resolve the flag');
 await shot(admin, 'p4-flag-resolved');
 
 // Review & Decide → approve (guard must NOT appear now)
@@ -319,9 +339,19 @@ if (await auditTab.count()) {
 const logText = await admin.locator('body').innerText();
 check(/RFI|Request for information/i.test(logText) && /Approved|APPROVED|Status/i.test(logText), 'activity/audit log lists the RFI and approval actions');
 check(/marked the Verify Assist flag in review/.test(logText) && /resolved the Verify Assist flag/.test(logText), 'activity/audit log humanizes the Verify Assist flag updates');
-check(!/VERIFY_ASSIST_FLAG_UPDATED/.test(logText), 'no raw audit action codes leak into the activity log');
+check(!/VERIFY_ASSIST_FLAG_UPDATED|CASE_FLAG_UPDATED/.test(logText), 'no raw audit action codes leak into the activity log');
+check(/cleared the OOS-MCD case flag/.test(logText), 'audit log shows the case flag being cleared when the finding was resolved');
 check(/changed case status from Pending Verification to In Review/.test(logText) && /from In Review to Approved/.test(logText), 'audit log shows both status transitions (queued for review, approved)');
 await shot(admin, 'p4-audit-log');
+
+// Case list: the worked case must no longer carry OOS-MCD and reads "CLEAR verified"
+await admin.goto(BASE + '/admin/ee/cases');
+await admin.getByRole('button', { name: /Completed/ }).click().catch(() => {});
+await admin.getByText(primary.caseNumber).waitFor({ timeout: 20000 });
+const doneRow = admin.locator('tr', { hasText: primary.caseNumber });
+const doneRowText = await doneRow.innerText();
+check(!/OOS-MCD/.test(doneRowText), 'case list row has no OOS-MCD chip after resolution');
+check(/CLEAR verified/.test(doneRowText) && !/Out-of-state coverage/.test(doneRowText), 'Verify Assist column shows "CLEAR verified" only after resolution');
 
 // Approve guard SHOULD appear on the second case (flag still open)
 console.log('\n## Part 4b — approve guard on a case with an open flag');

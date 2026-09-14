@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { AlertCircle, Check, ChevronDown, Circle, Info, XCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { IdentityVerification } from '../../types/ee';
+import { hasOpenOutOfStateFlag } from '../../types/ee';
 import type { RuleEvaluation } from './MagiRulesEngine';
 
 /**
@@ -65,8 +66,9 @@ export const STEP_LABEL_IDENTITY_CLEAR = 'Identity verification (CLEAR)' as cons
 /**
  * Pipeline row for the CLEAR / Verify Assist identity verification linked to
  * the case. Informational (`info`) when CLEAR verified the identity cleanly;
- * `warn` when the verification also surfaced active out-of-state Medicaid
- * coverage; `block` when CLEAR failed/expired; `pend` while in progress.
+ * `warn` while the verification's out-of-state Medicaid finding is still open;
+ * `pass` once that flag was resolved/dismissed; `block` when CLEAR
+ * failed/expired; `pend` while in progress.
  * Returns null when no verification is linked — callers append the result to
  * {@link buildVerificationSteps} output.
  */
@@ -79,10 +81,18 @@ export function identityVerificationStep(iv: IdentityVerification | null | undef
     const det = iv.determination;
     if (det?.duplicate_enrollment) {
       const payer = det.coverage?.payer_name ?? `${det.payer_state_name ?? det.payer_state ?? 'out-of-state'} Medicaid`;
+      if (hasOpenOutOfStateFlag(iv)) {
+        return {
+          label: STEP_LABEL_IDENTITY_CLEAR,
+          status: 'warn',
+          note: `Identity verified by CLEAR.${checksNote} Coverage check found active ${payer} — see Case Assist.`,
+        };
+      }
+      // Flag resolved/dismissed → the finding no longer blocks; it passes with a note.
       return {
         label: STEP_LABEL_IDENTITY_CLEAR,
-        status: 'warn',
-        note: `Identity verified by CLEAR.${checksNote} Coverage check found active ${payer} — see Case Assist.`,
+        status: 'pass',
+        note: `Identity verified by CLEAR.${checksNote} Coverage finding (${payer}) ${iv.flag?.status ?? 'resolved'} — no longer blocks determination.`,
       };
     }
     return {

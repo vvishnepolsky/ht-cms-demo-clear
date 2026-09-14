@@ -8,15 +8,18 @@
  *     (renders whatever check names arrive) with green/red icons
  *   - Document: type, issuing state, number last-4 (SensitiveValue), expiration
  *   - Verified identity: name, DOB (SensitiveValue), address
+ *   - Checks footer: server-curated summary ("8 identity checks passed · …")
  *   - "Coverage discovered" sub-card when the coverage check found active
  *     out-of-state Medicaid (payer, plan status, member id, start date, and
- *     the applicant's self-resolution mapped to friendly text)
+ *     the applicant's self-resolution mapped to friendly text) — red while the
+ *     Verify Assist flag is open, neutral with a Resolved/Dismissed tag after
  *
  * Pure renderer — no data fetching. WorkspacePage passes
  * `eeCase.identityVerification`.
  */
 
 import { CheckCircle2, Clock, ShieldAlert, ShieldCheck, XCircle } from 'lucide-react';
+import { isFlagClosed } from './case-assist/OutOfStateCoverageCard';
 import type { IdentityVerification, VerificationCheck } from '../../types/ee';
 import { cn, DASH, fmtDate } from '../../lib/utils';
 import { SensitiveValue } from './SensitiveValue';
@@ -132,6 +135,10 @@ export function IdentityVerificationCard({ identityVerification: iv }: IdentityV
   const coverage = det?.coverage ?? null;
   const duplicate = det?.duplicate_enrollment === true;
   const verified = iv.status === 'success';
+  // Red only while the Verify Assist flag is open / in review; once resolved or
+  // dismissed the coverage block stays as evidence but renders neutral.
+  const findingClosed = duplicate && isFlagClosed(iv.flag);
+  const closedLabel = iv.flag?.status === 'dismissed' ? 'Dismissed' : 'Resolved';
 
   const fullName =
     [doc?.first_name, doc?.middle_name, doc?.last_name].filter(Boolean).join(' ') || iv.subjectName || DASH;
@@ -178,6 +185,14 @@ export function IdentityVerificationCard({ identityVerification: iv }: IdentityV
             ))}
           </ul>
         )}
+        {iv.checksSummary && (
+          <p
+            className="px-4 py-1.5 text-[11px] text-muted-foreground border-b border-border bg-muted/20"
+            data-slot="checks-summary"
+          >
+            {iv.checksSummary}
+          </p>
+        )}
 
         {/* Document + identity */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 px-4 py-3">
@@ -217,22 +232,43 @@ export function IdentityVerificationCard({ identityVerification: iv }: IdentityV
           </dl>
         </div>
 
-        {/* Coverage discovered */}
+        {/* Coverage discovered — red while the finding is open, neutral once resolved/dismissed */}
         {duplicate && (
           <div
-            className="mx-4 mb-4 rounded-lg border p-3"
-            style={{
-              borderColor: 'var(--civic-error-solid, #dc2626)',
-              backgroundColor: 'var(--civic-error-bg, rgb(254 242 242))',
-            }}
+            className={cn('mx-4 mb-4 rounded-lg border p-3', findingClosed && 'border-border bg-muted/30')}
+            style={
+              findingClosed
+                ? undefined
+                : {
+                    borderColor: 'var(--civic-error-solid, #dc2626)',
+                    backgroundColor: 'var(--civic-error-bg, rgb(254 242 242))',
+                  }
+            }
             role="note"
             aria-label="Coverage discovered"
+            data-slot="coverage-discovered"
+            data-state={findingClosed ? 'closed' : 'open'}
           >
             <div className="flex items-center gap-2 mb-2">
-              <ShieldAlert className="w-4 h-4" style={{ color: 'var(--civic-error-text, #991b1b)' }} aria-hidden="true" />
-              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--civic-error-text, #991b1b)' }}>
+              {findingClosed ? (
+                <ShieldCheck className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              ) : (
+                <ShieldAlert className="w-4 h-4" style={{ color: 'var(--civic-error-text, #991b1b)' }} aria-hidden="true" />
+              )}
+              <p
+                className={cn('text-xs font-bold uppercase tracking-wider', findingClosed && 'text-muted-foreground')}
+                style={findingClosed ? undefined : { color: 'var(--civic-error-text, #991b1b)' }}
+              >
                 Coverage discovered — {det?.payer_state_name ?? det?.payer_state ?? 'out of state'}
               </p>
+              {findingClosed && (
+                <span
+                  className="ml-auto inline-flex items-center rounded-md border border-border bg-card px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground"
+                  data-slot="coverage-finding-tag"
+                >
+                  {closedLabel}
+                </span>
+              )}
             </div>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
               <Field label="Payer" value={coverage?.payer_name ?? (det?.payer_state ? `${det.payer_state} Medicaid` : null)} />
@@ -246,9 +282,19 @@ export function IdentityVerificationCard({ identityVerification: iv }: IdentityV
                 />
               )}
             </dl>
-            <p className="text-[11px] mt-2 leading-snug" style={{ color: 'var(--civic-error-text, #991b1b)' }}>
+            <p
+              className={cn('text-[11px] mt-2 leading-snug', findingClosed && 'text-muted-foreground')}
+              style={findingClosed ? undefined : { color: 'var(--civic-error-text, #991b1b)' }}
+            >
               <span className="font-semibold">Applicant response: </span>
               {resolution ?? 'No response recorded in the hosted flow.'}
+              {findingClosed && iv.flag && (
+                <>
+                  {' '}
+                  <span className="font-semibold">Finding {closedLabel.toLowerCase()}</span>
+                  {iv.flag.dispositionReason ? ` — ${iv.flag.dispositionReason.replace(/_/g, ' ')}` : ''} ({fmtDate(iv.flag.updatedAt)}).
+                </>
+              )}
             </p>
           </div>
         )}
