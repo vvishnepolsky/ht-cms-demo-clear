@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { attachUser, ensureStaffSeeds, getUser, isStaff } from "./auth.js";
+import { backfillOutOfStateCaseFlags } from "./ee/cases.js";
 import { narrativeMode } from "./case-assist/narrative.js";
 import { config, PKG_ROOT } from "./config.js";
 import { determinationsForCase, getCaseRow } from "./ee/cases.js";
@@ -154,6 +155,8 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
 });
 
 const seeded = ensureStaffSeeds();
+const backfilled = backfillOutOfStateCaseFlags();
+if (backfilled) console.log(`Backfilled out-of-state flag state on ${backfilled} case(s)`);
 if (seeded.length) console.log(`Seeded staff users: ${seeded.join(", ")}`);
 
 app.listen(config.port, () => {

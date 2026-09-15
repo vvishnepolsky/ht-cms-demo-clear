@@ -730,3 +730,40 @@ export function saveCaseAssistNarrative(id: string, narrative: string, source: s
     `UPDATE medicaid_ee_cases SET case_assist_narrative = ?, case_assist_narrative_source = ?, case_assist_rec_ids = ? WHERE id = ?`,
   ).run(narrative, source, toJson(recIds), id);
 }
+
+/**
+ * Boot-time backfill: cases whose Verify Assist flag was resolved/dismissed
+ * before flag→case syncing existed still carry the OOS-MCD chip and
+ * flagReason. Re-run the sync for every linked case so the caseworker UI
+ * never shows a lingering finding. Idempotent (no-op when nothing changes).
+ */
+export function backfillOutOfStateCaseFlags(): number {
+  const rows = db
+    .prepare(
+      `SELECT v.case_id AS caseId,
+              SUM(CASE WHEN f.status IN ('open','in_review') THEN 1 ELSE 0 END) AS openCount,
+              COUNT(f.id) AS flagCount
+       FROM verifications v JOIN flags f ON f.verification_id = v.id
+       WHERE v.case_id IS NOT NULL AND f.type = 'out_of_state_medicaid'
+       GROUP BY v.case_id`,
+    )
+    .all() as Array<{ caseId: string; openCount: number; flagCount: number }>;
+  const system: User = {
+    id: "system",
+    role: "admin",
+    email: "system@state-x.gov",
+    firstName: "System",
+    lastName: "Backfill",
+    createdAt: now(),
+  };
+  let changed = 0;
+  for (const r of rows) {
+    if (r.flagCount === 0) continue;
+    const before = getCaseRow(r.caseId);
+    if (!before) continue;
+    const open = r.openCount > 0;
+    const after = syncOutOfStateCaseFlag(r.caseId, open, open ? "open" : "resolved", system);
+    if (after && (after.flag_reason !== before.flag_reason || after.intake_data !== before.intake_data)) changed++;
+  }
+  return changed;
+}
