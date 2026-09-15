@@ -2770,14 +2770,6 @@ a {
   font-size: 14px;
   color: var(--civic-danger-text, #b42318);
 }
-.btn--clear .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
 .verify-spinner {
   width: 18px;
   height: 18px;
@@ -2792,91 +2784,48 @@ a {
     transform: rotate(360deg);
   }
 }
-/* CLEAR brand CTA: white button, navy border + text, bold CLEAR wordmark. */
-.btn--clear {
-  background: #ffffff;
-  color: #041a55;
-  border: 2px solid #041a55;
-  font-weight: 700;
-  height: 44px;
-  padding: 0 22px;
-}
-.btn--clear:hover:not(:disabled) {
-  background: #f4f7ff;
-}
-.btn--clear:focus-visible {
-  box-shadow: 0 0 0 3px rgba(4, 26, 85, 0.25);
-}
-.clear-wordmark {
-  font-family: 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 900;
-  font-size: 13px;
-  letter-spacing: 1.5px;
-  line-height: 1;
-}
-.verified-control {
-  position: relative;
-}
-.verified-control > .input,
-.verified-control > .input input,
-.verified-control > select.input {
-  background: var(--civic-bg-subtle);
-  color: var(--civic-text-secondary);
-}
-.verified-control > .input {
-  padding-right: 36px;
-}
-.verified-control--inset > .input {
-  padding-right: 56px;
-}
-.verified-check {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  color: var(--civic-success-text);
-  pointer-events: none;
-}
-.verified-control--inset .verified-check {
-  right: 34px;
-}
-.verified-requirement {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  border: 1px solid var(--civic-success-border, var(--civic-border-default));
-  border-radius: 14px;
-  background: var(--civic-success-bg);
-}
-.verified-requirement-icon {
+/* "Verify with CLEAR" CTA — ported from the deployed Verify Assist app:
+   inline-flex h-12 min-w-[236px] gap-2.5 rounded-[32px] bg-[#041A55] px-6
+   text-base font-semibold tracking-[-0.02em] text-white; hover bg-[#0a2a7c]. */
+.clear-verify-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9999px;
-  background: var(--civic-bg-card);
-  color: var(--civic-success-text);
+  gap: 10px;
+  height: 48px;
+  min-width: 236px;
   flex-shrink: 0;
-}
-.verified-requirement-body {
-  flex: 1;
-  min-width: 0;
-}
-.verified-requirement-title {
+  padding: 0 24px;
+  border: none;
+  border-radius: 32px;
+  background: #041a55;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 16px;
   font-weight: 600;
-  font-size: 15px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 150ms var(--civic-ease-standard);
 }
-.verified-requirement-detail {
-  font-size: 14px;
-  color: var(--civic-text-secondary);
+.clear-verify-btn:hover:not(:disabled) {
+  background: #0a2a7c;
 }
-.verified-pill--sm {
-  height: 32px;
-  padding: 0 12px;
-  font-size: 13px;
+.clear-verify-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.clear-verify-btn:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.clear-verify-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(4, 26, 85, 0.35);
+}
+.clear-verify-btn__mark {
+  flex-shrink: 0;
 }
 .verified-pill {
   display: inline-flex;

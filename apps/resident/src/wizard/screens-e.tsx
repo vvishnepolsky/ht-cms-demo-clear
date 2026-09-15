@@ -65,6 +65,7 @@ import { AddressAutofill } from "@mapbox/search-js-react";
 import { MAPBOX_TOKEN, US_AUTOFILL_OPTIONS } from "../lib/address-autofill";
 import { i18n, setStoredLanguage, useTranslation } from "@ht/i18n";
 import { persistForm } from "./context";
+import { ClearVerifyButton } from "./ClearVerifyButton";
 import { VerifiedControl } from "./VerifiedChip";
 import {
   applyVerificationToPrimary,
@@ -721,31 +722,13 @@ function ClearVerifyPanel({ state, verified, error, onVerify }) {
   return (
     <Panel title="Verify your identity">
       <div className="verify-panel-body">
-        <p>
-          You'll be taken to Verify Assist, our identity-verification service,
-          to verify your identity with CLEAR — selfie + government ID, about 2
-          minutes. When you finish you'll return here with your information
-          filled in.
-        </p>
-        {/* CLEAR brand CTA: white pill, navy border, CLEAR wordmark (ht-clear /apply). */}
-        <button
-          type="button"
-          className="btn btn--clear"
+        <p>Expedite your application with CLEAR identity verification.</p>
+        {/* CLEAR brand CTA — the deployed Verify Assist button, verbatim. */}
+        <ClearVerifyButton
           disabled={state === "starting"}
           onClick={onVerify}
-        >
-          {state === "starting" ? (
-            "Opening CLEAR…"
-          ) : (
-            <Fragment>
-              Verify with{" "}
-              <span className="clear-wordmark" aria-hidden="true">
-                CLEAR
-              </span>
-              <span className="sr-only">CLEAR</span>
-            </Fragment>
-          )}
-        </button>
+          label={state === "starting" ? "Opening CLEAR…" : "Verify with CLEAR"}
+        />
       </div>
       {state === "failed" ? (
         <p role="alert" className="verify-panel-error">
