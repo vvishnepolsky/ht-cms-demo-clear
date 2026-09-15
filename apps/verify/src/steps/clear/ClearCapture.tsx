@@ -1,12 +1,13 @@
+// eslint-disable-next-line no-restricted-syntax -- the camera-stream lifecycle genuinely needs useEffect (call site annotated below); this disables the unavoidable import-specifier warning.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CaptureImages } from '@/lib/api';
 import './clear-capture.css';
 
 // ============================================================================
-// MOCK CLEAR CAPTURE — used only when the server runs with MOCK_CLEAR=true.
+// STUB CLEAR CAPTURE — used only when the session mode is "stub".
 //
 // Faithful local replica of CLEAR's hosted verification (ported from the
-// legacy GA Gateway demo via the resident app's former /clear-verify page):
+// verify-assist demo repo):
 // phone → OTP (sandbox code 123456) → selfie → document capture via
 // getUserMedia. Rendered embedded inside the Verify Assist FlowShell; on
 // completion the parent posts /clear-complete and moves to processing.
@@ -73,6 +74,7 @@ function CameraCapture({
     }
   }, [facing]);
 
+  // eslint-disable-next-line no-restricted-syntax -- getUserMedia stream acquisition/release is a mount/unmount browser-resource lifecycle, the documented use case for a direct effect; the cleanup stops camera tracks.
   useEffect(() => {
     void startStream();
     return stopStream;
@@ -108,7 +110,7 @@ function CameraCapture({
     return (
       <div>
         <p>
-          We couldn't access your camera. Please allow camera access in your browser, or simulate the capture
+          We couldn&apos;t access your camera. Please allow camera access in your browser, or simulate the capture
           (sandbox).
         </p>
         <button className="clear-primary" onClick={() => onCaptured(null)}>
@@ -125,11 +127,17 @@ function CameraCapture({
         {photo ? (
           <img src={photo} alt="Captured" />
         ) : (
-          <video ref={videoRef} playsInline muted style={facing === 'user' ? { transform: 'scaleX(-1)' } : undefined} />
+          <video
+            ref={videoRef}
+            aria-label="Live camera preview"
+            playsInline
+            muted
+            style={facing === 'user' ? { transform: 'scaleX(-1)' } : undefined}
+          />
         )}
         {!photo && (overlay === 'oval' ? <div className="selfie-oval" /> : <div className="id-frame" />)}
       </div>
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <canvas ref={canvasRef} aria-hidden="true" style={{ display: 'none' }} />
       {photo ? (
         <>
           <button className="clear-primary" onClick={() => onCaptured(photo)}>
@@ -148,7 +156,12 @@ function CameraCapture({
   );
 }
 
-export function ClearCapture({ onComplete }: { onComplete: (images: CaptureImages) => void }) {
+export function ClearCapture({
+  onComplete,
+}: {
+  /** `phone` is the number entered in the phone step — it drives the server's phone-triggered demo identities. */
+  onComplete: (images: CaptureImages, phone: string) => void;
+}) {
   const [step, setStep] = useState<Step>('intro');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -161,8 +174,8 @@ export function ClearCapture({ onComplete }: { onComplete: (images: CaptureImage
   // back to the flow (which completes the CLEAR session server-side).
   const finish = useCallback(() => {
     setStep('uploading');
-    setTimeout(() => onComplete(imagesRef.current), 900);
-  }, [onComplete]);
+    setTimeout(() => onComplete(imagesRef.current, phone), 900);
+  }, [onComplete, phone]);
 
   const submitOtp = () => {
     if (otp.trim() === '123456') {
@@ -190,14 +203,14 @@ export function ClearCapture({ onComplete }: { onComplete: (images: CaptureImage
           <>
             <h2>Verify your identity with CLEAR</h2>
             <p>
-              A quick selfie and a photo of your government ID — that's it. Your photos are used only to verify
+              A quick selfie and a photo of your government ID — that&apos;s it. Your photos are used only to verify
               your identity.
             </p>
             <button className="clear-primary" onClick={() => setStep('phone')}>
               Get started
             </button>
             <p style={{ fontSize: 11.5, marginTop: 14 }}>
-              By continuing you agree to CLEAR's Terms of Use and Privacy Policy.
+              By continuing you agree to CLEAR&apos;s Terms of Use and Privacy Policy.
             </p>
           </>
         )}
@@ -205,7 +218,7 @@ export function ClearCapture({ onComplete }: { onComplete: (images: CaptureImage
         {step === 'phone' && (
           <>
             <h2>Enter your phone number</h2>
-            <p>We'll text you a one-time code to confirm this device.</p>
+            <p>We&apos;ll text you a one-time code to confirm this device.</p>
             <input
               type="tel"
               placeholder="(408) 222-2222"
@@ -236,7 +249,7 @@ export function ClearCapture({ onComplete }: { onComplete: (images: CaptureImage
               onChange={(e) => setOtp(e.target.value)}
               aria-label="One-time code"
             />
-            {otpError && <p className="clear-error">That code didn't match. Try 123456.</p>}
+            {otpError && <p className="clear-error">That code didn&apos;t match. Try 123456.</p>}
             <button className="clear-primary" disabled={otp.trim().length !== 6} onClick={submitOtp}>
               Verify code
             </button>

@@ -1,8 +1,8 @@
 /* ============================================================================
    Resident template — brand foundation.
 
-   Applies the design-system token foundation (deep-teal accent + olive
-   secondary, cool-gray neutrals, teal-tinted elevation, brighter focus ring)
+   Applies the design-system token foundation (VerifyAssist blue accent + olive
+   secondary, cool-gray neutrals, navy-tinted elevation, brighter focus ring)
    on top of the vendored Civic base. This is a FOUNDATIONS-ONLY layer: it
    overrides Civic's Layer-1 (surfaces/text/borders) and Layer-2 (accent/status)
    semantic tokens by value only — no component rules are redefined here.
@@ -24,13 +24,16 @@
   --civic-bg-subtle: #f0f2f5;
   --civic-bg-component: #e8eaed;
   --civic-bg-component-hover: rgba(
-    0,
-    100,
-    126,
+    37,
+    99,
+    235,
     0.08
-  ); /* transparent teal — neutral hover fill (outline/secondary/ghost) */
+  ); /* transparent brand blue — neutral hover fill (outline/secondary/ghost) */
   --civic-bg-input: #ffffff;
   --civic-sidebar-bg: #f7f9fa;
+
+  /* --- Brand nav — deep navy bar (matches the VerifyAssist wordmark) ------ */
+  --brand-nav-bg: #0f2547;
 
   /* --- Text — deep slate-teal ------------------------------------------- */
   --civic-text-primary: #1a2e3a; /* ~14:1 on white */
@@ -44,14 +47,14 @@
   --civic-border-strong: #9ca3af;
   --civic-border-focus: var(--civic-accent-solid);
 
-  /* --- Accent — deep teal (THE interactive color, AA 6.4:1 on white) ---- */
-  --civic-accent-solid: #00647e;
-  --civic-accent-solid-hover: #004a5e;
-  --civic-accent-bg: #e8f5f7; /* pale teal surface / selected soft fill */
-  --civic-accent-bg-hover: #c8eff3;
-  --civic-accent-bg-active: #b6e7ed;
-  --civic-accent-text: #00647e;
-  --civic-accent-text-contrast: #003544;
+  /* --- Accent — VerifyAssist blue (THE interactive color) ---------------- */
+  --civic-accent-solid: #2563eb; /* brand blue, 4.5:1 white text on solid */
+  --civic-accent-solid-hover: #1d4ed8;
+  --civic-accent-bg: #eef3ff; /* pale blue surface / selected soft fill */
+  --civic-accent-bg-hover: #dde8ff;
+  --civic-accent-bg-active: #cbdcff;
+  --civic-accent-text: #1d4ed8; /* text-safe step on white (~6.3:1) */
+  --civic-accent-text-contrast: #17337a;
   --civic-accent-on-solid: #ffffff;
 
   /* --- Secondary accent — olive (surfaces and dots only; NOT body text) - */
@@ -68,24 +71,24 @@
   --civic-warning-solid: #f0b400;
   --civic-warning-bg: #fff4d5;
   --civic-warning-text: #9c6c00;
-  --civic-info-solid: #00647e;
-  --civic-info-bg: rgba(0, 100, 126, 0.06); /* transparent teal — notification / info surface */
-  --civic-info-border: rgba(0, 100, 126, 0.35); /* darker teal stroke on the transparent fill */
-  --civic-info-text: #00647e;
+  --civic-info-solid: #2563eb;
+  --civic-info-bg: rgba(37, 99, 235, 0.06); /* transparent brand blue — notification / info surface */
+  --civic-info-border: rgba(37, 99, 235, 0.35); /* darker blue stroke on the transparent fill */
+  --civic-info-text: #1d4ed8;
   --civic-destructive-solid: #dc2626;
   --civic-destructive-solid-hover: #c11f1f;
   --civic-destructive-bg: #fee2e2;
   --civic-destructive-text: #dc2626;
   --civic-destructive-border: #f3c2c4;
 
-  /* --- Focus & ring — teal, slightly more visible (WCAG 2.2) ------------ */
-  --civic-ring-color: rgba(0, 162, 199, 0.32);
+  /* --- Focus & ring — brand blue, slightly more visible (WCAG 2.2) ------ */
+  --civic-ring-color: rgba(37, 99, 235, 0.32);
   --civic-ring-width: 3px;
 
-  /* --- Elevation — teal-tinted so depth stays on-brand ------------------ */
-  --civic-shadow-sm: 0 1px 2px rgba(0, 74, 94, 0.04);
-  --civic-shadow-md: 0 4px 16px -4px rgba(0, 74, 94, 0.08), 0 1px 2px rgba(0, 74, 94, 0.04);
-  --civic-shadow-lg: 0 12px 32px -8px rgba(0, 74, 94, 0.12), 0 2px 6px rgba(0, 74, 94, 0.04);
-  --civic-shadow-xl: 0 24px 56px -12px rgba(0, 74, 94, 0.18), 0 4px 12px rgba(0, 74, 94, 0.06);
-  --civic-shadow-2xl: 0 32px 80px -16px rgba(0, 74, 94, 0.22), 0 8px 16px rgba(0, 74, 94, 0.08);
+  /* --- Elevation — navy-tinted so depth stays on-brand ------------------ */
+  --civic-shadow-sm: 0 1px 2px rgba(15, 37, 71, 0.04);
+  --civic-shadow-md: 0 4px 16px -4px rgba(15, 37, 71, 0.08), 0 1px 2px rgba(15, 37, 71, 0.04);
+  --civic-shadow-lg: 0 12px 32px -8px rgba(15, 37, 71, 0.12), 0 2px 6px rgba(15, 37, 71, 0.04);
+  --civic-shadow-xl: 0 24px 56px -12px rgba(15, 37, 71, 0.18), 0 4px 12px rgba(15, 37, 71, 0.06);
+  --civic-shadow-2xl: 0 32px 80px -16px rgba(15, 37, 71, 0.22), 0 8px 16px rgba(15, 37, 71, 0.08);
 }

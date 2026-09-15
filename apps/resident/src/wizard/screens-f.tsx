@@ -47,7 +47,7 @@ import {
   ageFrom,
   toMonthly,
 } from "./eligibility";
-import { VerifiedRequirement } from "./VerifiedChip";
+import { VerifiedControl, VerifiedRequirement } from "./VerifiedChip";
 import { FileUpload } from "./screens-e";
 import { useWireHousehold } from "../hooks/useWireHousehold";
 import { useStepSubmit } from "./submit-hooks";
@@ -175,27 +175,38 @@ function StepDemographicsV2({ ctx }) {
     }));
 
   // ─── Identity (primary only) ────────────────────────────────────────────
+  const sexVerified =
+    !!primary.identityVerification?.verifiedFields?.includes("sex") &&
+    !!primary.sex;
   const IdentitySection = (
     <Panel title="Identity">
       <Stack gap={14}>
-        <Field label="Sex assigned at birth" required>
-          <RadioGroup
-            name="sex"
-            value={primary.sex}
-            onChange={(x) => {
-              setPath("primaryApplicant", "sex", x);
-              if (x !== "female") {
-                setPath("demographics", "pregnant", null);
-                setPath("demographics", "dueDate", "");
-                setPath("demographics", "expectedBabies", 1);
-              }
-            }}
-            cols={2}
-            options={[
-              { value: "female", label: "Female" },
-              { value: "male", label: "Male" },
-            ]}
-          />
+        <Field
+          label="Sex assigned at birth"
+          required
+          hint={
+            sexVerified ? "Confirmed during identity verification." : undefined
+          }
+        >
+          <VerifiedControl verified={sexVerified}>
+            <RadioGroup
+              name="sex"
+              value={primary.sex}
+              onChange={(x) => {
+                setPath("primaryApplicant", "sex", x);
+                if (x !== "female") {
+                  setPath("demographics", "pregnant", null);
+                  setPath("demographics", "dueDate", "");
+                  setPath("demographics", "expectedBabies", 1);
+                }
+              }}
+              cols={2}
+              options={[
+                { value: "female", label: "Female" },
+                { value: "male", label: "Male" },
+              ]}
+            />
+          </VerifiedControl>
         </Field>
         <Field
           label="Race"

@@ -2827,6 +2827,62 @@ a {
 .clear-verify-btn__mark {
   flex-shrink: 0;
 }
+/* Fields prefilled from CLEAR: greyed out and locked. */
+.verified-control {
+  position: relative;
+  pointer-events: none;
+}
+.verified-control .input,
+.verified-control .input input,
+.verified-control select.input,
+.verified-control .radio-card,
+.verified-control .choice {
+  background: var(--civic-bg-subtle);
+  color: var(--civic-text-secondary);
+  border-color: var(--civic-border-subtle, var(--civic-border-default));
+}
+.verified-control .radio-card,
+.verified-control .choice {
+  opacity: 0.85;
+}
+/* A document requirement already satisfied by CLEAR (proof of identity). */
+.verified-requirement {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--civic-success-border, var(--civic-border-default));
+  border-radius: 14px;
+  background: var(--civic-success-bg);
+}
+.verified-requirement-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: var(--civic-bg-card);
+  color: var(--civic-success-text);
+  flex-shrink: 0;
+}
+.verified-requirement-body {
+  flex: 1;
+  min-width: 0;
+}
+.verified-requirement-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.verified-requirement-detail {
+  font-size: 14px;
+  color: var(--civic-text-secondary);
+}
+.verified-pill--sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
 .verified-pill {
   display: inline-flex;
   align-items: center;

@@ -1,8 +1,16 @@
 /**
- * Token-scoped client for the hosted-flow endpoints
+ * Token-scoped client for the hosted-flow REST surface
  * (docs/api-contract.md § Hosted Verify Assist flow). The session token from
- * the URL is the credential — there is no login in this app.
+ * the URL is the credential — there is no login in this app, and it never talks
+ * to a federation gateway or auth service.
+ *
+ * Same-origin: every call goes to `/api/flow/...` through the Vite `/api`
+ * dev proxy (no CORS). A 404/410 from any endpoint means the link is invalid,
+ * expired, or already consumed, and the UI degrades to the invalid-link screen
+ * without leaking session state.
  */
+
+const API_BASE = '/api';
 
 export interface DocumentTraits {
   document_type: string;
@@ -46,20 +54,25 @@ export interface Determination {
 export interface FlowCheck {
   name: string;
   status: string;
-  /** Real CLEAR API outcome; absent on legacy mock rows. */
+  /** Real CLEAR API outcome; absent on stubbed/mock rows. */
   value?: boolean | null;
 }
 
-export type FlowStatus = 'awaiting_user' | 'in_progress' | 'success' | 'failed' | 'expired';
+// 'pending' = verified with CLEAR but held for back-office review (a provider
+// name/DOB mismatch) — terminal for the flow UI.
+export type FlowStatus = 'awaiting_user' | 'in_progress' | 'success' | 'pending' | 'failed' | 'expired';
 
 export type FlowResolution = 'ended_submit_proof' | 'confirm_enrolled';
 
 export interface FlowSession {
   verificationId: string;
   status: FlowStatus;
-  role: 'applicant' | 'household';
+  role: 'applicant' | 'household' | 'provider';
+  /** 'mock' plays the in-app CLEAR capture replica; 'sandbox' redirects to clearUrl. */
   mode: 'mock' | 'sandbox';
   externalRef: string | null;
+  /** Provider verifications: the provider's NPI (shown instead of externalRef). */
+  npi: string | null;
   subjectName: string | null;
   checks: FlowCheck[];
   traits: {
@@ -71,25 +84,43 @@ export interface FlowSession {
   resolution: FlowResolution | null;
   /** Sandbox mode only: CLEAR's real hosted-UI URL for the verification step. */
   clearUrl: string | null;
-  /** Where the flow closes out to — back into the origin application. */
-  returnTo: string;
+  /**
+   * Where the flow closes out to — back into the origin application. May be
+   * null for a staff-initiated verification with no origin app, in which case
+   * the flow ends on a completion screen instead of a hand-back.
+   */
+  returnTo: string | null;
+}
+
+/** Non-2xx response; `status` lets callers distinguish invalid/expired tokens (404/410). */
+export class ApiError extends Error {
+  constructor(public readonly status: number) {
+    super(`request_failed_${status}`);
+    this.name = 'ApiError';
+  }
+}
+
+/** True when the error means the link is dead (unknown, expired, or consumed). */
+export function isTokenGone(err: unknown): boolean {
+  return err instanceof ApiError && (err.status === 404 || err.status === 410);
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: { 'content-type': 'application/json' },
+  const res = await fetch(`${API_BASE}${path}`, {
     ...init,
+    headers: {
+      'content-type': 'application/json',
+      ...(init?.headers as Record<string, string> | undefined),
+    },
   });
   if (!res.ok) {
-    throw new Error(`request_failed_${res.status}`);
+    throw new ApiError(res.status);
   }
   return (await res.json()) as T;
 }
 
 export async function getFlowSession(token: string): Promise<FlowSession> {
-  const { session } = await request<{ session: FlowSession }>(
-    `/api/flow/sessions/${encodeURIComponent(token)}`,
-  );
+  const { session } = await request<{ session: FlowSession }>(`/flow/sessions/${encodeURIComponent(token)}`);
   return session;
 }
 
@@ -103,22 +134,29 @@ export interface CaptureImages {
 /**
  * Mock mode only — stands in for CLEAR's servers completing the verification.
  * Real webcam captures ride along to the staff console; a slot whose capture
- * was simulated (camera unavailable) is simply omitted.
+ * was simulated (camera unavailable) is simply omitted. The phone entered in
+ * the capture replica rides along too — it drives the server's phone-triggered
+ * demo identities, mirroring how real runs carry the phone in CLEAR's traits.
  */
-export async function completeClearStep(token: string, images: CaptureImages = {}): Promise<void> {
-  await request(`/api/flow/sessions/${encodeURIComponent(token)}/clear-complete`, {
+export async function completeClearStep(token: string, images: CaptureImages = {}, phone?: string): Promise<void> {
+  await request(`/flow/sessions/${encodeURIComponent(token)}/clear-complete`, {
     method: 'POST',
-    body: JSON.stringify(images),
+    body: JSON.stringify({ ...images, phone }),
   });
 }
 
+/**
+ * Close-out: record the applicant's answer to the coverage finding. The server
+ * persists only the proof filename (the file itself is captured client-side for
+ * the UI); pass the selected file's `name` when the applicant uploads proof.
+ */
 export async function sendResolution(
   token: string,
   resolution: FlowResolution,
-  proofName?: string,
-): Promise<{ returnTo: string }> {
-  return request<{ ok: boolean; returnTo: string }>(
-    `/api/flow/sessions/${encodeURIComponent(token)}/resolution`,
-    { method: 'POST', body: JSON.stringify({ resolution, proofName }) },
-  );
+  proof?: { name: string; proofDataUrl?: string; proofMimeType?: string },
+): Promise<{ returnTo: string | null }> {
+  return request<{ ok: boolean; returnTo: string | null }>(`/flow/sessions/${encodeURIComponent(token)}/resolution`, {
+    method: 'POST',
+    body: JSON.stringify({ resolution, proofName: proof?.name }),
+  });
 }

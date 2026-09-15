@@ -74,7 +74,7 @@ async function residentJourney({ label, full }) {
   check(true, `handed off to hosted flow ${page.url()}`);
 
   console.log(`\n## Part 2 — hosted Verify Assist flow (${label})`);
-  await page.getByRole('button', { name: 'Begin verification' }).click();
+  // No welcome interstitial: mock mode lands directly on the CLEAR capture replica.
   await page.getByRole('heading', { name: 'Verify your identity with CLEAR' }).waitFor();
   await page.locator('.clear-primary').click(); // Get started
   await page.getByLabel('Phone number').fill('5551234567');
@@ -93,11 +93,12 @@ async function residentJourney({ label, full }) {
   await page.getByRole('heading', { name: 'Photograph your ID' }).waitFor();
   await sleep(800);
   await captureOrSimulate();
-  await page.getByText(/We found active Medicaid coverage in South Carolina/).waitFor({ timeout: 40000 });
+  await page.getByText(/Our records show you have active Medicaid coverage with/).waitFor({ timeout: 40000 });
+  check((await page.getByText(/South Carolina Medicaid/).count()) > 0, 'results name the South Carolina Medicaid payer');
   check(true, 'results show the South Carolina Medicaid finding');
   check((await page.getByText('Identity verified').count()) > 0, 'results show identity verified');
   if (full) { await shot(page, 'p2-results-sc-medicaid'); }
-  await page.getByText(/I'm still enrolled/).click();
+  await page.getByText(/I am still enrolled/).click();
   await page.getByRole('button', { name: /Send results/ }).click();
   await page.getByRole('heading', { name: /Results sent/ }).waitFor({ timeout: 15000 });
   if (full) await shot(page, 'p2-closeout');
@@ -119,8 +120,8 @@ async function residentJourney({ label, full }) {
     const texts = await page.locator('.step-body input[type=text]').evaluateAll((els) => els.map((e) => e.value));
     check(texts.includes('Springfield') && texts.includes('55501'), 'city Springfield + ZIP 55501 prefilled');
     check((await page.locator('.step-body select').nth(1).inputValue()) === 'SX', 'state prefilled SX');
-    const chips = await page.locator('.verified-check').count();
-    check(chips >= 8, `in-field "Verified by CLEAR" checks present (${chips})`);
+    const chips = await page.locator('.verified-control').count();
+    check(chips >= 8, `verified fields greyed out (${chips})`);
     check((await page.locator('[aria-label*="ending in 6789"]').count()) > 0, 'masked SSN •••-••-6789 shown');
     check(await page.getByRole('button', { name: /^Continue$/ }).isEnabled(), 'Continue enabled after prefill');
     check(!page.url().includes('verified='), 'hash rewritten to bare #/personal');
@@ -135,7 +136,9 @@ async function residentJourney({ label, full }) {
         check((await page.getByText(/Upload a driver's license/).count()) === 0, 'proof-of-identity dropzone hidden when verified');
         await shot(page, 'p3-demographics-verified');
       }
-      await page.getByText('Female', { exact: true }).click();
+      const sexPicked = await page.locator('input[name="sex"]:checked').count();
+      if (full) check(sexPicked > 0 && (await page.getByText(/Confirmed during identity verification/).count()) > 0, 'sex assigned at birth pre-marked by CLEAR and locked');
+      if (!sexPicked) await page.getByText('Female', { exact: true }).click();
       await page.getByText('U.S. Citizen', { exact: true }).click();
     },
     argyle: async () => {

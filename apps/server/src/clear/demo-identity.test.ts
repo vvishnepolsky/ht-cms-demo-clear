@@ -49,8 +49,9 @@ describe("enrichSession with DEMO_ENRICHMENT_PASSTHROUGH", () => {
     expect(doc.first_name).toBe("John");
     expect(doc.last_name).toBe("Doe");
     expect(doc.dob).toBe("1985-06-15");
-    // demo values for everything not passed through
-    expect(doc.middle_name).toBe(DEMO_DOCUMENT.middle_name);
+    // demo values for everything not passed through that the demo defines;
+    // fields the demo leaves empty (middle name) keep CLEAR's value
+    expect(doc.middle_name).toBe("Q");
     expect(doc.address_1).toBe(DEMO_DOCUMENT.address_1);
     expect(doc.subdivision).toBe("SX");
     // coverage storyline intact, policy holder follows the real name
@@ -72,6 +73,14 @@ describe("enrichSession with DEMO_ENRICHMENT_PASSTHROUGH", () => {
     expect(doc.first_name).toBe("Jordan");
     expect(doc.last_name).toBe("Doe");
     expect(doc.dob).toBe("1991-01-10");
+  });
+
+  it("keeps CLEAR's value for fields the demo identity leaves empty (sex, middle name)", () => {
+    const out = enrichSession(sandboxSession, "applicant", []);
+    const doc = out.traits!.document!;
+    expect(doc.first_name).toBe("Jordan"); // demo wins where defined
+    expect(doc.sex).toBe("M"); // demo sex is null → CLEAR's gender flows through
+    expect(doc.middle_name).toBe("Q");
   });
 
   it("is the full overlay when no passthrough is configured (mock path)", () => {

@@ -11,7 +11,7 @@ async function loadWith(env: Record<string, string>) {
 }
 
 const KEYS = [
-  "DEMO_APPLICANT_FIRST_NAME", "DEMO_APPLICANT_MIDDLE_NAME", "DEMO_APPLICANT_LAST_NAME", "DEMO_APPLICANT_DOB",
+  "DEMO_APPLICANT_FIRST_NAME", "DEMO_APPLICANT_MIDDLE_NAME", "DEMO_APPLICANT_LAST_NAME", "DEMO_APPLICANT_DOB", "DEMO_APPLICANT_SEX",
   "DEMO_HOUSEHOLD_FIRST_NAME", "DEMO_HOUSEHOLD_LAST_NAME", "DEMO_HOUSEHOLD_DOB",
 ];
 
@@ -36,6 +36,7 @@ describe("DEMO_APPLICANT_* / DEMO_HOUSEHOLD_* environment", () => {
       DEMO_APPLICANT_MIDDLE_NAME: "V",
       DEMO_APPLICANT_LAST_NAME: "Vishnepolsky",
       DEMO_APPLICANT_DOB: "1988-04-02",
+      DEMO_APPLICANT_SEX: "m",
       DEMO_HOUSEHOLD_FIRST_NAME: "Anna",
       DEMO_HOUSEHOLD_LAST_NAME: "Vishnepolsky",
       DEMO_HOUSEHOLD_DOB: "1990-09-30",
@@ -45,6 +46,7 @@ describe("DEMO_APPLICANT_* / DEMO_HOUSEHOLD_* environment", () => {
       middle_name: "V",
       last_name: "Vishnepolsky",
       dob: "1988-04-02",
+      sex: "M",
       address_1: "742 Evergreen Terrace", // address stays demo
     });
     expect(identity.DEMO_HEALTH_INSURANCE.policy_holder_first_name).toBe("Vadim");

@@ -10,7 +10,7 @@ export function InvalidLink() {
           <ShieldAlert className="size-8 text-muted-foreground" aria-hidden="true" />
           <h1 className="text-lg font-semibold">This verification link is invalid or has expired</h1>
           <p className="text-sm text-muted-foreground">
-            Return to your State-X Medicaid application and start the verification again to get a new link.
+            Return to your benefits application and start the verification again to get a new link.
           </p>
         </CardContent>
       </Card>

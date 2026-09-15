@@ -1,6 +1,11 @@
-/* Vendored Civic globals — the single style entry point for this app (same
- * vendoring model as the resident/admin apps: the css is owned source, never a
- * package import). civic-globals.css brings Tailwind v4, the Radix palettes,
- * Geist, and the Civic semantic tokens; theme.css re-skins the foundation. */
+/* Vendored Civic globals — the single style entry point for this app.
+ * It imports Tailwind v4, tw-animate-css, the Radix color palettes, the Geist
+ * font (@fontsource-variable/geist), and the Civic semantic tokens, and carries
+ * the @source directive that scans the vendored components. Imported locally
+ * (never as a package) per the vendoring model. Do NOT also @import 'tailwindcss'
+ * here — civic-globals.css already does, and a second import would duplicate it. */
 @import './styles/civic-globals.css';
+
+/* Brand foundation — overrides Civic semantic tokens by value (colors,
+ * elevation, focus ring). Loaded after the Civic base so it wins. */
 @import './styles/theme.css';

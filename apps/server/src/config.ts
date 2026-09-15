@@ -92,6 +92,15 @@ export interface DemoPerson {
   middleName: string | null;
   lastName: string;
   dob: string;
+  /** "M" | "F" | "X" | null — DEMO_*_SEX; null leaves the wizard's sex field unselected. */
+  sex: string | null;
+}
+function envSex(key: string, fallback: string | null): string | null {
+  const v = process.env[key]?.trim().toUpperCase();
+  if (v === undefined || v === "") return fallback;
+  if (v === "M" || v === "F" || v === "X") return v;
+  console.warn(`[config] ${key}="${process.env[key]}" must be M, F or X; leaving unset.`);
+  return fallback;
 }
 function envStr(key: string, fallback: string): string {
   const v = process.env[key]?.trim();
@@ -113,6 +122,7 @@ function demoPerson(prefix: string, d: DemoPerson): DemoPerson {
     middleName: middle === undefined ? d.middleName : middle || null,
     lastName: envStr(`${prefix}_LAST_NAME`, d.lastName),
     dob: envDob(`${prefix}_DOB`, d.dob),
+    sex: envSex(`${prefix}_SEX`, d.sex),
   };
 }
 export const DEMO_APPLICANT: DemoPerson = demoPerson("DEMO_APPLICANT", {
@@ -120,12 +130,14 @@ export const DEMO_APPLICANT: DemoPerson = demoPerson("DEMO_APPLICANT", {
   middleName: null,
   lastName: "Rivera",
   dob: "1991-01-10",
+  sex: null,
 });
 export const DEMO_HOUSEHOLD_MEMBER: DemoPerson = demoPerson("DEMO_HOUSEHOLD", {
   firstName: "Sam",
   middleName: null,
   lastName: "Rivera",
   dob: "1993-03-14",
+  sex: null,
 });
 
 /** Single demo tenant (State-X). Every GraphQL entity carries this customerId. */

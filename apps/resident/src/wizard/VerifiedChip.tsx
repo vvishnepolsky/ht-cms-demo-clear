@@ -53,15 +53,13 @@ export function VerifiedLabel({
 }
 
 /**
- * In-field treatment for a control prefilled from a CLEAR verification — the
- * ht-clear `/apply` pattern: a small green check at the right edge of the
- * control plus greyed auto-filled styling. The control stays editable. Pass
- * `inset` for controls with their own right-edge adornment (date picker,
- * select chevron) so the check sits beside it.
+ * Treatment for a control prefilled from a CLEAR verification: the field is
+ * greyed out and locked (the verified value is the record). `inset` is
+ * accepted for call-site compatibility and has no effect.
  */
 export function VerifiedControl({
   verified,
-  inset = false,
+  inset: _inset = false,
   children,
 }: {
   verified: boolean;
@@ -71,17 +69,11 @@ export function VerifiedControl({
   if (!verified) return <>{children}</>;
   return (
     <div
-      className={"verified-control" + (inset ? " verified-control--inset" : "")}
+      className="verified-control"
+      title="Verified by CLEAR"
+      aria-readonly="true"
     >
       {children}
-      <span
-        className="verified-check"
-        role="img"
-        aria-label="Verified by CLEAR"
-        title="Verified by CLEAR"
-      >
-        <Icon name="check" size={16} aria-hidden="true" />
-      </span>
     </div>
   );
 }

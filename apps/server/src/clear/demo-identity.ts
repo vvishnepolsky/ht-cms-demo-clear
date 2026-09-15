@@ -22,7 +22,7 @@ export const DEMO_DOCUMENT: DocumentTraits = {
   middle_name: DEMO_APPLICANT.middleName,
   last_name: DEMO_APPLICANT.lastName,
   dob: DEMO_APPLICANT.dob,
-  sex: null,
+  sex: DEMO_APPLICANT.sex,
   address_1: "742 Evergreen Terrace",
   address_2: null,
   city: "Springfield",
@@ -48,7 +48,7 @@ export const HOUSEHOLD_DOCUMENT: DocumentTraits = {
   middle_name: DEMO_HOUSEHOLD_MEMBER.middleName,
   last_name: DEMO_HOUSEHOLD_MEMBER.lastName,
   dob: DEMO_HOUSEHOLD_MEMBER.dob,
-  sex: null,
+  sex: DEMO_HOUSEHOLD_MEMBER.sex,
   address_1: "742 Evergreen Terrace",
   address_2: null,
   city: "Springfield",
@@ -102,8 +102,15 @@ export function applyPassthrough(
   realDoc: Partial<DocumentTraits> | null | undefined,
   fields: readonly DocumentField[],
 ): DocumentTraits {
-  if (!realDoc || fields.length === 0) return demoDoc;
   const merged: DocumentTraits = { ...demoDoc };
+  if (!realDoc) return merged;
+  // Fields the demo identity leaves empty (sex, middle name, …) keep whatever
+  // CLEAR actually returned — the overlay only replaces what it defines.
+  for (const [k, v] of Object.entries(realDoc) as Array<[DocumentField, unknown]>) {
+    if ((merged as unknown as Record<string, unknown>)[k] == null && v != null && String(v).trim() !== "") {
+      (merged as unknown as Record<string, unknown>)[k] = v;
+    }
+  }
   for (const f of fields) {
     const v = realDoc[f];
     if (v !== undefined && v !== null && String(v).trim() !== "") {
