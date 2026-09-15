@@ -153,7 +153,8 @@ try {
     insurance: async () => {
       const banner = page.locator('[data-testid=insurance-from-clear]');
       await banner.waitFor({ timeout: 10000 });
-      check(/Found during identity verification/.test(await banner.innerText()), 'insurance step shows "Found during identity verification"');
+      check(/We identified existing healthcare coverage/.test(await banner.innerText()) && /Review it below/.test(await banner.innerText()), 'insurance step says "We identified existing healthcare coverage — Review it below"');
+      check((await banner.locator('[data-testid=insurance-unlock]').count()) === 1, 'an edit option sits underneath the notice');
       check((await banner.getAttribute('data-locked')) === 'true', 'prefilled entry is locked');
       check((await page.locator('.step-body .verified-control').count()) >= 1, 'prefilled entry uses the greyed/locked VerifiedControl treatment');
       const body = page.locator('.step-body');
@@ -176,7 +177,7 @@ try {
       await shot(page, 'e2-insurance-prefilled');
       // The edit link unlocks; re-lock is not offered (the applicant now owns the values).
       await page.locator('[data-testid=insurance-unlock]').click();
-      check((await banner.getAttribute('data-locked')) === 'false', '"This isn\'t right — edit" unlocks the entry');
+      check((await banner.getAttribute('data-locked')) === 'false', 'the edit option unlocks the entry');
     },
   };
   const visited = [];

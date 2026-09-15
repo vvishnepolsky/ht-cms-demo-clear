@@ -1173,29 +1173,24 @@ function StepInsuranceV2({ ctx }) {
         <Stack gap={14}>
           {fromClear ? (
             <div className="verified-requirement" data-testid="insurance-from-clear" data-locked={locked ? 'true' : 'false'}>
-              <span className="verified-requirement-ic" aria-hidden="true">
+              <span className="verified-requirement-icon" aria-hidden="true">
                 <Icon name="shieldCheck" size={16} />
               </span>
               <div className="verified-requirement-body">
-                <div className="verified-requirement-title">Found during identity verification</div>
-                <div className="verified-requirement-sub">
-                  CLEAR's coverage check found this {h.companyName ? `${h.companyName} ` : ''}plan for{' '}
-                  {member.name.split(' ')[0]}. Review it below
-                  {locked ? ' — the details are locked to what was found.' : '.'}
-                </div>
+                <div className="verified-requirement-title">We identified existing healthcare coverage</div>
+                <div className="verified-requirement-detail">Review it below.</div>
+                {locked ? (
+                  <button
+                    type="button"
+                    className="btn btn--link"
+                    data-testid="insurance-unlock"
+                    style={{ marginTop: 6, padding: 0 }}
+                    onClick={() => setMember(activeId, { locked: false })}
+                  >
+                    Something's wrong? Edit it
+                  </button>
+                ) : null}
               </div>
-              {locked ? (
-                <button
-                  type="button"
-                  className="btn btn--link"
-                  data-testid="insurance-unlock"
-                  onClick={() => setMember(activeId, { locked: false })}
-                >
-                  This isn't right — edit
-                </button>
-              ) : (
-                <span className="fineprint">Editable</span>
-              )}
             </div>
           ) : null}
           <VerifiedControl verified={locked}>
