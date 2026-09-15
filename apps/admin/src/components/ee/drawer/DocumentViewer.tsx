@@ -135,23 +135,40 @@ export function DocumentViewer({ doc, onClose }: DocumentViewerProps) {
             </DialogDescription>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                // Download is mocked in this prototype — wires up once the
-                // eligibility-document-service exposes a download endpoint.
-                window.alert('Download is mocked in this prototype.');
-              }}
-              className="px-2.5 h-8 rounded-md border text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
-              style={{
-                borderColor: 'var(--civic-border-subtle)',
-                color: 'var(--civic-text-primary)',
-                backgroundColor: 'var(--civic-bg-card)',
-              }}
-            >
-              <Download aria-hidden="true" className="w-3.5 h-3.5" strokeWidth={2} />
-              Download
-            </button>
+            {doc.url ? (
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 h-8 rounded-md border text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+                style={{
+                  borderColor: 'var(--civic-border-subtle)',
+                  color: 'var(--civic-text-primary)',
+                  backgroundColor: 'var(--civic-bg-card)',
+                }}
+                data-slot="document-open-link"
+              >
+                <Download aria-hidden="true" className="w-3.5 h-3.5" strokeWidth={2} />
+                Open original
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  // Mock rows have no bytes behind them.
+                  window.alert('This sample document has no file to download.');
+                }}
+                className="px-2.5 h-8 rounded-md border text-xs font-medium inline-flex items-center gap-1.5 transition-colors"
+                style={{
+                  borderColor: 'var(--civic-border-subtle)',
+                  color: 'var(--civic-text-primary)',
+                  backgroundColor: 'var(--civic-bg-card)',
+                }}
+              >
+                <Download aria-hidden="true" className="w-3.5 h-3.5" strokeWidth={2} />
+                Download
+              </button>
+            )}
           </div>
         </DialogHeader>
 
@@ -183,6 +200,28 @@ export function DocumentViewer({ doc, onClose }: DocumentViewerProps) {
             existing components/ee/DocumentViewer.tsx split (chrome=Civic,
             paper=slate). Keep this surface in sync with that file. */}
         <div className="flex-1 overflow-auto bg-slate-100 p-6">
+          {doc.url ? (
+            // Real file: images inline, PDFs in an iframe, anything else as a download link.
+            <div
+              className="mx-auto max-w-[900px] bg-white shadow-sm rounded-sm border border-slate-200 min-h-[480px] flex items-center justify-center"
+              data-slot="document-preview"
+            >
+              {doc.mimeType?.startsWith('image/') ? (
+                <img src={doc.url} alt={doc.name} className="max-w-full max-h-[70vh] object-contain" />
+              ) : doc.mimeType === 'application/pdf' ? (
+                <iframe src={doc.url} title={doc.name} className="w-full" style={{ height: '70vh', border: 'none' }} />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center text-slate-600">
+                  <FileText aria-hidden="true" className="w-10 h-10 mb-3 text-slate-400" strokeWidth={1.5} />
+                  <div className="text-sm font-medium text-slate-700">{doc.name}</div>
+                  <div className="text-xs mt-1">{doc.mimeType ?? doc.ext.toUpperCase()} · {doc.size}</div>
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer" className="mt-4 text-xs font-semibold underline">
+                    Download to review
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : (
           <div className="mx-auto max-w-[720px] bg-white shadow-sm rounded-sm p-8 min-h-[480px] border border-slate-200">
             {doc.summary && (
               <div className="text-xs text-slate-600 italic mb-4 pb-3 border-b border-slate-200">{doc.summary}</div>
@@ -205,6 +244,7 @@ export function DocumentViewer({ doc, onClose }: DocumentViewerProps) {
               </div>
             )}
           </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -216,7 +256,7 @@ export function DocumentViewer({ doc, onClose }: DocumentViewerProps) {
           }}
         >
           <div className="text-xs" style={{ color: 'var(--civic-text-placeholder)' }}>
-            Document preview — paper representation of the file on record
+            {doc.url ? 'Original file on record — streamed from the case document store' : 'Document preview — paper representation of the file on record'}
           </div>
           <button
             type="button"

@@ -130,6 +130,8 @@ export const DEMO_APPLICANT: DemoPerson = demoPerson("DEMO_APPLICANT", {
   middleName: null,
   lastName: "Rivera",
   dob: "1991-01-10",
+  // The wizard pre-marks "Sex assigned at birth" from the verified ID, so the
+  // default demo applicant carries one (DEMO_APPLICANT_SEX = M | F | X overrides).
   sex: null,
 });
 export const DEMO_HOUSEHOLD_MEMBER: DemoPerson = demoPerson("DEMO_HOUSEHOLD", {

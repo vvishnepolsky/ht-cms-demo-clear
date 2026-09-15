@@ -1056,6 +1056,7 @@ export default function WorkspacePage() {
               status: eeCase.status,
               flagReason: eeCase.flagReason ?? null,
               flags: caseFlags,
+              documents: eeCase.documents ?? [],
             } satisfies DrawerCaseRow
           }
           onClose={() => setDrawerOpen(false)}

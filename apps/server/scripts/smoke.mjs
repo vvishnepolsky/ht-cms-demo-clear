@@ -64,6 +64,12 @@ class Client {
     }
     return { status: res.status, json, headers: res.headers };
   }
+  /** Raw GET — status, headers and the body bytes (for binary document downloads). */
+  async getRaw(path) {
+    const res = await fetch(`${BASE}${path}`, { headers: this.headers() });
+    const bytes = Buffer.from(await res.arrayBuffer());
+    return { status: res.status, headers: res.headers, bytes };
+  }
   get(path, h) {
     return this.request("GET", path, undefined, h);
   }
@@ -301,7 +307,11 @@ if (residentOps.LoginResident && residentOps.CreateResidentAccount) {
 }
 
 // Verify Assist: applicant verification through the hosted flow (bearer auth, no x-app)
-async function runVerification(role, resolution) {
+// 1×1 PNG used as the "proof of disenrollment" the applicant uploads in the hosted flow.
+const PROOF_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==";
+const PROOF_DATA_URL = `data:image/png;base64,${PROOF_PNG_BASE64}`;
+
+async function runVerification(role, resolution, proof) {
   const va = new Client(null);
   va.bearer = residentToken;
   const created = await va.post("/api/verifications", { role });
@@ -317,13 +327,15 @@ async function runVerification(role, resolution) {
   const s2 = await anon.get(`/api/flow/sessions/${token}`);
   assert(s2.json.session.status === "success", "flow completed", s2.json);
   assert(s2.json.session.traits && !("health_insurance" in s2.json.session.traits), "resident view strips health_insurance", s2.json.session.traits);
+  let resolutionResponse = null;
   if (resolution) {
-    const res = await anon.post(`/api/flow/sessions/${token}/resolution`, { resolution });
+    const res = await anon.post(`/api/flow/sessions/${token}/resolution`, { resolution, ...(proof ?? {}) });
     assert(res.status === 200 && res.json.returnTo, "resolution", res.json);
+    resolutionResponse = res.json;
   }
   const mine = await va.get(`/api/verifications/${id}`);
   assert(mine.status === 200 && mine.json.verification.status === "success", "owner read", mine.json);
-  return { id, externalRef: created.json.verification.externalRef, verification: mine.json.verification };
+  return { id, externalRef: created.json.verification.externalRef, verification: mine.json.verification, resolutionResponse, va };
 }
 
 const applicantVerification = await runVerification("applicant", "confirm_enrolled");
@@ -531,6 +543,9 @@ let flagId;
   assert(iv.flag?.type === "out_of_state_medicaid" && iv.flag.status === "open", "staff sees flag", iv.flag);
   assert(iv.flag.notes.length === 1, "applicant resolution note on flag", iv.flag.notes);
   assert(iv.traits.document.document_number_last4?.length === 4 && iv.traits.ssnLast4 === "6789", "traits redacted", iv.traits);
+  // The CLEAR-verified applicant never typed an SSN — the person row carries the verified last-4.
+  const cs = noGqlErrors(await staff.gql(adminOps.GetEECase, { id: caseId }, "GetEECase"), "GetEECase ssn").medicaidEeCase;
+  assert(cs.determinations?.[0]?.person?.ssnLast4 === "6789", "person.ssnLast4 propagated from CLEAR", cs.determinations?.[0]?.person);
   flagId = iv.flag.id;
   const ca = d.medicaidEeCase.caseAssist;
   const ids = ca.recommendations.map((x) => x.id);
@@ -629,6 +644,11 @@ let flagId;
   assert(!ids.includes("oos-medicaid") && !ids.includes("applicant-resolution"), "no out-of-state recommendation once resolved", ids);
   assert(/finding was resolved on .* \(disenrollment confirmed by the other state\)/.test(ca.caseAssist.narrative), "narrative regenerated with the resolution", ca.caseAssist.narrative);
   assert(ca.identityVerification.flag.status === "resolved", "flag still on record", ca.identityVerification.flag);
+  // The Evaluate step's trace follows the flag: Coverage discovery is PASS "Resolved" now.
+  const trace = c.ruleEvaluations;
+  const covRow = (trace?.sections ?? []).flatMap((sec) => sec.rows ?? []).find((r) => r.ruleName === "Coverage discovery");
+  assert(covRow && covRow.status === "PASS" && covRow.rightValue === "Resolved" && /Disenrollment confirmed by the other state/.test(covRow.note ?? ""), "Coverage discovery trace row resolved", covRow);
+  assert(trace.outcome !== "NEEDS_REVIEW" || (trace.summary.pending + trace.summary.failed) > 0, "outcome no longer cites the resolved finding", { outcome: trace.outcome, summary: trace.summary });
   const rest = await staff.get(`/api/admin/verifications/${applicantVerification.id}`);
   assert(rest.status === 200 && Array.isArray(rest.json.verification.checks) && rest.json.curatedChecks?.shown?.length <= 9, "staff REST keeps raw checks + curatedChecks", Object.keys(rest.json));
   log(`flag resolved → OOS-MCD cleared, no oos recommendation; narrative: ${ca.caseAssist.narrative}`);
@@ -724,6 +744,31 @@ let flagId;
   assert(!ids.includes("oos-medicaid") && ids.includes("identity-verified"), "clean recommendations", ids);
   assert(ca.identityVerification?.determination.duplicate_enrollment === false, "clean determination", ca.identityVerification);
   log(`clean path (household role): no flag; recs=${JSON.stringify(ids)}`);
+}
+
+// Verify Assist proof of disenrollment → stored document, served only to the owner or staff
+{
+  const proofRun = await runVerification("applicant", "ended_submit_proof", {
+    proofName: "sc-disenrollment-letter.png",
+    proofDataUrl: PROOF_DATA_URL,
+    proofMimeType: "image/png",
+  });
+  const docId = proofRun.resolutionResponse?.proofDocumentId;
+  assert(typeof docId === "string" && docId.length > 10, "resolution stored a proof document", proofRun.resolutionResponse);
+  assert(proofRun.verification.proofDocumentId === docId, "verification carries proofDocumentId", proofRun.verification);
+  const owner = await proofRun.va.getRaw(`/api/documents/${docId}/content`);
+  assert(owner.status === 200 && /^image\/png/.test(owner.headers.get("content-type") ?? "") && owner.bytes.length > 50, "owner can download the proof", { status: owner.status, type: owner.headers.get("content-type") });
+  assert(/inline; filename="sc-disenrollment-letter.png"/.test(owner.headers.get("content-disposition") ?? ""), "inline content-disposition", owner.headers.get("content-disposition"));
+  const anonRes = await anon.getRaw(`/api/documents/${docId}/content`);
+  assert(anonRes.status === 401, "anonymous download refused", anonRes.status);
+  const staffRes = await staff.getRaw(`/api/documents/${docId}/content`);
+  assert(staffRes.status === 200, "staff can download the proof", staffRes.status);
+  const detail = await staff.get(`/api/admin/verifications/${proofRun.id}`);
+  assert(/document /.test(JSON.stringify(detail.json)) || detail.json.verification.proofDocumentId === docId, "staff detail references the proof document", detail.json.verification.proofDocumentId);
+  const flags = await staff.get(`/api/verifications/${proofRun.id}/flags`);
+  const note = (flags.json.flags?.[0]?.notes ?? []).find((n) => /submitted proof of disenrollment/.test(n.body));
+  assert(note && note.body.includes(`(document ${docId})`), "flag note cites the proof document", flags.json.flags?.[0]?.notes);
+  log(`proof of disenrollment stored as document ${docId}: owner/staff 200 image/png, anonymous 401, flag note cites it`);
 }
 
 // logout clears cookie

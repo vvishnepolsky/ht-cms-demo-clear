@@ -172,6 +172,10 @@ export function CompletedCaseDetail({ eeCase, applicantName }: CompletedCaseDeta
   // sentinel rather than synthesizing a fake one (ENG-1913).
   const ssnFull = typeof dm.ssn === 'string' ? dm.ssn : null;
   const ssnReveal: string | null = ssnFull;
+  // CLEAR-verified applicants never type an SSN — show the verified last-4 masked.
+  const ssnLast4FromRecord =
+    eeCase.determinations[0]?.person?.ssnLast4 ?? eeCase.identityVerification?.traits?.ssnLast4 ?? null;
+  const ssnFromClear = !ssnReveal && ssnLast4FromRecord ? `•••-••-${ssnLast4FromRecord}` : null;
 
   // County
   const county = typeof intake.county === 'string' ? intake.county : '—';
@@ -530,7 +534,23 @@ export function CompletedCaseDetail({ eeCase, applicantName }: CompletedCaseDeta
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">SSN</dt>
-                    <dd className="mt-0.5">{ssnReveal ? <SensitiveValue value={ssnReveal} type="ssn" /> : '—'}</dd>
+                    <dd className="mt-0.5">
+                      {ssnReveal ? (
+                        <SensitiveValue value={ssnReveal} type="ssn" />
+                      ) : ssnFromClear ? (
+                        <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-nowrap" data-slot="ssn-from-clear">
+                          <SensitiveValue value={ssnFromClear} type="ssn" copyable={false} />
+                          <span
+                            className="text-[10px] font-semibold uppercase tracking-wider text-green-700"
+                            title="Last four digits confirmed during CLEAR identity verification"
+                          >
+                            from CLEAR
+                          </span>
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">County</dt>

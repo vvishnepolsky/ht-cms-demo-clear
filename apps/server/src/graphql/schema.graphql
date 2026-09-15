@@ -332,8 +332,28 @@ type MedicaidEeCaseDocument {
   id: ID!
   caseId: ID!
   s3Key: String!
+  """e.g. proof-of-disenrollment | proof-of-residence"""
   documentCategory: String!
   createdAt: DateTime!
+  # --- demo additions (additive to the supergraph shape) ---
+  fileName: String!
+  mimeType: String!
+  sizeBytes: Int!
+  uploadedAt: DateTime!
+  """verify_assist (uploaded in the hosted flow) | resident_upload"""
+  source: String!
+  """Same-origin URL streaming the bytes to the owner or staff: /api/documents/<id>/content"""
+  url: String!
+}
+
+"""Proof of disenrollment the applicant uploaded in the Verify Assist hosted flow."""
+type VerificationProofDocument {
+  id: ID!
+  fileName: String!
+  mimeType: String!
+  sizeBytes: Int!
+  uploadedAt: DateTime!
+  url: String!
 }
 
 type MedicaidEeCase {
@@ -698,6 +718,8 @@ type IdentityVerification {
   determination: CoverageDetermination
   """ended_submit_proof | confirm_enrolled | null"""
   resolution: String
+  """Set when the applicant chose ended_submit_proof and uploaded a file."""
+  proofDocument: VerificationProofDocument
   """Staff-only; null for residents."""
   flag: VerifyAssistFlag
 }

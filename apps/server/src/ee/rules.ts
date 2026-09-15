@@ -88,6 +88,95 @@ export interface IdentityContext {
   duplicateEnrollment: boolean;
   payerStateName: string | null;
   payerName: string | null;
+  /** Verify Assist flag: open | in_review | resolved | dismissed | null (no flag row yet). */
+  flagStatus?: string | null;
+  /** Disposition once the flag is closed, e.g. disenrollment_confirmed. */
+  flagDispositionReason?: string | null;
+  /** When the flag was last updated (the resolution time once closed). */
+  flagUpdatedAt?: string | null;
+  /** Applicant's hosted-flow answer: ended_submit_proof | confirm_enrolled | null. */
+  resolution?: string | null;
+}
+
+const DISPOSITION_LABELS: Record<string, string> = {
+  disenrollment_confirmed: "Disenrollment confirmed by the other state",
+  proof_received: "Applicant submitted proof coverage ended",
+  coverage_terminated_by_applicant: "Applicant terminated the other coverage",
+  false_positive: "False positive — not the same person",
+  coverage_inactive: "Coverage record is stale / inactive",
+  not_medicaid: "Payer is not a Medicaid program",
+  other: "Other",
+};
+
+function dispositionLabel(code: string | null | undefined): string {
+  if (!code) return "Resolved";
+  return DISPOSITION_LABELS[code] ?? code.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
+function shortDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+/** The "Coverage discovery" trace row — PENDING while the flag is open, PASS once resolved/dismissed. */
+export function coverageDiscoveryRow(id: IdentityContext): TraceRow {
+  const ok = id.status === "success";
+  if (!id.duplicateEnrollment) {
+    return {
+      ruleId: "SX-IDV-002",
+      ruleName: "Coverage discovery",
+      displayCode: "IDV-002",
+      status: ok ? "PASS" : "PENDING",
+      leftLabel: "Other health coverage found",
+      rightValue: ok ? "No other coverage found" : "Not checked",
+    };
+  }
+  const stateName = id.payerStateName ?? id.payerName ?? "other state";
+  const flag = id.flagStatus ?? "open";
+  if (flag === "resolved") {
+    const when = shortDate(id.flagUpdatedAt);
+    return {
+      ruleId: "SX-IDV-002",
+      ruleName: "Coverage discovery",
+      displayCode: "IDV-002",
+      status: "PASS",
+      leftLabel: "Other health coverage found",
+      rightValue: "Resolved",
+      note: `${dispositionLabel(id.flagDispositionReason)}${when ? ` · ${when}` : ""}`,
+    };
+  }
+  if (flag === "dismissed") {
+    return {
+      ruleId: "SX-IDV-002",
+      ruleName: "Coverage discovery",
+      displayCode: "IDV-002",
+      status: "PASS",
+      leftLabel: "Other health coverage found",
+      rightValue: "Dismissed",
+      note: `Dismissed · ${dispositionLabel(id.flagDispositionReason)}`,
+    };
+  }
+  return {
+    ruleId: "SX-IDV-002",
+    ruleName: "Coverage discovery",
+    displayCode: "IDV-002",
+    status: "PENDING",
+    leftLabel: "Other health coverage found",
+    rightValue: `Active out-of-state Medicaid (${stateName}) — resolve the Verify Assist flag`,
+    note:
+      id.resolution === "ended_submit_proof"
+        ? "Applicant says the coverage ended and submitted proof — review it, then resolve the flag."
+        : "OOS-MCD: caseworker review required before determination.",
+  };
+}
+
+/** True while the out-of-state finding still blocks determination. */
+export function coverageFindingOpen(id: IdentityContext | null): boolean {
+  if (!id?.duplicateEnrollment) return false;
+  const flag = id.flagStatus ?? "open";
+  return flag === "open" || flag === "in_review";
 }
 
 export interface EvaluationInput {
@@ -263,27 +352,8 @@ export function evaluateCase(input: EvaluationInput): EvaluationResult {
             ? "Verification failed"
             : `Verification ${id.status.replace("_", " ")}`,
       });
-      if (id.duplicateEnrollment) {
-        rows.push({
-          ruleId: "SX-IDV-002",
-          ruleName: "Coverage discovery",
-          displayCode: "IDV-002",
-          status: "PENDING",
-          leftLabel: "Other health coverage found",
-          rightValue: `Active out-of-state Medicaid — ${id.payerStateName ?? id.payerName ?? "other state"}`,
-          note: "OOS-MCD: caseworker review required before determination.",
-        });
-        reviewReasons.push("active out-of-state Medicaid coverage");
-      } else {
-        rows.push({
-          ruleId: "SX-IDV-002",
-          ruleName: "Coverage discovery",
-          displayCode: "IDV-002",
-          status: ok ? "PASS" : "PENDING",
-          leftLabel: "Other health coverage found",
-          rightValue: ok ? "None found" : "Not checked",
-        });
-      }
+      rows.push(coverageDiscoveryRow(id));
+      if (coverageFindingOpen(id)) reviewReasons.push("active out-of-state Medicaid coverage");
       if (!ok) reviewReasons.push("identity not verified");
     }
     sections.push({ name: "Identity Verification", ordering: 1, summary: "CLEAR Verify Assist", rows });

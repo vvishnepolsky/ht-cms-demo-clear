@@ -118,6 +118,19 @@ export const GET_EE_CASE_QUERY: TypedDocumentNode<{ medicaidEeCase: EECase | nul
       notes
       flagReason
       intakeData
+      documents {
+        id
+        caseId
+        s3Key
+        documentCategory
+        createdAt
+        fileName
+        mimeType
+        sizeBytes
+        uploadedAt
+        source
+        url
+      }
       ruleEvaluations
       rfiDetails {
         itemsRequested
@@ -255,6 +268,14 @@ export const GET_EE_CASE_QUERY: TypedDocumentNode<{ medicaidEeCase: EECase | nul
           }
         }
         resolution
+        proofDocument {
+          id
+          fileName
+          mimeType
+          sizeBytes
+          uploadedAt
+          url
+        }
         flag {
           id
           type

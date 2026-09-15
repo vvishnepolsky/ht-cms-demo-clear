@@ -5,7 +5,7 @@ Drives the real UI in headless Chromium against a running single-service build:
 ```bash
 # from repo root: build and start the server in single-service mode
 npm run build
-PORT=4777 SERVE_STATIC=true MOCK_CLEAR=true DATABASE_PATH=./data/e2e.db PUBLIC_URL=http://localhost:4777 npm run start -w @demo/server
+PORT=4777 SERVE_STATIC=true MOCK_CLEAR=true DEMO_APPLICANT_SEX=F DATABASE_PATH=./data/e2e.db PUBLIC_URL=http://localhost:4777 npm run start -w @demo/server
 
 # in another shell
 cd e2e && npm install && npx playwright install chromium
@@ -16,3 +16,5 @@ Creates fresh resident accounts on every run, walks the wizard, completes the
 mock CLEAR flow (South Carolina Medicaid finding, "still enrolled"), submits,
 then logs in as the caseworker and works the Case Assist flag through RFI →
 resolve → approve. Screenshots land in `shots/`.
+
+`DEMO_APPLICANT_SEX=F` is required by the storyline's "sex pre-marked by CLEAR" check; the server default leaves it unset.

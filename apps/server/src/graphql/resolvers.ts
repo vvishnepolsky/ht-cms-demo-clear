@@ -42,7 +42,15 @@ import {
   type CreateCaseInput,
   type EeCase,
 } from "../ee/cases.js";
-import { confirmDocumentUpload, createDocument, getDocument, type CreateDocumentInput } from "../ee/documents.js";
+import {
+  confirmDocumentUpload,
+  createDocument,
+  documentsForCase,
+  getDocument,
+  toCaseDocument,
+  toProofDocument,
+  type CreateDocumentInput,
+} from "../ee/documents.js";
 import {
   addHouseholdMember,
   createHousehold,
@@ -180,6 +188,10 @@ function identityVerificationView(row: VerificationRow, staff: boolean) {
         }
       : null,
     resolution: row.resolution,
+    proofDocument: (() => {
+      const doc = row.proof_document_id ? getDocument(row.proof_document_id) : undefined;
+      return doc ? toProofDocument(doc) : null;
+    })(),
     flag: flagRow ? toFlag(flagRow) : null,
   };
 }
@@ -585,8 +597,8 @@ export const resolvers = {
     determinations(c: CaseView) {
       return determinationsForCase(c.id).map(toDetermination);
     },
-    documents() {
-      return [];
+    documents(c: CaseView) {
+      return documentsForCase(c.id).map(toCaseDocument);
     },
     identityVerification(c: CaseView, _: unknown, ctx: GqlContext) {
       const row = verificationForCase(c.id);

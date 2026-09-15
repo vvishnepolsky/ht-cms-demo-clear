@@ -7,13 +7,25 @@ import {
   getVerificationRow,
   hasOpenFlag,
   latestUnlinkedApplicantVerification,
+  primaryFlagForVerification,
+  verificationForCase,
   type VerificationRow,
 } from "../verifications.js";
-import type { Determination as CoverageDetermination, VerificationCheck } from "../clear/types.js";
+import type { Determination as CoverageDetermination, SessionTraits, VerificationCheck } from "../clear/types.js";
 import { medicaidAudit, SYSTEM_ACTOR } from "./audit.js";
 import { getHousehold, householdMembers } from "./households.js";
-import { evaluateCase, type IdentityContext } from "./rules.js";
-import { checkPassed } from "../case-assist/rules.js";
+import {
+  coverageDiscoveryRow,
+  coverageFindingOpen,
+  evaluateCase,
+  type IdentityContext,
+  type SectionedTrace,
+  type TraceRow,
+  type TraceSection,
+} from "./rules.js";
+import { checkPassed, curateChecks } from "../clear/check-curation.js";
+import { attachVerificationDocumentsToCase } from "./documents.js";
+import { setPersonSsnLast4IfEmpty } from "./persons.js";
 
 /** medicaid-ee-service replica: cases, determinations, lifecycle. */
 
@@ -259,8 +271,10 @@ export function coverageDates(from = new Date()): { effectiveDate: string; expir
 
 export function identityContextFor(v: VerificationRow | undefined): IdentityContext | null {
   if (!v) return null;
-  const checks = fromJson<VerificationCheck[]>(v.checks) ?? [];
+  // Curated identity checks — the raw sandbox list carries skipped/NFC rows.
+  const checks = curateChecks(fromJson<VerificationCheck[]>(v.checks) ?? []).shown;
   const det = fromJson<CoverageDetermination>(v.determination);
+  const flag = primaryFlagForVerification(v.id);
   return {
     status: v.status,
     checksTotal: checks.length,
@@ -268,7 +282,76 @@ export function identityContextFor(v: VerificationRow | undefined): IdentityCont
     duplicateEnrollment: det?.duplicate_enrollment === true,
     payerStateName: det?.payer_state_name ?? null,
     payerName: det?.coverage?.payer_name ?? null,
+    flagStatus: flag?.status ?? null,
+    flagDispositionReason: flag?.disposition_reason ?? null,
+    flagUpdatedAt: flag?.updated_at ?? null,
+    resolution: v.resolution,
   };
+}
+
+/**
+ * Re-point the persisted rule trace's "Coverage discovery" row at the current
+ * Verify Assist flag state (PENDING while open → PASS "Resolved"/"Dismissed").
+ * The trace is written once at creation; this patches ONLY that row (and the
+ * derived outcome/summary) so caseworker decisions on terminal cases are never
+ * reset. Returns true when the stored trace changed.
+ */
+export function refreshCoverageDiscoveryTrace(caseId: string): boolean {
+  const row = getCaseRow(caseId);
+  if (!row) return false;
+  const identity = identityContextFor(verificationForCase(caseId));
+  if (!identity) return false;
+  const trace = fromJson<SectionedTrace>(row.rule_evaluations);
+  if (!trace || !Array.isArray(trace.sections)) return false;
+
+  const nextRow = coverageDiscoveryRow(identity);
+  let changed = false;
+  let prevStatus: string | null = null;
+  const sections: TraceSection[] = trace.sections.map((section: TraceSection) => ({
+    ...section,
+    rows: section.rows.map((r: TraceRow) => {
+      if (r.ruleId !== nextRow.ruleId) return r;
+      if (r.status !== nextRow.status || r.rightValue !== nextRow.rightValue || r.note !== nextRow.note) {
+        changed = true;
+        prevStatus = r.status;
+        return { ...nextRow };
+      }
+      return r;
+    }),
+  }));
+  if (!changed) return false;
+
+  // Keep the summary counts consistent with the row's new status.
+  const summary = { ...trace.summary };
+  const dec = (k: "passed" | "failed" | "pending") => (summary[k] = Math.max(0, (summary[k] ?? 0) - 1));
+  const inc = (k: "passed" | "failed" | "pending") => (summary[k] = (summary[k] ?? 0) + 1);
+  if (prevStatus === "PASS") dec("passed");
+  else if (prevStatus === "FAIL") dec("failed");
+  else if (prevStatus === "PENDING") dec("pending");
+  if (nextRow.status === "PASS") inc("passed");
+  else if (nextRow.status === "FAIL") inc("failed");
+  else inc("pending");
+
+  // The engine outcome stops citing the coverage finding once it is closed; a
+  // NEEDS_REVIEW that rested solely on it becomes ELIGIBLE (never touches an
+  // INELIGIBLE outcome or the recorded determinations).
+  let outcome = trace.outcome;
+  const finalSection = sections.find((sec: TraceSection) => sec.name === "Final Determination");
+  const outcomeRow = finalSection?.rows.find((r: TraceRow) => r.ruleId === "SX-FIN-001" || r.ruleName === "Eligibility outcome");
+  if (outcome === "NEEDS_REVIEW" && !coverageFindingOpen(identity) && summary.failed === 0 && summary.pending === 0) {
+    outcome = "ELIGIBLE";
+    if (outcomeRow) {
+      outcomeRow.status = "PASS";
+      outcomeRow.rightValue = "ELIGIBLE";
+      outcomeRow.note = "Out-of-state coverage finding resolved; all rules pass.";
+    }
+  } else if (outcomeRow && typeof outcomeRow.note === "string" && !coverageFindingOpen(identity)) {
+    outcomeRow.note = outcomeRow.note.replace(/active out-of-state Medicaid coverage(,\s*|\s*)/i, "").replace(/:\s*\.$/, ".");
+  }
+
+  const nextTrace: SectionedTrace = { ...trace, sections, summary, outcome };
+  touch(caseId, { rule_evaluations: toJson(nextTrace) });
+  return true;
 }
 
 // --- create -----------------------------------------------------------------------------
@@ -383,6 +466,24 @@ export function createCase(input: CreateCaseInput, actor: User): CaseRow {
     }
     if (verification) {
       db.prepare(`UPDATE verifications SET case_id = ? WHERE id = ?`).run(row.id, verification.id);
+      // Proof of disenrollment (and anything else) uploaded through the
+      // hosted flow now belongs to the case.
+      attachVerificationDocumentsToCase(verification.id, row.id);
+      // A CLEAR-verified applicant never types an SSN — carry the verified
+      // last-4 onto the person row (only ever four digits; applicant role only).
+      if (verification.role === "applicant") {
+        const traits = fromJson<SessionTraits>(verification.traits);
+        if (setPersonSsnLast4IfEmpty(applicantPersonId, traits?.ssn9?.slice(-4) ?? null)) {
+          medicaidAudit({
+            eventType: "RECORD_UPDATE",
+            action: "PERSON_UPDATED",
+            resourceType: RESOURCE_TYPE,
+            resourceId: row.id,
+            actorId: SYSTEM_ACTOR,
+            metadata: { actorType: "SYSTEM", field: "ssnLast4", source: "CLEAR", personId: applicantPersonId },
+          });
+        }
+      }
     }
   });
   tx();
@@ -704,7 +805,10 @@ export function syncOutOfStateCaseFlag(caseId: string, flagOpen: boolean, flagSt
     }
     if (hasReason) patch.flag_reason = null;
   }
-  if (Object.keys(patch).length === 0) return row;
+  // The Evaluate step's "Coverage discovery" row follows the flag too — even
+  // when the chip/reason were already in the right state.
+  const traceChanged = refreshCoverageDiscoveryTrace(caseId);
+  if (Object.keys(patch).length === 0) return traceChanged ? getCaseRow(caseId)! : row;
 
   const updated = touch(caseId, patch);
   medicaidAudit({

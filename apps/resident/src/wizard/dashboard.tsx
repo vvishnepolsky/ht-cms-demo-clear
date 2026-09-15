@@ -16,6 +16,8 @@ import {
   GET_MEDICAID_EE_CASE_QUERY,
   LIST_MY_MEDICAID_EE_CASES_QUERY,
   GET_ELIGIBILITY_NOTICE_QUERY,
+  CREATE_DOCUMENT_MUTATION,
+  CONFIRM_DOCUMENT_UPLOAD_MUTATION,
 } from '../lib/operations';
 import { SESSION_KEYS } from '../lib/session-keys';
 import { client } from '../lib/apollo';
@@ -474,16 +476,65 @@ function EligibilityPdfModal({ open, onClose, noticeUrl, loading }) {
   );
 }
 
+const DOCUMENT_CATEGORY_LABELS = {
+  'proof-of-disenrollment': 'Proof of Medicaid disenrollment',
+  'proof-of-residence': 'Proof of residence',
+  'proof-of-income': 'Proof of income',
+  'proof-of-identity': 'Proof of identity',
+};
+
+/** "Proof of Medicaid disenrollment — South Carolina" for the CLEAR-flow upload. */
+function documentCategoryLabel(doc, payerStateName) {
+  const base = DOCUMENT_CATEGORY_LABELS[doc.documentCategory] || doc.documentCategory.replace(/-/g, ' ');
+  if (doc.documentCategory === 'proof-of-disenrollment' && payerStateName) return `${base} — ${payerStateName}`;
+  return base;
+}
+
+/**
+ * Upload a file for real: createDocument (metadata, attached to the case via
+ * programId) → PUT the bytes to the presigned-style uploadUrl → confirm. The
+ * dashboard then refetches the case so the new row appears under "Your uploads".
+ */
+async function uploadCaseDocument(file, caseId) {
+  const { data } = await client.mutate({
+    mutation: CREATE_DOCUMENT_MUTATION,
+    variables: {
+      input: {
+        fileName: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        fileType: (file.name.split('.').pop() || 'bin').toLowerCase(),
+        documentPurpose: 'SUPPORTING_DOCUMENT',
+        sensitivityLevel: 'PHI',
+        retentionPolicy: 'CASE_RECORD',
+        sizeBytes: file.size,
+        program: 'MEDICAID',
+        programId: caseId,
+      },
+    },
+  });
+  const created = data?.createDocument;
+  if (!created?.documentId || !created.uploadUrl || created.errors?.length) {
+    throw new Error(created?.errors?.[0]?.code || 'create_failed');
+  }
+  const put = await fetch(created.uploadUrl, { method: 'PUT', body: file, credentials: 'include' });
+  if (!put.ok) throw new Error('upload_failed');
+  await client.mutate({
+    mutation: CONFIRM_DOCUMENT_UPLOAD_MUTATION,
+    variables: { input: { documentId: created.documentId, sizeBytes: file.size, checksumSha256: 'n/a' } },
+  });
+}
+
 function Documents() {
-  const [docs, setDocs] = useState([]);
   const [dragging, setDragging] = useState(false);
   const [approvalOpen, setApprovalOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const inputRef = React.useRef(null);
 
   // Resolve caseId so we can fetch the real eligibility notice from the backend.
   // Apollo deduplicates these queries — StatusHero calls the same hooks, so they
   // share cache entries and won't produce duplicate network requests.
-  const { caseId } = useCaseStatus();
+  const { caseId, eeCaseStatus } = useCaseStatus();
   const { data: noticeData, loading: noticeLoading } = useQuery(GET_ELIGIBILITY_NOTICE_QUERY, {
     variables: { caseId: caseId ?? '' },
     skip: !caseId,
@@ -492,27 +543,46 @@ function Documents() {
   });
   const noticeUrl = noticeData?.eligibilityNotice?.noticeUrl ?? null;
 
-  function addFiles(list) {
-    const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const incoming = Array.from(list || []).map((f) => ({
-      id: 'd' + Math.floor(Math.random() * 1e9),
-      name: f.name,
-      size: f.size,
-      type: f.type,
-      kind: 'uploaded',
-      uploadedOn: today,
-    }));
-    setDocs([...incoming, ...docs]);
-  }
+  // Real documents on the case — the proof of disenrollment uploaded in the
+  // Verify Assist flow and anything uploaded from this card. Nothing here is
+  // seeded or fabricated.
+  const payerStateName = eeCaseStatus?.identityVerification?.determination?.payer_state_name ?? null;
+  const uploaded = (eeCaseStatus?.documents ?? []).map((d) => ({
+    id: d.id,
+    name: d.fileName,
+    size: d.sizeBytes,
+    type: d.mimeType,
+    kind: 'uploaded',
+    category: documentCategoryLabel(d, payerStateName),
+    uploadedOn: new Date(d.uploadedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    url: d.url,
+    source: d.source,
+  }));
 
-  function remove(id) {
-    setDocs(docs.filter((d) => d.id !== id));
+  async function addFiles(list) {
+    const files = Array.from(list || []);
+    if (!files.length) return;
+    if (!caseId) {
+      setUploadError('Submit your application before uploading documents.');
+      return;
+    }
+    setUploadError(null);
+    setUploading(true);
+    try {
+      for (const f of files) await uploadCaseDocument(f, caseId);
+      await client.refetchQueries({ include: [GET_MEDICAID_EE_CASE_QUERY] });
+    } catch (err) {
+      console.error('[dashboard] document upload failed', { name: err instanceof Error ? err.name : typeof err });
+      setUploadError("We couldn't upload that file. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function onDrop(e) {
     e.preventDefault();
     setDragging(false);
-    if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files);
+    if (e.dataTransfer?.files?.length) void addFiles(e.dataTransfer.files);
   }
 
   // Approval letter only appears when the backend has generated and returned a URL.
@@ -526,8 +596,7 @@ function Documents() {
         uploadedOn: 'Available',
       }
     : null;
-  const fromState = [...(approvalLetterDoc ? [approvalLetterDoc] : []), ...docs.filter((d) => d.kind === 'from-state')];
-  const uploaded = docs.filter((d) => d.kind === 'uploaded');
+  const fromState = approvalLetterDoc ? [approvalLetterDoc] : [];
   const totalCount = fromState.length + uploaded.length;
 
   return (
@@ -550,12 +619,13 @@ function Documents() {
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
+          aria-busy={uploading}
         >
           <div className="doc-dropzone-ic">
             <Icon name="upload" size={18} aria-hidden="true" />
           </div>
           <div className="doc-dropzone-body">
-            <div className="doc-dropzone-title">Upload a document</div>
+            <div className="doc-dropzone-title">{uploading ? 'Uploading…' : 'Upload a document'}</div>
             <div className="doc-dropzone-sub">Pay stubs, ID, address proof, anything State-X HHS asks for</div>
           </div>
           <input
@@ -565,12 +635,28 @@ function Documents() {
             accept=".pdf,.jpg,.jpeg,.png,.heic,application/pdf,image/*"
             style={{ display: 'none' }}
             onChange={(e) => {
-              addFiles(e.target.files);
+              void addFiles(e.target.files);
               e.target.value = '';
             }}
           />
         </div>
+        {uploadError ? (
+          <p className="fineprint" role="alert" style={{ color: 'var(--iowa-red)', marginTop: 8 }}>
+            {uploadError}
+          </p>
+        ) : null}
       </div>
+
+      {uploaded.length > 0 ? (
+        <div className="doc-section" data-testid="dashboard-uploads">
+          <div className="doc-section-head">Your uploads</div>
+          <div className="doc-list">
+            {uploaded.map((d) => (
+              <DocRow key={d.id} doc={d} href={d.url} />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {fromState.length > 0 ? (
         <div className="doc-section">
@@ -578,17 +664,6 @@ function Documents() {
           <div className="doc-list">
             {fromState.map((d) => (
               <DocRow key={d.id} doc={d} onView={d.id === 'd-notice' ? () => setApprovalOpen(true) : undefined} />
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {uploaded.length > 0 ? (
-        <div className="doc-section">
-          <div className="doc-section-head">Uploaded by you</div>
-          <div className="doc-list">
-            {uploaded.map((d) => (
-              <DocRow key={d.id} doc={d} onRemove={() => remove(d.id)} />
             ))}
           </div>
         </div>
@@ -603,19 +678,33 @@ function Documents() {
   );
 }
 
-function DocRow({ doc, onRemove, onView }) {
+function DocRow({ doc, onRemove, onView, href }) {
   return (
-    <div className="doc-row">
+    <div className="doc-row" data-document-id={doc.id}>
       <div className={'doc-row-ic ' + (doc.kind === 'from-state' ? 'state' : 'user')}>
         <Icon name="file" size={16} aria-hidden="true" />
       </div>
       <div className="doc-row-body">
         <div className="doc-row-name">{doc.name}</div>
         <div className="doc-row-meta">
+          {doc.category ? `${doc.category} · ` : ''}
           {fmtSize(doc.size)} · {doc.uploadedOn}
         </div>
       </div>
       <div className="doc-row-actions">
+        {href ? (
+          <a
+            className="btn btn--ghost size-sm"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View"
+            aria-label={`View ${doc.name}`}
+            data-testid="document-view-link"
+          >
+            <Icon name="eye" size={14} aria-hidden="true" /> View
+          </a>
+        ) : (
         <button
           type="button"
           className="btn btn--ghost size-sm"
@@ -625,6 +714,7 @@ function DocRow({ doc, onRemove, onView }) {
         >
           <Icon name={onView ? 'eye' : 'download'} size={14} aria-hidden="true" />
         </button>
+        )}
         {onRemove ? (
           <button
             type="button"

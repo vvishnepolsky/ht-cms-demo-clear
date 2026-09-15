@@ -144,6 +144,7 @@ export function CaseAssistPanel({
             flag={iv.flag}
             determination={iv.determination}
             resolution={iv.resolution}
+            proofDocument={iv.proofDocument ?? null}
             canPerform={canPerform}
             onAction={handleAction}
             actorEmail={actorEmail}

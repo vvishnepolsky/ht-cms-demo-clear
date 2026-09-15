@@ -3,6 +3,7 @@ import { audit } from "./audit.js";
 import { config } from "./config.js";
 import { db, now, toJson } from "./db.js";
 import { enrichSession } from "./clear/demo-identity.js";
+import { setPersonSsnLast4IfEmpty } from "./ee/persons.js";
 import { normalizeClearTraits } from "./clear/normalize.js";
 import { determine } from "./clear/rules.js";
 import type { ClearSession } from "./clear/types.js";
@@ -64,6 +65,14 @@ export function completeVerification(
 
   if (determination.duplicate_enrollment) {
     createFlagIfNoneOpen(row.id, row.external_ref, determination, "clear-pipeline", "system");
+  }
+
+  // The applicant's own verification carries their SSN (demo identity or real
+  // CLEAR trait). Fill the person row's last-4 when it is still empty so the
+  // caseworker sees it even before a case exists. Household-role verifications
+  // describe someone else and never touch the primary's row.
+  if (row.role === "applicant" && setPersonSsnLast4IfEmpty(row.user_id, enriched.traits?.ssn9?.slice(-4) ?? null)) {
+    audit("clear-pipeline", "system", "person.ssn_last4_from_clear", row.user_id, { verificationId: row.id });
   }
 }
 

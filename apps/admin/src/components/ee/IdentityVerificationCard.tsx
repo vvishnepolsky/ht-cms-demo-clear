@@ -288,6 +288,22 @@ export function IdentityVerificationCard({ identityVerification: iv }: IdentityV
             >
               <span className="font-semibold">Applicant response: </span>
               {resolution ?? 'No response recorded in the hosted flow.'}
+              {iv.proofDocument && (
+                <>
+                  {' '}
+                  Proof submitted:{' '}
+                  <a
+                    href={iv.proofDocument.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold underline underline-offset-2"
+                    data-slot="identity-proof-link"
+                  >
+                    {iv.proofDocument.fileName}
+                  </a>
+                  .
+                </>
+              )}
               {findingClosed && iv.flag && (
                 <>
                   {' '}

@@ -146,17 +146,26 @@ export async function completeClearStep(token: string, images: CaptureImages = {
 }
 
 /**
- * Close-out: record the applicant's answer to the coverage finding. The server
- * persists only the proof filename (the file itself is captured client-side for
- * the UI); pass the selected file's `name` when the applicant uploads proof.
+ * Close-out: record the applicant's answer to the coverage finding. When the
+ * applicant chose "coverage ended" the proof file rides along as a base64 data
+ * URL (Results.tsx caps it at ~6 MB; the server caps at 8 MB) and the server
+ * stores it as a case document — the response carries its `proofDocumentId`.
  */
 export async function sendResolution(
   token: string,
   resolution: FlowResolution,
   proof?: { name: string; proofDataUrl?: string; proofMimeType?: string },
-): Promise<{ returnTo: string | null }> {
-  return request<{ ok: boolean; returnTo: string | null }>(`/flow/sessions/${encodeURIComponent(token)}/resolution`, {
-    method: 'POST',
-    body: JSON.stringify({ resolution, proofName: proof?.name }),
-  });
+): Promise<{ returnTo: string | null; proofDocumentId?: string | null }> {
+  return request<{ ok: boolean; returnTo: string | null; proofDocumentId?: string | null }>(
+    `/flow/sessions/${encodeURIComponent(token)}/resolution`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        resolution,
+        proofName: proof?.name,
+        proofDataUrl: proof?.proofDataUrl,
+        proofMimeType: proof?.proofMimeType,
+      }),
+    },
+  );
 }

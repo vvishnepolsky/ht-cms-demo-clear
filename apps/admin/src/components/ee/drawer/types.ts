@@ -6,6 +6,7 @@
  */
 
 import type { CaseDetailFixture } from '../../../data/case-details';
+import type { CaseDocumentRecord } from '../../../types/ee';
 
 export type DrawerTabId = 'application' | 'documents' | 'messages' | 'activity';
 
@@ -27,6 +28,8 @@ export interface DrawerCaseRow {
    * `flagReason` as a single pill.
    */
   flags?: ReadonlyArray<string>;
+  /** Real documents on the case (GraphQL `documents`), rendered by the Documents tab. */
+  documents?: ReadonlyArray<CaseDocumentRecord>;
 }
 
 export interface DrawerTabProps {

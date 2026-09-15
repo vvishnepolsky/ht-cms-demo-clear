@@ -20,9 +20,9 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { AlertOctagon, ChevronDown, Flag, MessageSquare, Square, SquareCheck } from 'lucide-react';
+import { AlertOctagon, ChevronDown, ExternalLink, Flag, MessageSquare, Paperclip, Square, SquareCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import type { CaseAssistRecommendation, CoverageDetermination, VerifyAssistFlag } from '../../../types/ee';
+import type { CaseAssistRecommendation, CoverageDetermination, VerificationProofDocument, VerifyAssistFlag } from '../../../types/ee';
 import { UPDATE_VERIFY_ASSIST_FLAG_MUTATION } from '../../../lib/ee-operations';
 import { cn, DASH, fmtDate } from '../../../lib/utils';
 import { formatRelativeTime } from '../../../lib/format-relative-time';
@@ -82,6 +82,8 @@ export interface OutOfStateCoverageCardProps {
   determination: CoverageDetermination | null;
   /** Applicant's hosted-flow response: ended_submit_proof | confirm_enrolled | null */
   resolution: string | null;
+  /** Proof of disenrollment the applicant uploaded in the hosted flow (when any). */
+  proofDocument?: VerificationProofDocument | null;
   /** Which suggested actions the parent can perform (rendered as buttons). */
   canPerform?: (recommendation: CaseAssistRecommendation, action: string) => boolean;
   /** Perform a suggested action (Issue RFI…, Hold determination…). */
@@ -97,6 +99,7 @@ export function OutOfStateCoverageCard({
   flag,
   determination,
   resolution,
+  proofDocument = null,
   canPerform,
   onAction,
   actorEmail,
@@ -236,7 +239,9 @@ export function OutOfStateCoverageCard({
   const body =
     rec?.body ??
     `CLEAR's coverage discovery found an ACTIVE ${payer} enrollment. Federal rules bar concurrent Medicaid enrollment in two states, so State-X coverage cannot be approved until the ${stateName} case is closed.`;
-  const actions = rec?.suggestedActions ?? [];
+  // Proof already on file → asking for proof again makes no sense: swap the
+  // "Issue RFI…" action for a direct link to review what the applicant sent.
+  const actions = (rec?.suggestedActions ?? []).filter((a) => !(proofDocument && /issue rfi/i.test(a)));
   const rail = 'var(--civic-error-solid, #dc2626)';
   const bg = 'var(--civic-error-bg, rgb(254 242 242))';
   const text = 'var(--civic-error-text, #991b1b)';
@@ -302,8 +307,28 @@ export function OutOfStateCoverageCard({
           </div>
           <div className="col-span-2">
             <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">Applicant's response</dt>
-            <dd className="text-foreground">
-              {resolution ? RESPONSE_LABELS[resolution] ?? resolution.replace(/_/g, ' ') : 'No response recorded in the hosted flow'}
+            <dd className="text-foreground" data-slot="oos-applicant-response">
+              {proofDocument ? (
+                <>
+                  Coverage ended — proof submitted:{' '}
+                  <span className="font-medium">{proofDocument.fileName}</span>
+                  {' · '}
+                  <a
+                    href={proofDocument.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 font-semibold underline underline-offset-2"
+                    data-slot="oos-proof-link"
+                  >
+                    View
+                    <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                  </a>
+                </>
+              ) : resolution ? (
+                RESPONSE_LABELS[resolution] ?? resolution.replace(/_/g, ' ')
+              ) : (
+                'No response recorded in the hosted flow'
+              )}
             </dd>
           </div>
           {flag?.assignee && (
@@ -316,6 +341,19 @@ export function OutOfStateCoverageCard({
 
         {/* Actions — suggested actions + flag controls in one row */}
         <div className="space-y-1.5" data-slot="oos-actions">
+          {proofDocument && (
+            <a
+              href={proofDocument.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border transition-colors hover:brightness-95"
+              style={{ backgroundColor: bg, color: text, borderColor: rail }}
+              data-slot="oos-review-proof"
+            >
+              <Paperclip className="w-3.5 h-3.5" aria-hidden="true" />
+              Review submitted proof — {proofDocument.fileName} →
+            </a>
+          )}
           {actions.length > 0 && (
             <ul className="space-y-1">
               {actions.map((action) => {

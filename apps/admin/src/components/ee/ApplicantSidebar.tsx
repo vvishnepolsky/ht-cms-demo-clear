@@ -99,6 +99,12 @@ export function ApplicantSidebar({ eeCase, applicantName }: ApplicantSidebarProp
   const ssnFull = typeof dm.ssn === 'string' ? dm.ssn : null;
   const ssnLegacyMasked = typeof dm.ssnMasked === 'string' ? dm.ssnMasked : null;
   const ssnReveal: string | null = ssnFull;
+  // A CLEAR-verified applicant never types an SSN — fall back to the last-4 the
+  // server carried from the verification (persons.ssnLast4 is filled from the
+  // CLEAR trait; identityVerification.traits.ssnLast4 is the same value).
+  const ssnLast4FromRecord =
+    eeCase.determinations[0]?.person?.ssnLast4 ?? eeCase.identityVerification?.traits?.ssnLast4 ?? null;
+  const ssnFromClear = !ssnReveal && !ssnLegacyMasked && ssnLast4FromRecord ? `•••-••-${ssnLast4FromRecord}` : null;
   const phoneNumber = typeof dm.phoneNumber === 'string' ? dm.phoneNumber : null;
   const preferredContact = typeof dm.preferredContact === 'string' ? dm.preferredContact : null;
   // Identity-service federation returns null for seeded personIds, so fall
@@ -180,8 +186,24 @@ export function ApplicantSidebar({ eeCase, applicantName }: ApplicantSidebarProp
         <Row label="DOB" value={dobDisplay} />
         <Row
           label="SSN"
-          value={ssnReveal ? <SensitiveValue value={ssnReveal} type="ssn" /> : ssnLegacyMasked}
-          mono={!ssnReveal}
+          value={
+            ssnReveal ? (
+              <SensitiveValue value={ssnReveal} type="ssn" />
+            ) : ssnFromClear ? (
+              <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5 whitespace-nowrap" data-slot="ssn-from-clear">
+                <SensitiveValue value={ssnFromClear} type="ssn" copyable={false} />
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-wider text-green-700"
+                  title="Last four digits confirmed during CLEAR identity verification"
+                >
+                  from CLEAR
+                </span>
+              </span>
+            ) : (
+              ssnLegacyMasked
+            )
+          }
+          mono={!ssnReveal && !ssnFromClear}
         />
         {mcNumber && <Row label="MCID" value={mcNumber} mono />}
         <Row label="Phone" value={phoneNumber ?? (clearVerified ? iv?.traits?.phone ?? null : null)} />

@@ -25,6 +25,8 @@ export interface VerificationRow {
   clear_hosted_url: string | null;
   images: string | null;
   case_id: string | null;
+  /** documents.id of the proof of disenrollment uploaded in the hosted flow. */
+  proof_document_id?: string | null;
   created_at: string;
   completed_at: string | null;
 }
@@ -55,6 +57,8 @@ export interface Verification {
   determination: Determination | null;
   /** Applicant's choice from the hosted flow: 'ended_submit_proof' | 'confirm_enrolled'. */
   resolution: string | null;
+  /** Document id of the proof of disenrollment, when one was uploaded. */
+  proofDocumentId: string | null;
 }
 
 /**
@@ -94,6 +98,7 @@ export function toVerification(row: VerificationRow): Verification {
     traits: redactTraits(fromJson<SessionTraits>(row.traits)),
     determination: fromJson<Determination>(row.determination),
     resolution: row.resolution,
+    proofDocumentId: row.proof_document_id ?? null,
   };
 }
 

@@ -293,6 +293,34 @@ export interface VerifyAssistFlag {
   updatedAt: string;
 }
 
+/** Proof of disenrollment uploaded in the Verify Assist hosted flow. */
+export interface VerificationProofDocument {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  /** Same-origin URL streaming the bytes (owner or staff). */
+  url: string;
+}
+
+/** A document attached to the case (demo additions on the supergraph shape). */
+export interface CaseDocumentRecord {
+  id: string;
+  caseId: string;
+  s3Key: string;
+  /** e.g. proof-of-disenrollment | proof-of-residence */
+  documentCategory: string;
+  createdAt: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  /** verify_assist | resident_upload */
+  source: string;
+  url: string;
+}
+
 export interface IdentityVerification {
   id: string;
   /** "CLEAR" */
@@ -311,6 +339,8 @@ export interface IdentityVerification {
   determination: CoverageDetermination | null;
   /** Applicant's self-resolution in the hosted flow: ended_submit_proof | confirm_enrolled | null */
   resolution: string | null;
+  /** Set when the applicant chose ended_submit_proof and uploaded a file. */
+  proofDocument?: VerificationProofDocument | null;
   /** Staff-only; null for residents. */
   flag: VerifyAssistFlag | null;
 }
@@ -399,6 +429,8 @@ export interface EECase {
   determinations: EEDetermination[];
   incomeVerification: IncomeVerification | null;
   assetVerification: AssetVerification | null;
+  /** Documents attached to the case (proof of disenrollment, resident uploads). */
+  documents?: CaseDocumentRecord[];
   /**
    * CLEAR / Verify Assist verification linked to the case (null until the
    * server links one). Optional in the TS type so pre-existing fixtures that

@@ -11,6 +11,8 @@
  * Exit code 1 when any check fails or an unexplained console/network error was seen.
  */
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { launch, newContext, BASE, shot, dump, report, sleep, issues, setStep } from './lib.mjs';
 
 const PASSWORD = 'Password1234!';
@@ -39,7 +41,9 @@ const browser = await launch();
 // ─────────────────────────────────────────────────────────────────────────
 // Resident journey (Parts 1–3). `full` also walks the wizard to submission.
 // ─────────────────────────────────────────────────────────────────────────
-async function residentJourney({ label, full }) {
+const PROOF_PNG = path.join(path.dirname(fileURLToPath(import.meta.url)), 'proof-sc-disenrollment.png');
+
+async function residentJourney({ label, full, proof = false }) {
   const { page, ctx } = await newContext(browser, `resident-${label}`);
   const email = `demo+${label}-${Date.now()}@example.com`;
   const rec = { email };
@@ -98,7 +102,15 @@ async function residentJourney({ label, full }) {
   check(true, 'results show the South Carolina Medicaid finding');
   check((await page.getByText('Identity verified').count()) > 0, 'results show identity verified');
   if (full) { await shot(page, 'p2-results-sc-medicaid'); }
-  await page.getByText(/I am still enrolled/).click();
+  if (proof) {
+    // "I have ended this coverage" → upload proof (a small PNG) → send.
+    await page.getByText(/I have ended this coverage/).click();
+    await page.locator('#proof-file').setInputFiles(PROOF_PNG);
+    await page.getByText(/Selected:/).waitFor({ timeout: 10000 });
+    check(true, 'proof of disenrollment selected in the hosted flow (proof-sc-disenrollment.png)');
+  } else {
+    await page.getByText(/I am still enrolled/).click();
+  }
   await page.getByRole('button', { name: /Send results/ }).click();
   await page.getByRole('heading', { name: /Results sent/ }).waitFor({ timeout: 15000 });
   if (full) await shot(page, 'p2-closeout');
@@ -197,13 +209,33 @@ async function residentJourney({ label, full }) {
     await page.locator('[data-testid=dashboard-case-number]').waitFor({ timeout: 20000 });
     check((await page.locator('.status-hero').innerText()).includes(rec.caseNumber), 'resident /dashboard survives a full reload (cookie session + SPA route)');
   }
+  if (proof) {
+    console.log(`\n## Part 3b — proof shows up on the resident dashboard (${label})`);
+    await page.getByRole('button', { name: /View dashboard/ }).click();
+    await page.waitForURL(/\/dashboard/);
+    const uploads = page.locator('[data-testid=dashboard-uploads]');
+    await uploads.waitFor({ timeout: 20000 });
+    const uploadsText = await uploads.innerText();
+    check(/proof-sc-disenrollment\.png/.test(uploadsText), 'dashboard "Your uploads" lists the proof file');
+    check(/Proof of Medicaid disenrollment — South Carolina/.test(uploadsText), 'upload is labelled "Proof of Medicaid disenrollment — South Carolina"');
+    const href = await uploads.locator('[data-testid=document-view-link]').first().getAttribute('href');
+    rec.proofUrl = href ? new URL(href, BASE).toString() : null;
+    check(!!rec.proofUrl && /\/api\/documents\/[^/]+\/content$/.test(rec.proofUrl), `View link points at the document content endpoint (${rec.proofUrl})`);
+    const owned = await page.request.get(rec.proofUrl);
+    check(owned.status() === 200 && /^image\/png/.test(owned.headers()['content-type'] ?? ''), `View link returns 200 image/png with the resident's cookies (${owned.status()} ${owned.headers()['content-type']})`);
+    const anonCtx = await browser.newContext();
+    const anon = await anonCtx.request.get(rec.proofUrl);
+    check(anon.status() !== 200 && [401, 403, 404].includes(anon.status()), `document content is refused without cookies (${anon.status()})`);
+    await anonCtx.close();
+    await shot(page, 'p3b-dashboard-proof-upload');
+  }
   await ctx.close();
   state.cases.push(rec);
   return rec;
 }
 
 const primary = await residentJourney({ label: 'a', full: true });
-const secondary = await residentJourney({ label: 'b', full: false });
+const secondary = await residentJourney({ label: 'b', full: false, proof: true });
 
 // ─────────────────────────────────────────────────────────────────────────
 // Part 4 — caseworker
@@ -262,6 +294,8 @@ check((await checkRows.count()) <= 9 && (await checkRows.count()) > 0, `identity
 check(!/Phone/.test(await ivCard.getByRole('list', { name: 'Verification checks' }).innerText()), 'no Phone/device rows in the checks list');
 check((await ivCard.locator('[data-slot=checks-summary]').count()) === 1 && /identity checks passed/.test(await ivCard.locator('[data-slot=checks-summary]').innerText()), `checks summary footer present (${(await ivCard.locator('[data-slot=checks-summary]').innerText().catch(() => '')).trim()})`);
 check((await ivCard.locator('[data-slot=coverage-discovered][data-state=open]').count()) === 1, 'identity card coverage block is red/open before resolution');
+const ssnRow = admin.locator('[data-slot=ssn-from-clear]');
+check((await ssnRow.count()) > 0 && /6789/.test(await ssnRow.first().innerText()) && /from CLEAR/i.test(await ssnRow.first().innerText()), `sidebar SSN shows the masked CLEAR last-4, not a dash (${(await ssnRow.first().innerText().catch(() => '')).replace(/\s+/g, ' ')})`);
 check(/Selfie passes liveness check/.test(ivText) && /Passed/.test(ivText), 'Identity verification card lists CLEAR checks as Passed');
 check(/COVERAGE DISCOVERED/i.test(ivText) && /South Carolina Medicaid/.test(ivText) && /123485135/.test(ivText), 'Identity verification card shows coverage discovered (payer + member id)');
 check(/•••-••-6789/.test(ivText), 'Identity card shows masked SSN last-4 only');
@@ -319,6 +353,22 @@ check(/finding was resolved/i.test(await admin.locator('[data-slot=case-assist-n
 check((await ivCard.locator('[data-slot=coverage-discovered][data-state=closed]').count()) === 1 && /Resolved/.test(await ivCard.locator('[data-slot=coverage-discovered]').innerText()), 'identity card coverage block shows Resolved (neutral) after resolution');
 check(!/resolve the flag before determination/i.test(pageAfter), 'bottom ActionBar no longer asks to resolve the flag');
 await shot(admin, 'p4-flag-resolved');
+// Evaluate step: the persisted rule trace followed the flag.
+await admin.getByRole('button', { name: /2 Evaluate/ }).click();
+// The sectioned rule trace is collapsed by default — expand it first.
+await admin.getByText('Eligibility Determination Rule Trace').waitFor({ timeout: 15000 });
+const traceToggle = admin.getByRole('button', { name: /View rule trace/ });
+if (await traceToggle.count()) await traceToggle.first().click();
+else await admin.getByText('Eligibility Determination Rule Trace').click();
+const covRow = admin.locator('li', { hasText: 'Other health coverage found' }).first();
+await covRow.waitFor({ timeout: 15000 });
+await sleep(400);
+const covRowText = (await covRow.innerText()).replace(/\s+/g, ' ');
+check(/Resolved/.test(covRowText) && !/Pending/.test(covRowText), `Evaluate step Coverage discovery row reads Resolved (${covRowText.slice(0, 120)})`);
+check(/Disenrollment confirmed by the other state/.test(covRowText), 'Coverage discovery row carries the disposition note');
+await shot(admin, 'p4-evaluate-resolved');
+await admin.getByRole('button', { name: /1 Verify/ }).click();
+await sleep(300);
 
 // Review & Decide → approve (guard must NOT appear now)
 await admin.getByRole('button', { name: /Review & Decide/ }).click();
@@ -364,6 +414,30 @@ await admin.locator('tr', { hasText: secondary.caseNumber }).click();
 await admin.waitForURL(/\/admin\/ee\/cases\/[^/]+$/);
 secondary.caseId = admin.url().split('/').pop();
 await admin.locator('[data-slot=case-assist-panel]').waitFor({ timeout: 20000 });
+await sleep(800);
+const oosCardB = admin.locator('[data-slot=out-of-state-coverage-card]');
+check((await oosCardB.locator('[data-slot=oos-proof-link]').count()) === 1 && /proof-sc-disenrollment\.png/.test(await oosCardB.innerText()), 'Case Assist card shows "coverage ended — proof submitted: <file> · View"');
+check((await oosCardB.locator('[data-slot=oos-review-proof]').count()) === 1, 'Case Assist card offers "Review submitted proof"');
+check((await oosCardB.getByRole('button', { name: /Issue RFI for proof/ }).count()) === 0, '"Issue RFI for proof" action hidden when proof is on file');
+check((await admin.locator('[data-slot=identity-proof-link]').count()) === 1, 'identity card coverage block links the proof');
+const proofHref = await oosCardB.locator('[data-slot=oos-proof-link]').getAttribute('href');
+const staffFetch = await admin.request.get(new URL(proofHref, BASE).toString());
+check(staffFetch.status() === 200 && /^image\/png/.test(staffFetch.headers()['content-type'] ?? ''), `staff can open the proof (${staffFetch.status()})`);
+await shot(admin, 'p4b-case-assist-proof-link');
+await admin.getByRole('button', { name: /Full Case Details/ }).click();
+await admin.getByRole('tab', { name: /Documents/ }).first().click();
+await admin.getByRole('button', { name: /Open document proof-sc-disenrollment\.png/ }).waitFor({ timeout: 15000 });
+check(true, 'admin Documents tab lists the proof file');
+check(/Proof of Medicaid disenrollment/.test(await admin.locator('body').innerText()), 'Documents tab labels it as proof of Medicaid disenrollment');
+await shot(admin, 'p4b-documents-tab');
+await admin.getByRole('button', { name: /Open document proof-sc-disenrollment\.png/ }).click();
+await admin.locator('[data-slot=document-preview] img').waitFor({ timeout: 15000 });
+check(true, 'DocumentViewer renders the image from the content endpoint');
+await admin.keyboard.press('Escape');
+await sleep(300);
+const closeDrawer = admin.getByRole('dialog').getByRole('button', { name: /^Back$/ }).first();
+if (await closeDrawer.count()) await closeDrawer.click(); else await admin.keyboard.press('Escape');
+await sleep(400);
 await admin.getByRole('button', { name: /Review & Decide/ }).click();
 await dialog.getByText('Review & Decide').waitFor();
 await dialog.getByRole('button', { name: 'Confirm Approval' }).click();

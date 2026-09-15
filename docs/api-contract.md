@@ -19,10 +19,60 @@ One Express server (`apps/server`, `:4000` in dev) owns SQLite and serves:
 Dev: each SPA runs on its own Vite port and proxies `/api` and `/graphql` to
 `http://localhost:4000`. Prod: same origin, no CORS.
 
-Also served: `PUT /api/uploads/:documentId` (the `createDocument` data sink —
-bytes are discarded, the row is marked received) and
+Also served: `PUT /api/uploads/:documentId` (the `createDocument` upload target —
+bytes are written under `dirname(DATABASE_PATH)/uploads/` and the row is marked
+received), `GET /api/documents/:id/content` (streams a stored document to its
+owner — resident cookie/Bearer — or to staff; `Content-Type` from the row,
+`Content-Disposition: inline; filename=…`; 401 anonymous, 404 otherwise) and
 `GET /api/cases/:id/notice.pdf` (owner or staff; the URL `eligibilityNotice`
 returns once a case is APPROVED or DENIED).
+
+### Documents
+
+`documents` rows carry additive columns `verification_id`, `case_id`,
+`document_category`. Producers:
+
+- **Verify Assist proof of disenrollment** — `POST /api/flow/sessions/:token/resolution`
+  with `{ resolution: "ended_submit_proof", proofName, proofDataUrl, proofMimeType }`
+  (data URL ≤ 8 MB; the hosted flow caps at ~6 MB) stores the bytes and an
+  `UPLOADED` row (owner = the verification's user, purpose
+  `PROOF_OF_COVERAGE_TERMINATION`, category `proof-of-disenrollment`, program
+  `MEDICAID`), records `verifications.proof_document_id`, cites it in the flag note
+  ("… submitted proof of disenrollment: <file> (document <id>)") and returns
+  `proofDocumentId`.
+- **Resident dashboard uploads** — `createDocument` with `programId = <caseId>`
+  attaches the row to the caller's own case; bytes arrive via the `PUT`.
+
+`createMedicaidEeCase` attaches the linked verification's documents to the new
+case (`documents.case_id`). `MedicaidEeCase.documents` returns them; the
+supergraph shape `{ id caseId s3Key documentCategory createdAt }` is extended
+additively with `fileName mimeType sizeBytes uploadedAt source url`
+(`source: verify_assist | resident_upload`, `url = /api/documents/<id>/content`).
+`IdentityVerification.proofDocument { id fileName mimeType sizeBytes uploadedAt url }`
+links the proof directly from the Case Assist card. The admin Documents tab and the
+resident dashboard "Your uploads" list these real rows only (no seeded uploads).
+
+### SSN last-4 from CLEAR
+
+A CLEAR-verified applicant never types an SSN, so `persons.ssn_last4` is filled
+from the verification's `traits.ssn9` (last four digits only) when the person row
+has none — at verification completion (`pipeline.completeVerification`, applicant
+role only) and again when `createMedicaidEeCase` links the verification (audit
+`PERSON_UPDATED`, no digits in metadata). The admin sidebar/completed view fall
+back to `identityVerification.traits.ssnLast4` and render the masked value with a
+"from CLEAR" chip.
+
+### Rule trace follows the Verify Assist flag
+
+`rule_evaluations` is written at creation; `ee/cases.ts` `refreshCoverageDiscoveryTrace`
+(called from `syncOutOfStateCaseFlag`, i.e. every flag update and the boot backfill)
+patches only the `Coverage discovery` row (`SX-IDV-002`): PENDING
+"Active out-of-state Medicaid (<state>) — resolve the Verify Assist flag" while the
+flag is open/in_review; PASS `Resolved` with note "<disposition> · <date>" once
+resolved; PASS `Dismissed` with the reason once dismissed; PASS "No other coverage
+found" when nothing was found. `summary` counts move with the row and a
+`NEEDS_REVIEW` outcome that rested solely on the finding becomes `ELIGIBLE`;
+recorded determinations are never touched.
 
 Ports (dev): server 4000 · resident 5181 · admin 5180 · verify 5187.
 

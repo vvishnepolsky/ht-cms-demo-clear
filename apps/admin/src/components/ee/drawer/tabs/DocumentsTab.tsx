@@ -4,21 +4,21 @@
  * Storyboard parity: /Downloads/CMS Demo Storyboard/src/components/CaseDetailsDrawer.jsx
  * (the `{tab === "documents" && (...)}` block at L242).
  *
- * Layer 3 of ENG-1708. Lists the documents on a case, filterable by
- * type bucket (All / Income / Identity / Medical / RFI / Other), with
- * click-to-preview into a DocumentViewer modal. Empty state when the
- * case has no docs.
- *
- * Replaces two storyboard globals — `window.CASE_DOCUMENTS` and
- * `window.DocumentViewer` — with module-scoped equivalents:
- * `documentsForCase()` from `data/documents.ts` and the local
- * `DocumentViewer` component in the same drawer/ subdir.
+ * Layer 3 of ENG-1708. Lists the REAL documents on the case (GraphQL
+ * `medicaidEeCase.documents` — the proof of disenrollment uploaded in the
+ * Verify Assist hosted flow and the resident's dashboard uploads), filterable
+ * by type bucket, with click-to-preview into a DocumentViewer modal that
+ * streams the bytes from `/api/documents/<id>/content`. Empty state when the
+ * case has no documents. The storyboard mock list (`data/documents.ts`) is no
+ * longer rendered here — a caseworker must never see fabricated uploads next to
+ * (or instead of) the applicant's real ones.
  */
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { AlertCircle, CheckCircle2, Clock, Download, FileText } from 'lucide-react';
-import { documentsForCase, type CaseDocument, type DocumentStatus } from '../../../../data/documents';
+import type { CaseDocument, DocumentExt, DocumentStatus, DocumentType } from '../../../../data/documents';
+import type { CaseDocumentRecord } from '../../../../types/ee';
 import { GET_ELIGIBILITY_NOTICE_QUERY, type EligibilityNoticeErrorCode } from '../../../../lib/ee-operations';
 import { DocumentViewer } from '../DocumentViewer';
 import type { DrawerTabProps } from '../types';
@@ -253,8 +253,58 @@ function EligibilityNoticeSection({ caseId }: { caseId: string }) {
   );
 }
 
+const CATEGORY_TYPE: Record<string, DocumentType> = {
+  'proof-of-disenrollment': 'other',
+  'proof-of-residence': 'residency',
+  'proof-of-income': 'income',
+  'proof-of-identity': 'identity',
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  'proof-of-disenrollment': 'Proof of Medicaid disenrollment (Verify Assist)',
+  'proof-of-residence': 'Proof of residence',
+  'proof-of-income': 'Proof of income',
+  'proof-of-identity': 'Proof of identity',
+  'supporting-document': 'Supporting document',
+};
+
+function extOf(doc: CaseDocumentRecord): DocumentExt {
+  const fromName = doc.fileName.includes('.') ? doc.fileName.split('.').pop()!.toLowerCase() : '';
+  if (fromName === 'pdf' || fromName === 'png' || fromName === 'tiff') return fromName;
+  if (fromName === 'jpg' || fromName === 'jpeg') return 'jpg';
+  if (doc.mimeType === 'application/pdf') return 'pdf';
+  if (doc.mimeType === 'image/png') return 'png';
+  return 'jpg';
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Adapt a real case document onto the tile/viewer shape the tab already renders. */
+export function toCaseDocumentTile(doc: CaseDocumentRecord): CaseDocument {
+  return {
+    id: doc.id,
+    caseId: doc.caseId,
+    name: doc.fileName,
+    type: CATEGORY_TYPE[doc.documentCategory] ?? 'other',
+    ext: extOf(doc),
+    size: fmtBytes(doc.sizeBytes),
+    pages: 1,
+    status: 'pending',
+    uploadedBy: doc.source === 'verify_assist' ? 'Applicant (Verify Assist flow)' : 'Applicant (resident portal)',
+    uploadedAt: new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+    tags: doc.documentCategory === 'proof-of-disenrollment' ? ['rfi'] : undefined,
+    relatedTo: CATEGORY_LABEL[doc.documentCategory] ?? doc.documentCategory.replace(/-/g, ' '),
+    url: doc.url,
+    mimeType: doc.mimeType,
+  };
+}
+
 export function DocumentsTab({ caseRow }: DrawerTabProps) {
-  const docs = useMemo(() => documentsForCase(caseRow.id), [caseRow.id]);
+  const docs = useMemo(() => (caseRow.documents ?? []).map(toCaseDocumentTile), [caseRow.documents]);
   const [filterId, setFilterId] = useState<string>(ALL_BUCKET_ID);
   const [viewing, setViewing] = useState<CaseDocument | null>(null);
 

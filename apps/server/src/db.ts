@@ -210,7 +210,7 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS medicaid_audit_log_resource_idx ON medicaid_audit_log(resource_id, timestamp);
 
-  -- document-service replica (metadata only; bytes are discarded) -----------
+  -- document-service replica (metadata; bytes stored under <data dir>/uploads/) --
   CREATE TABLE IF NOT EXISTS documents (
     id                TEXT PRIMARY KEY,
     customer_id       TEXT NOT NULL,
@@ -253,6 +253,11 @@ ensureColumn("verifications", "images", "images TEXT");
 // The E&E case this verification was linked to at createMedicaidEeCase time.
 ensureColumn("verifications", "case_id", "case_id TEXT");
 db.exec(`CREATE INDEX IF NOT EXISTS verifications_case_id_idx ON verifications(case_id)`);
+// Verify Assist proof of disenrollment → stored document (bytes on disk under uploads/).
+ensureColumn("verifications", "proof_document_id", "proof_document_id TEXT");
+ensureColumn("documents", "verification_id", "verification_id TEXT");
+ensureColumn("documents", "case_id", "case_id TEXT");
+ensureColumn("documents", "document_category", "document_category TEXT");
 ensureColumn("medicaid_ee_cases", "case_assist_narrative_source", "case_assist_narrative_source TEXT");
 ensureColumn("medicaid_ee_cases", "case_assist_rec_ids", "case_assist_rec_ids TEXT");
 

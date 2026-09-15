@@ -225,3 +225,17 @@ export function toPersonRecord(person: Person) {
     phones: person.phones.map((p) => ({ value: p.value })),
   };
 }
+
+/**
+ * Fill `ssn_last4` from a CLEAR-verified trait when the person row has none —
+ * the resident never types an SSN once CLEAR verified it. Only the last four
+ * digits are ever accepted; returns true when the row changed.
+ */
+export function setPersonSsnLast4IfEmpty(personId: string, ssnLast4: string | null | undefined): boolean {
+  const l4 = typeof ssnLast4 === "string" ? ssnLast4.replace(/\D/g, "").slice(-4) : "";
+  if (!/^\d{4}$/.test(l4)) return false;
+  const row = getPersonRow(personId);
+  if (!row || row.ssn_last4) return false;
+  db.prepare(`UPDATE persons SET ssn_last4 = ?, updated_at = ? WHERE id = ?`).run(l4, now(), personId);
+  return true;
+}

@@ -6,7 +6,7 @@ import { backfillOutOfStateCaseFlags } from "./ee/cases.js";
 import { narrativeMode } from "./case-assist/narrative.js";
 import { config, PKG_ROOT } from "./config.js";
 import { determinationsForCase, getCaseRow } from "./ee/cases.js";
-import { markUploadReceived } from "./ee/documents.js";
+import { getDocument, markUploadReceived, readDocumentBytes } from "./ee/documents.js";
 import { buildNoticePdf } from "./ee/notice.js";
 import { getPerson } from "./ee/persons.js";
 import { graphqlHandler } from "./graphql/index.js";
@@ -48,15 +48,38 @@ app.get("/graphql", (_req: Request, res: Response) => {
   res.status(405).json({ errors: [{ message: "Use POST /graphql" }] });
 });
 
-// document-service data sink: accepts the presigned-style PUT and discards the bytes.
+// document-service upload target: accepts the presigned-style PUT and stores the bytes on disk.
 app.put("/api/uploads/:documentId", express.raw({ type: () => true, limit: "60mb" }), (req: Request, res: Response) => {
-  const size = Buffer.isBuffer(req.body) ? req.body.length : Number(req.headers["content-length"] ?? 0);
-  const ok = markUploadReceived(String(req.params.documentId), size);
+  const bytes = Buffer.isBuffer(req.body) ? req.body : null;
+  const size = bytes ? bytes.length : Number(req.headers["content-length"] ?? 0);
+  const ok = markUploadReceived(String(req.params.documentId), bytes, size);
   if (!ok) {
     res.status(404).json({ error: { code: "not_found", message: "Unknown document." } });
     return;
   }
   res.status(200).end();
+});
+
+// Document bytes — owner (resident cookie/Bearer) or staff only; never anonymous.
+app.get("/api/documents/:id/content", (req: Request, res: Response) => {
+  const user = getUser(res); // 401 when anonymous
+  const row = getDocument(String(req.params.id));
+  if (!row || (!isStaff(user) && row.owner_id !== user.id)) {
+    res.status(404).json({ error: { code: "not_found", message: "Document not found." } });
+    return;
+  }
+  const bytes = readDocumentBytes(row);
+  if (!bytes) {
+    res.status(404).json({ error: { code: "not_found", message: "No file content is stored for this document." } });
+    return;
+  }
+  const safeName = row.file_name.replace(/[^\w.\- ]+/g, "_");
+  res.setHeader("Content-Type", row.mime_type || "application/octet-stream");
+  res.setHeader("Content-Length", String(bytes.length));
+  res.setHeader("Content-Disposition", `inline; filename="${safeName}"`);
+  res.setHeader("Cache-Control", "private, no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.status(200).end(bytes);
 });
 
 // Eligibility notice PDF (owner or staff).

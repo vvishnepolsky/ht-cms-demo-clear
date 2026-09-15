@@ -66,6 +66,10 @@ export interface CaseDocument {
    * PDF rasterization. Keep it short (~10-30 lines).
    */
   previewText?: string;
+  /** Real document (GraphQL `documents`): same-origin URL streaming the bytes. Mock rows have none. */
+  url?: string;
+  /** Real document MIME type — drives the viewer (img / iframe / download). */
+  mimeType?: string;
 }
 
 /**

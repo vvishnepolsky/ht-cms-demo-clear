@@ -376,6 +376,21 @@ export interface CaseIdentityVerification {
   resolution: string | null;
 }
 
+/** A document on the resident's own case (proof of disenrollment, dashboard uploads). */
+export interface MedicaidEeCaseDocumentRecord {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  /** e.g. proof-of-disenrollment | proof-of-residence */
+  documentCategory: string;
+  /** verify_assist | resident_upload */
+  source: string;
+  /** Same-origin URL streaming the bytes to the owner (cookie auth). */
+  url: string;
+}
+
 export interface MedicaidEeCaseQueryResult {
   id: string;
   caseNumber: string | null;
@@ -383,6 +398,7 @@ export interface MedicaidEeCaseQueryResult {
   createdAt: string;
   updatedAt: string;
   rfiDetails: MedicaidEeCaseRfiDetails | null;
+  documents: MedicaidEeCaseDocumentRecord[];
   /** ENG-1883: coverage-start (enrolledOn) + recert-due dates are derived from
    *  these on the dashboard. */
   determinations: MedicaidEeCaseDeterminationDates[];
@@ -404,6 +420,16 @@ export const GET_MEDICAID_EE_CASE_QUERY: TypedDocumentNode<
         itemsRequested
         deadline
         noteToApplicant
+      }
+      documents {
+        id
+        fileName
+        mimeType
+        sizeBytes
+        uploadedAt
+        documentCategory
+        source
+        url
       }
       determinations {
         status
