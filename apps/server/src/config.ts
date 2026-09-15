@@ -41,6 +41,93 @@ if (!mockClear && !clearConfigured) {
   mockClear = true;
 }
 
+
+/**
+ * DEMO_ENRICHMENT_PASSTHROUGH — comma-separated `traits.document` fields that
+ * keep CLEAR's REAL value when the demo overlay applies to a sandbox run
+ * (everything else, incl. the South Carolina coverage, stays demo data).
+ * Aliases: `name` → first_name,middle_name,last_name · `dob`/`date_of_birth`
+ * → dob · `address` → address_1,address_2,city,subdivision,postal_code ·
+ * `all` → every document field. Empty (default) = full overlay, as before.
+ */
+export const DOCUMENT_FIELDS = [
+  "document_type", "first_name", "middle_name", "last_name", "dob", "sex", "address_1", "address_2", "city",
+  "subdivision", "postal_code", "country", "document_number", "issuing_subdivision", "issuing_country",
+  "issued_date", "expiration_date",
+] as const;
+export type DocumentField = (typeof DOCUMENT_FIELDS)[number];
+const PASSTHROUGH_ALIASES: Record<string, DocumentField[]> = {
+  name: ["first_name", "middle_name", "last_name"],
+  dob: ["dob"],
+  date_of_birth: ["dob"],
+  birthdate: ["dob"],
+  address: ["address_1", "address_2", "city", "subdivision", "postal_code"],
+  all: [...DOCUMENT_FIELDS],
+};
+export function parsePassthrough(raw: string | undefined): DocumentField[] {
+  const out = new Set<DocumentField>();
+  for (const token of (raw ?? "").split(",")) {
+    const key = token.trim().toLowerCase().replace(/[\s-]+/g, "_");
+    if (!key) continue;
+    const expanded = PASSTHROUGH_ALIASES[key] ?? ((DOCUMENT_FIELDS as readonly string[]).includes(key) ? [key as DocumentField] : null);
+    if (!expanded) {
+      console.warn(`[config] DEMO_ENRICHMENT_PASSTHROUGH: unknown field "${token.trim()}" ignored.`);
+      continue;
+    }
+    for (const f of expanded) out.add(f);
+  }
+  return [...out];
+}
+
+
+/**
+ * Demo identities (mock mode, or sandbox + DEMO_ENRICHMENT). Name and date of
+ * birth are configurable from the environment so the storyline can star anyone:
+ *   DEMO_APPLICANT_FIRST_NAME / DEMO_APPLICANT_MIDDLE_NAME / DEMO_APPLICANT_LAST_NAME / DEMO_APPLICANT_DOB
+ *   DEMO_HOUSEHOLD_FIRST_NAME / DEMO_HOUSEHOLD_MIDDLE_NAME / DEMO_HOUSEHOLD_LAST_NAME / DEMO_HOUSEHOLD_DOB
+ * DOB must be ISO yyyy-mm-dd; an invalid value falls back to the default with a warning.
+ */
+export interface DemoPerson {
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  dob: string;
+}
+function envStr(key: string, fallback: string): string {
+  const v = process.env[key]?.trim();
+  return v ? v : fallback;
+}
+function envDob(key: string, fallback: string): string {
+  const v = process.env[key]?.trim();
+  if (!v) return fallback;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) {
+    console.warn(`[config] ${key}="${v}" is not an ISO date (yyyy-mm-dd); using ${fallback}.`);
+    return fallback;
+  }
+  return v;
+}
+function demoPerson(prefix: string, d: DemoPerson): DemoPerson {
+  const middle = process.env[`${prefix}_MIDDLE_NAME`]?.trim();
+  return {
+    firstName: envStr(`${prefix}_FIRST_NAME`, d.firstName),
+    middleName: middle === undefined ? d.middleName : middle || null,
+    lastName: envStr(`${prefix}_LAST_NAME`, d.lastName),
+    dob: envDob(`${prefix}_DOB`, d.dob),
+  };
+}
+export const DEMO_APPLICANT: DemoPerson = demoPerson("DEMO_APPLICANT", {
+  firstName: "Jordan",
+  middleName: null,
+  lastName: "Rivera",
+  dob: "1991-01-10",
+});
+export const DEMO_HOUSEHOLD_MEMBER: DemoPerson = demoPerson("DEMO_HOUSEHOLD", {
+  firstName: "Sam",
+  middleName: null,
+  lastName: "Rivera",
+  dob: "1993-03-14",
+});
+
 /** Single demo tenant (State-X). Every GraphQL entity carries this customerId. */
 export const CUSTOMER_ID = "00000000-0000-4000-a000-000000000003";
 
@@ -55,6 +142,11 @@ export const config = {
   // Medicaid storyline) even on real sandbox runs. Default off — real runs
   // return CLEAR's actual data. Mock mode always uses demo identities.
   demoEnrichment: process.env.DEMO_ENRICHMENT === "true",
+  // Document fields that pass through from CLEAR when the overlay applies to a
+  // real (sandbox) run — see parsePassthrough. Mock runs have no real data.
+  demoEnrichmentPassthrough: parsePassthrough(process.env.DEMO_ENRICHMENT_PASSTHROUGH),
+  demoApplicant: DEMO_APPLICANT,
+  demoHouseholdMember: DEMO_HOUSEHOLD_MEMBER,
   clearApiKey,
   clearProjectId,
   // Resident portal sits at the deploy root; the hosted flow lives under /verify.

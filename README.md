@@ -59,7 +59,7 @@ the first deploy:
 | Setting | Effect |
 |---|---|
 | `CLEAR_API_KEY`, `CLEAR_PROJECT_ID` (dashboard secrets) | Real CLEAR sandbox. Register `<service-url>/verify/flow` as the project's redirect URL. Until set, the server falls back to mock mode and says so in `/api/health`. |
-| `DEMO_ENRICHMENT=true` (default in the blueprint) | Overlays the deterministic demo identity (Jordan Rivera + active South Carolina Medicaid) on sandbox runs so the out-of-state flag always fires. CLEAR's sandbox itself returns "John Doe" with no coverage. Set `false` for pure CLEAR data. |
+| `DEMO_ENRICHMENT=true` (default in the blueprint) | Overlays the deterministic demo identity (Jordan Rivera + active South Carolina Medicaid) on sandbox runs so the out-of-state flag always fires. CLEAR's sandbox itself returns "John Doe" with no coverage. Set `false` for pure CLEAR data. Change who the storyline is about with `DEMO_APPLICANT_FIRST_NAME`, `DEMO_APPLICANT_LAST_NAME`, `DEMO_APPLICANT_DOB` (and `DEMO_HOUSEHOLD_*` for the household member); `/api/health` echoes the active identity. Optional `DEMO_ENRICHMENT_PASSTHROUGH=first_name,last_name,dob` takes those fields from CLEAR's real result instead. |
 | `ANTHROPIC_API_KEY` | Case Assist narratives written by Claude (`CASE_ASSIST_MODEL`, default `claude-opus-5`). Otherwise templated. |
 
 ## Repo layout

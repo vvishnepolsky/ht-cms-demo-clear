@@ -27,6 +27,10 @@ app.get("/api/health", (_req: Request, res: Response) => {
     ok: true,
     mode: config.mockClear ? "mock" : "sandbox",
     clearConfigured: config.clearConfigured,
+    demoEnrichment: config.mockClear || config.demoEnrichment,
+    demoEnrichmentPassthrough: config.demoEnrichmentPassthrough,
+    demoApplicant: `${config.demoApplicant.firstName} ${config.demoApplicant.lastName} (${config.demoApplicant.dob})`,
+    demoHouseholdMember: `${config.demoHouseholdMember.firstName} ${config.demoHouseholdMember.lastName} (${config.demoHouseholdMember.dob})`,
     caseAssistNarrative: narrativeMode(),
   });
 });

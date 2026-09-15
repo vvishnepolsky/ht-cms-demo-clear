@@ -40,6 +40,23 @@ services:
         value: "false"
       - key: DEMO_ENRICHMENT
         value: "true"
+      # Demo identity — edit in the dashboard to change who the storyline is about.
+      - key: DEMO_APPLICANT_FIRST_NAME
+        value: Jordan
+      - key: DEMO_APPLICANT_LAST_NAME
+        value: Rivera
+      - key: DEMO_APPLICANT_DOB
+        value: "1991-01-10"
+      - key: DEMO_HOUSEHOLD_FIRST_NAME
+        value: Sam
+      - key: DEMO_HOUSEHOLD_LAST_NAME
+        value: Rivera
+      - key: DEMO_HOUSEHOLD_DOB
+        value: "1993-03-14"
+      # Optional (set in the dashboard): comma-separated document fields to take from
+      # CLEAR's real result instead of the demo identity, e.g. first_name,last_name,dob.
+      - key: DEMO_ENRICHMENT_PASSTHROUGH
+        sync: false
       - key: CLEAR_API_KEY
         sync: false
       - key: CLEAR_PROJECT_ID

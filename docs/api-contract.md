@@ -363,7 +363,7 @@ See `docs/verify-assist-api-contract.md` for full shapes. Changes for this demo:
 
 ## Demo identity (mock mode or `DEMO_ENRICHMENT=true`)
 
-Applicant overlay (role `applicant`): **Jordan Rivera**, DOB 1991-01-10,
+Applicant overlay (role `applicant`): **Jordan Rivera**, DOB 1991-01-10 (name/DOB configurable via `DEMO_APPLICANT_*`),
 `742 Evergreen Terrace, Springfield, SX 55501`, `drivers_license` issued by SX,
 SSN `123-45-6789` (only last-4 leaves the server), phone `(555) 123-4567`, and
 
@@ -395,6 +395,9 @@ mode with `DEMO_ENRICHMENT=false`, CLEAR's real traits flow through unchanged.
 | `VERIFY_APP_URL` | `PUBLIC_URL/verify` or `http://localhost:5187` | |
 | `MOCK_CLEAR` | true | `false` = real CLEAR sandbox |
 | `DEMO_ENRICHMENT` | false | overlay demo identity on sandbox runs |
+| `DEMO_APPLICANT_FIRST_NAME`, `DEMO_APPLICANT_MIDDLE_NAME`, `DEMO_APPLICANT_LAST_NAME`, `DEMO_APPLICANT_DOB` | Jordan / – / Rivera / 1991-01-10 | name + DOB of the demo applicant identity (mock mode and sandbox overlay). Address, SSN and coverage stay as documented above; the coverage policy holder follows this name. |
+| `DEMO_HOUSEHOLD_FIRST_NAME`, `DEMO_HOUSEHOLD_MIDDLE_NAME`, `DEMO_HOUSEHOLD_LAST_NAME`, `DEMO_HOUSEHOLD_DOB` | Sam / – / Rivera / 1993-03-14 | same for the household-member identity |
+| `DEMO_ENRICHMENT_PASSTHROUGH` | (empty) | comma-separated `traits.document` fields that keep CLEAR's real value under the overlay (e.g. `first_name,last_name,dob`; aliases `name`, `dob`, `address`, `all`). Coverage, SSN and the rest stay demo. Policy-holder name follows the final document name. |
 | `CLEAR_API_KEY`, `CLEAR_PROJECT_ID` | | sandbox creds |
 | `VERIFY_ASSIST_TENANT_STATE` | SX | |
 | `ANTHROPIC_API_KEY` | | optional; enables Claude narratives (`GET /api/health` reports `caseAssistNarrative: "claude"|"template"` and `clearConfigured`) |
