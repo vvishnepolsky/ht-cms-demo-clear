@@ -75,6 +75,7 @@ import {
   startClearVerification,
   takeReturnLegVerificationId,
   unverifyField,
+  applyVerificationCoverageToInsurance,
 } from "./clear-verification";
 
 /* =========================================================================
@@ -780,6 +781,11 @@ function StepPersonalInfoV2({ ctx }) {
         if (verification.status === "success") {
           updateFormData("primaryApplicant", (prev) =>
             applyVerificationToPrimary(prev, verification),
+          );
+          // Coverage discovery found the applicant's own plan (e.g. employer
+          // coverage): prefill the insurance step from it, locked.
+          updateFormData("healthInsurance", (prev) =>
+            applyVerificationCoverageToInsurance(prev, verification),
           );
           setVerifyState("idle");
         } else if (

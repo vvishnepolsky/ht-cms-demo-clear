@@ -5,7 +5,7 @@ import type {
   VerificationCheck,
   VerificationRole,
 } from "./types.js";
-import { config, DEMO_APPLICANT, DEMO_HOUSEHOLD_MEMBER, type DocumentField } from "../config.js";
+import { config, DEMO_APPLICANT, DEMO_HOUSEHOLD_MEMBER, type CoverageScenario, type DocumentField } from "../config.js";
 
 // Deterministic demo identities. Sandbox returns "John Doe", so after a
 // successful real round-trip we overlay these values — same schema, demo data.
@@ -64,6 +64,7 @@ export const HOUSEHOLD_DOCUMENT: DocumentTraits = {
 
 export const HOUSEHOLD_SSN9 = "987654321";
 
+// Scenario "oos_medicaid" (default): the applicant's own out-of-state Medicaid.
 export const DEMO_HEALTH_INSURANCE: HealthInsuranceTraits = {
   payer_id: "SCMCD",
   payer_name: "South Carolina Medicaid",
@@ -74,7 +75,34 @@ export const DEMO_HEALTH_INSURANCE: HealthInsuranceTraits = {
   policy_holder_first_name: DEMO_APPLICANT.firstName,
   policy_holder_last_name: DEMO_APPLICANT.lastName,
   coverage_start_date: "2025-11-01",
+  coverage_type: "medicaid",
+  policy_holder_relationship: null,
+  monthly_premium: null,
 };
+
+// Scenario "employer_plan": an active employer plan held by the applicant's
+// spouse. Not Medicaid and not out of state, so the coverage rules stay clear
+// and no flag opens; the wizard prefills its insurance step from these values.
+export const DEMO_EMPLOYER_INSURANCE: HealthInsuranceTraits = {
+  payer_id: "AETNA",
+  payer_name: "Aetna",
+  plan_status: "ACTIVE",
+  group_name: null,
+  group_id: "G123456789",
+  insurance_member_id: "W123456789",
+  policy_holder_first_name: "Jane",
+  policy_holder_last_name: "Doe",
+  coverage_start_date: "2026-01-01",
+  coverage_type: "employer",
+  policy_holder_relationship: "spouse",
+  monthly_premium: 300,
+};
+
+/** The applicant's coverage for a scenario. Medicaid follows the document's name (it is the applicant's own enrollment); the employer plan keeps its spouse policy holder. */
+export function demoCoverage(scenario: CoverageScenario, document: DocumentTraits): HealthInsuranceTraits {
+  if (scenario === "employer_plan") return { ...DEMO_EMPLOYER_INSURANCE };
+  return { ...DEMO_HEALTH_INSURANCE, policy_holder_first_name: document.first_name, policy_holder_last_name: document.last_name };
+}
 
 // Mirrors the real CLEAR API's check objects so mock and sandbox render identically.
 export const DEMO_CHECKS: VerificationCheck[] = [
@@ -127,6 +155,7 @@ export function enrichSession(
   session: ClearSession,
   role: VerificationRole = "applicant",
   passthrough: readonly DocumentField[] = config.demoEnrichmentPassthrough,
+  scenario: CoverageScenario = config.demoCoverageScenario,
 ): ClearSession {
   if (session.status !== "success") return session;
   const realDoc = (session.traits as { document?: Partial<DocumentTraits> | null } | null)?.document ?? null;
@@ -154,13 +183,8 @@ export function enrichSession(
       // the demo constant only fills the mock path.
       phone: { number: realPhone || DEMO_PHONE },
       ssn9: APPLICANT_SSN9,
-      // The policy holder follows whichever name ends up on the document so the
-      // coverage finding still reads as the applicant's own enrollment.
-      health_insurance: {
-        ...DEMO_HEALTH_INSURANCE,
-        policy_holder_first_name: document.first_name,
-        policy_holder_last_name: document.last_name,
-      },
+      // Which coverage discovery "finds" is the configured scenario (DEMO_COVERAGE_SCENARIO).
+      health_insurance: demoCoverage(scenario, document),
     },
   };
 }

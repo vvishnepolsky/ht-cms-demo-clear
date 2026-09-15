@@ -43,6 +43,18 @@ const RESOLUTION_LABELS: Record<string, string> = {
   confirm_enrolled: 'Applicant confirmed they are still enrolled in the other state’s Medicaid.',
 };
 
+/** "Aetna (employer plan)" suffix for the other-coverage line. */
+function coverageTypeLabel(type: string | null | undefined): string {
+  if (!type) return '';
+  return ` (${type === 'employer' ? 'employer plan' : `${type} plan`})`;
+}
+
+/** W123456789 → W…789 — enough to recognise the record without printing the whole id. */
+function maskId(id: string): string {
+  if (id.length <= 4) return id;
+  return `${id.slice(0, 1)}…${id.slice(-3)}`;
+}
+
 function humanize(raw: string): string {
   return raw.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 }
@@ -314,7 +326,41 @@ export function IdentityVerificationCard({ identityVerification: iv }: IdentityV
             </p>
           </div>
         )}
-        {!duplicate && det && (
+        {/* Other (non-Medicaid) coverage — the applicant's own plan; neutral, never red */}
+        {!duplicate && det && coverage && (
+          <div
+            className="mx-4 mb-4 rounded-lg border border-border bg-muted/30 p-3"
+            role="note"
+            aria-label="Other coverage found"
+            data-slot="other-coverage"
+            data-coverage-type={det.coverage_type ?? coverage.coverage_type ?? 'unknown'}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldCheck className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Other coverage found</p>
+              <span className="ml-auto inline-flex items-center rounded-md border border-border bg-card px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                Not a finding · TPL
+              </span>
+            </div>
+            <p className="text-xs text-foreground leading-snug">
+              {[
+                `${coverage.payer_name ?? 'Unknown payer'}${coverageTypeLabel(det.coverage_type ?? coverage.coverage_type)}`,
+                coverage.insurance_member_id ? `member ${maskId(coverage.insurance_member_id)}` : null,
+                coverage.group_id ? `group ${maskId(coverage.group_id)}` : null,
+                coverage.policy_holder_first_name || coverage.policy_holder_last_name
+                  ? `policy holder ${[coverage.policy_holder_first_name, coverage.policy_holder_last_name].filter(Boolean).join(' ')}${
+                      coverage.policy_holder_relationship ? ` (${coverage.policy_holder_relationship})` : ''
+                    }`
+                  : null,
+                coverage.coverage_start_date ? `since ${fmtDate(coverage.coverage_start_date)}` : null,
+                coverage.monthly_premium != null ? `$${coverage.monthly_premium}/mo` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          </div>
+        )}
+        {!duplicate && det && !coverage && (
           <p className="px-4 pb-3 text-[11px] text-muted-foreground">
             Coverage check: no active Medicaid coverage found in another state.
           </p>

@@ -204,14 +204,18 @@ export function Results({
   }
 
   if (!duplicate) {
+    // Result "clear": identity verified, nothing for the applicant to resolve.
+    // Coverage may still have been found (e.g. the applicant's own employer
+    // plan) — that is not a finding, so no plan details or callout appear here;
+    // the application's insurance step is prefilled from it instead.
     return (
       <Card>
         <CardContent className="space-y-4">
           <IdentitySummary session={session} />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground" data-slot="results-clear-copy">
             {session.returnTo
-              ? 'No existing healthcare coverage was found. Your verified details are ready to go back to your application.'
-              : 'No existing healthcare coverage was found. Your verification is complete and your results have been sent to the agency reviewing your application.'}
+              ? 'Your identity is verified. Your verified details are ready to go back to your application.'
+              : 'Your identity is verified. Your verification is complete and your results have been sent to the agency reviewing your application.'}
           </p>
           <ReturnOrDone returnTo={session.returnTo} />
         </CardContent>

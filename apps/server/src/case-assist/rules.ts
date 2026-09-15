@@ -38,7 +38,18 @@ export interface CaseAssistVerificationView {
     duplicate_enrollment: boolean;
     payer_state: string | null;
     payer_state_name: string | null;
-    coverage: { payer_name?: string | null; plan_status?: string | null; insurance_member_id?: string | null } | null;
+    coverage: {
+      payer_name?: string | null;
+      plan_status?: string | null;
+      insurance_member_id?: string | null;
+      coverage_type?: string | null;
+      monthly_premium?: number | null;
+      policy_holder_first_name?: string | null;
+      policy_holder_last_name?: string | null;
+      policy_holder_relationship?: string | null;
+      coverage_start_date?: string | null;
+    } | null;
+    coverage_type?: string | null;
   } | null;
 }
 
@@ -105,6 +116,42 @@ export function deriveRecommendations(
         `Issue RFI for proof of ${stateCode} Medicaid disenrollment`,
         `Contact ${stateName} DHHS to confirm termination date`,
         "Hold determination until resolved",
+      ],
+    });
+  }
+
+  // Other (non-Medicaid) coverage discovered — e.g. an ACTIVE employer plan. Not a
+  // program-integrity finding: no flag, no block. The caseworker records it as
+  // third-party liability so Medicaid pays secondary.
+  const coverageType = det?.coverage_type ?? det?.coverage?.coverage_type ?? null;
+  if (det && !det.duplicate_enrollment && det.coverage && coverageType && coverageType !== "medicaid") {
+    const cov = det.coverage;
+    const holder = [cov.policy_holder_first_name, cov.policy_holder_last_name].filter(Boolean).join(" ");
+    const holderNote = holder
+      ? ` held by ${holder}${cov.policy_holder_relationship ? ` (${cov.policy_holder_relationship})` : ""}`
+      : "";
+    const typeLabel = coverageType === "employer" ? "employer" : coverageType;
+    recs.push({
+      id: `other-coverage-${coverageType}`,
+      type: "guidance",
+      priority: 3,
+      severity: "info",
+      source: "verify_assist",
+      title: `${typeLabel.charAt(0).toUpperCase()}${typeLabel.slice(1)} coverage on file — verify third-party liability (TPL)`,
+      body: `CLEAR's coverage discovery found an ACTIVE ${cov.payer_name ?? typeLabel} ${typeLabel} plan for ${name}${holderNote}${
+        cov.monthly_premium != null ? `, $${cov.monthly_premium}/mo` : ""
+      }${cov.coverage_start_date ? `, since ${cov.coverage_start_date}` : ""}. This is not Medicaid and does not block eligibility, but it must be recorded as third-party liability so Medicaid pays secondary.`,
+      rationale: {
+        summary: `Coverage discovery found ${cov.payer_name ?? "a payer"} with coverage_type "${coverageType}"; not a Medicaid payer, so no duplicate-enrollment finding.`,
+        citedFieldPaths: [
+          "identityVerification.determination.coverage.payer_name",
+          "identityVerification.determination.coverage.coverage_type",
+          "identityVerification.determination.duplicate_enrollment",
+        ],
+      },
+      suggestedActions: [
+        `Record ${cov.payer_name ?? "the plan"} as third-party liability`,
+        "Confirm premium and coverage dates with the applicant",
       ],
     });
   }

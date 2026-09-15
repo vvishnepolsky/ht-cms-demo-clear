@@ -262,12 +262,21 @@ export interface HealthInsuranceTraits {
   policy_holder_first_name: string | null;
   policy_holder_last_name: string | null;
   coverage_start_date: string | null;
+  group_id?: string | null;
+  /** employer | medicaid | marketplace | medicare | tricare | private | other (demo addition) */
+  coverage_type?: string | null;
+  /** self | spouse | parent | other — when someone else holds the policy */
+  policy_holder_relationship?: string | null;
+  /** Whole dollars per month */
+  monthly_premium?: number | null;
 }
 
 export interface CoverageDetermination {
   /** issue_found | clear */
   result: string;
   duplicate_enrollment: boolean;
+  /** Mirror of coverage.coverage_type */
+  coverage_type?: string | null;
   payer_state: string | null;
   payer_state_name: string | null;
   /** Staff-only; null for residents. */

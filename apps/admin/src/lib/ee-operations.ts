@@ -257,14 +257,19 @@ export const GET_EE_CASE_QUERY: TypedDocumentNode<{ medicaidEeCase: EECase | nul
           duplicate_enrollment
           payer_state
           payer_state_name
+          coverage_type
           coverage {
             payer_id
             payer_name
             plan_status
             insurance_member_id
+            group_id
             policy_holder_first_name
             policy_holder_last_name
+            policy_holder_relationship
             coverage_start_date
+            coverage_type
+            monthly_premium
           }
         }
         resolution

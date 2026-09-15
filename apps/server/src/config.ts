@@ -142,6 +142,29 @@ export const DEMO_HOUSEHOLD_MEMBER: DemoPerson = demoPerson("DEMO_HOUSEHOLD", {
   sex: null,
 });
 
+/**
+ * DEMO_COVERAGE_SCENARIO — which coverage the demo identity carries, i.e. what
+ * CLEAR's coverage discovery "finds" for the applicant:
+ *   oos_medicaid  (default) ACTIVE South Carolina Medicaid → out-of-state
+ *                 duplicate-enrollment finding, applicant response, OOS-MCD flag.
+ *   employer_plan ACTIVE employer plan (Aetna, held by a spouse). No finding,
+ *                 no flag; the wizard's insurance step is prefilled instead.
+ * The household member is clean in both. Switch by changing the variable and
+ * restarting; /api/health echoes the active scenario.
+ */
+export const COVERAGE_SCENARIOS = ["oos_medicaid", "employer_plan"] as const;
+export type CoverageScenario = (typeof COVERAGE_SCENARIOS)[number];
+export function parseCoverageScenario(raw: string | undefined): CoverageScenario {
+  const v = (raw ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (!v) return "oos_medicaid";
+  if ((COVERAGE_SCENARIOS as readonly string[]).includes(v)) return v as CoverageScenario;
+  // Friendly aliases so the dashboard value can read naturally.
+  if (["medicaid", "oos", "out_of_state", "out_of_state_medicaid", "medicaid_discovery"].includes(v)) return "oos_medicaid";
+  if (["employer", "employer_coverage", "employer_insurance", "esi", "aetna"].includes(v)) return "employer_plan";
+  console.warn(`[config] DEMO_COVERAGE_SCENARIO="${raw}" is not one of ${COVERAGE_SCENARIOS.join(", ")}; using oos_medicaid.`);
+  return "oos_medicaid";
+}
+
 /** Single demo tenant (State-X). Every GraphQL entity carries this customerId. */
 export const CUSTOMER_ID = "00000000-0000-4000-a000-000000000003";
 
@@ -161,6 +184,8 @@ export const config = {
   demoEnrichmentPassthrough: parsePassthrough(process.env.DEMO_ENRICHMENT_PASSTHROUGH),
   demoApplicant: DEMO_APPLICANT,
   demoHouseholdMember: DEMO_HOUSEHOLD_MEMBER,
+  // Which coverage the demo applicant carries — see parseCoverageScenario.
+  demoCoverageScenario: parseCoverageScenario(process.env.DEMO_COVERAGE_SCENARIO),
   clearApiKey,
   clearProjectId,
   // Resident portal sits at the deploy root; the hosted flow lives under /verify.

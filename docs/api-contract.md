@@ -326,6 +326,7 @@ type UpdateVerifyAssistFlagPayload { flag: VerifyAssistFlag, errors: [PayloadErr
 | id | trigger | severity | title |
 |---|---|---|---|
 | `oos-medicaid` | linked verification `determination.duplicate_enrollment` (or an open flag) **while the Verify Assist flag is `open`/`in_review`** — nothing is emitted once the flag is `resolved`/`dismissed` (the flag card's history is the record). The applicant's hosted-flow response (`resolution`) is folded into the body and `rationale.summary`; there are no separate applicant-response recommendations any more. | critical | Active out-of-state Medicaid coverage detected (South Carolina) |
+| `other-coverage-<type>` (e.g. `other-coverage-employer`) | determination `result === 'clear'` with a non-Medicaid `coverage` (`coverage_type` ≠ medicaid) | info (P3, source verify_assist) | Employer coverage on file — verify third-party liability (TPL). Cited: `…coverage.payer_name`, `…coverage.coverage_type`, `…duplicate_enrollment`; actions "Record Aetna as third-party liability", "Confirm premium and coverage dates with the applicant" |
 | `identity-verified` | verification `status === 'success'` and every **curated** check passed (`clear/check-curation.ts` — category headers, phone/device and NFC rows are ignored); body says "N/N identity checks passed" using the curated count | info | Identity verified by CLEAR — no manual ID review needed |
 | `identity-unverified` | no linked verification, or status failed/expired | warning | Identity not verified — request ID documents |
 | `rfi-pending` | `flagReason` starts with `rfi:` | warning | RFI outstanding |
@@ -429,6 +430,35 @@ Tenant state code is `SX` (`VERIFY_ASSIST_TENANT_STATE=SX`). Rule: Medicaid paye
 whose state ≠ tenant state and `plan_status === 'ACTIVE'` → `duplicate_enrollment`.
 Payer map: `SCMCD → SC (South Carolina)`, `ILMCD → IL (Illinois)`.
 
+
+**Coverage scenario (`DEMO_COVERAGE_SCENARIO`)** — the object above is the
+`oos_medicaid` default. With `employer_plan` the applicant instead carries
+
+```json
+{ "payer_id": "AETNA", "payer_name": "Aetna", "plan_status": "ACTIVE", "group_id": "G123456789", "group_name": null,
+  "insurance_member_id": "W123456789", "policy_holder_first_name": "Jane", "policy_holder_last_name": "Doe",
+  "policy_holder_relationship": "spouse", "coverage_start_date": "2026-01-01", "monthly_premium": 300,
+  "coverage_type": "employer" }
+```
+
+(the policy holder is the spouse, not the demo applicant). `HealthInsuranceTraits`
+is extended additively with `coverage_type` (`employer | medicaid | marketplace |
+medicare | other | null`), `monthly_premium` and `policy_holder_relationship`
+(`self | spouse | parent | other | null`); real sandbox coverage infers
+`coverage_type` from the payer (known Medicaid payers → `medicaid`, else `null`).
+`determination.coverage_type` mirrors it. An employer plan is **not** a duplicate
+enrollment: `result: "clear"`, `duplicate_enrollment: false`, no flag, no OOS-MCD
+chip, no red banner; the hosted flow shows only the identity-verified summary and
+returns (no coverage callout, no resolution step); the resident/owner GraphQL view
+**includes** `determination.coverage` when `duplicate_enrollment === false` (the
+applicant's own plan) and keeps stripping it while a duplicate-enrollment finding
+exists; the REST owner view (`/api/verifications/:id`, flow session) is unchanged.
+The wizard's `/#/insurance` step prefills one active entry for the primary
+applicant from the coverage (type employer, Aetna, W123456789, G123456789, $300,
+policy holder Jane Doe · spouse, start 2026-01-01), locked as "Found during identity
+verification" with an edit link, and submits it under `intakeData.householdMembers[0].insurance`
+with `source: "clear"`. Case Assist adds `other-coverage-employer` (info) and the
+Evaluate trace row reads "Other coverage found (employer plan)".
 **Important:** the overlay applies only to identity + coverage traits. In sandbox
 mode with `DEMO_ENRICHMENT=false`, CLEAR's real traits flow through unchanged.
 
@@ -445,6 +475,7 @@ mode with `DEMO_ENRICHMENT=false`, CLEAR's real traits flow through unchanged.
 | `VERIFY_APP_URL` | `PUBLIC_URL/verify` or `http://localhost:5187` | |
 | `MOCK_CLEAR` | true | `false` = real CLEAR sandbox |
 | `DEMO_ENRICHMENT` | false | overlay demo identity on sandbox runs |
+| `DEMO_COVERAGE_SCENARIO` | `oos_medicaid` | `oos_medicaid` \| `employer_plan` (aliases `medicaid`, `out_of_state_medicaid`, `employer`; bad value → warning + default). Which coverage the demo applicant carries — see *Demo identity*. `/api/health` echoes it as `demoCoverageScenario`. |
 | `DEMO_APPLICANT_FIRST_NAME`, `DEMO_APPLICANT_MIDDLE_NAME`, `DEMO_APPLICANT_LAST_NAME`, `DEMO_APPLICANT_DOB`, `DEMO_APPLICANT_SEX` (M/F/X) | Jordan / – / Rivera / 1991-01-10 / – | name, DOB and sex of the demo applicant identity. Fields the demo identity leaves empty keep CLEAR's real value on sandbox runs (mock mode and sandbox overlay). Address, SSN and coverage stay as documented above; the coverage policy holder follows this name. |
 | `DEMO_HOUSEHOLD_FIRST_NAME`, `DEMO_HOUSEHOLD_MIDDLE_NAME`, `DEMO_HOUSEHOLD_LAST_NAME`, `DEMO_HOUSEHOLD_DOB`, `DEMO_HOUSEHOLD_SEX` | Sam / – / Rivera / 1993-03-14 / – | same for the household-member identity |
 | `DEMO_ENRICHMENT_PASSTHROUGH` | (empty) | comma-separated `traits.document` fields that keep CLEAR's real value under the overlay (e.g. `first_name,last_name,dob`; aliases `name`, `dob`, `address`, `all`). Coverage, SSN and the rest stay demo. Policy-holder name follows the final document name. |

@@ -73,11 +73,37 @@ export interface VerificationCheck {
   status: string;
 }
 
+/**
+ * Coverage record CLEAR discovered. The server includes it for the owner only
+ * when it is NOT a duplicate-enrollment finding (the applicant's own employer /
+ * marketplace plan); the demo-extension fields are null on real runs.
+ */
+export interface RawCoverageTraits {
+  payer_id?: string | null;
+  payer_name?: string | null;
+  plan_status?: string | null;
+  group_id?: string | null;
+  group_name?: string | null;
+  insurance_member_id?: string | null;
+  policy_holder_first_name?: string | null;
+  policy_holder_last_name?: string | null;
+  /** self | spouse | parent | other */
+  policy_holder_relationship?: string | null;
+  coverage_start_date?: string | null;
+  /** employer | medicaid | marketplace | medicare | tricare | private | other */
+  coverage_type?: string | null;
+  monthly_premium?: number | null;
+}
+
 export interface CoverageDetermination {
   result: 'issue_found' | 'clear';
   duplicate_enrollment: boolean;
   payer_state: string | null;
   payer_state_name: string | null;
+  /** Mirror of coverage.coverage_type */
+  coverage_type?: string | null;
+  /** Present only when the result is clear (see RawCoverageTraits). */
+  coverage?: RawCoverageTraits | null;
 }
 
 export interface VerificationTraits {

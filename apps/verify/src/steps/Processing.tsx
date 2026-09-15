@@ -124,6 +124,10 @@ export function Processing({
               state: 'warn',
               detail: `Active Medicaid coverage found — ${det.coverage.payer_name} (Member ID ${det.coverage.insurance_member_id})`,
             });
+          } else if (det?.coverage) {
+            // Other coverage (e.g. the applicant's own employer plan) is not a
+            // finding — complete, no warning, no plan details.
+            setRow(2, { state: 'ok', detail: 'Coverage check complete' });
           } else {
             setRow(2, { state: 'ok', detail: 'No existing coverage found' });
           }

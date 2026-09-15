@@ -122,6 +122,12 @@ export function templateNarrative(summary: NarrativeCaseSummary, recs: CaseAssis
         : "No blocking findings — ready for the caseworker's determination.",
     );
   }
+  // Other (non-Medicaid) coverage discovered — not a finding, but worth one line.
+  const other = recs.find((r) => r.id.startsWith("other-coverage-"));
+  if (other) {
+    const type = other.id.replace("other-coverage-", "");
+    parts.push(`CLEAR also found ${type === "employer" ? "an employer plan" : `${type} coverage`} — record it as third-party liability.`);
+  }
   return parts.join(" ");
 }
 

@@ -34,6 +34,14 @@ export interface HealthInsuranceTraits {
   policy_holder_last_name: string | null;
   /** ISO yyyy-mm-dd; CLEAR's coverage payload carries it when the payer reports one. */
   coverage_start_date?: string | null;
+  // ── Demo extensions ── not part of CLEAR's payload (null on real runs). They
+  // let the employer-plan storyline prefill the wizard's insurance step.
+  /** Wizard "type of coverage" value: employer | marketplace | medicare | tricare | private | medicaid | other. */
+  coverage_type?: string | null;
+  /** Policy holder's relationship to the applicant when someone else holds the policy (e.g. "spouse"). */
+  policy_holder_relationship?: string | null;
+  /** Monthly premium in whole dollars. */
+  monthly_premium?: number | null;
 }
 
 export interface VerificationCheck {
@@ -58,6 +66,8 @@ export interface Determination {
   payer_state: string | null; // e.g. "SC"
   payer_state_name: string | null; // e.g. "South Carolina"
   coverage: HealthInsuranceTraits | null;
+  /** Mirror of coverage.coverage_type (employer | medicaid | …) for consumers that only read the determination. */
+  coverage_type?: string | null;
 }
 
 export interface SessionTraits {

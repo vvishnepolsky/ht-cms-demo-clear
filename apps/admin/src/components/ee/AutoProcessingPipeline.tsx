@@ -95,6 +95,15 @@ export function identityVerificationStep(iv: IdentityVerification | null | undef
         note: `Identity verified by CLEAR.${checksNote} Coverage finding (${payer}) ${iv.flag?.status ?? 'resolved'} — no longer blocks determination.`,
       };
     }
+    const otherType = det?.coverage_type ?? det?.coverage?.coverage_type ?? null;
+    if (det?.coverage && otherType && otherType !== 'medicaid') {
+      // The applicant's own (non-Medicaid) plan — not a finding, just TPL to record.
+      return {
+        label: STEP_LABEL_IDENTITY_CLEAR,
+        status: 'pass',
+        note: `Identity verified by CLEAR.${checksNote} Other coverage found (${otherType === 'employer' ? 'employer plan' : `${otherType} plan`}) — ${det.coverage.payer_name ?? 'payer'}; record as third-party liability.`,
+      };
+    }
     return {
       label: STEP_LABEL_IDENTITY_CLEAR,
       status: 'info',

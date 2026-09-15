@@ -1,3 +1,4 @@
+import { MEDICAID_PAYERS } from "./rules.js";
 import type { DocumentTraits, HealthInsuranceTraits, SessionTraits } from "./types.js";
 
 /**
@@ -66,6 +67,11 @@ function normalizeHealthInsurance(hi: Record<string, any> | null | undefined): H
     policy_holder_first_name: str(hi.policy_holder_first_name),
     policy_holder_last_name: str(hi.policy_holder_last_name),
     coverage_start_date: isoDate(hi.coverage_start_date ?? hi.effective_date ?? null),
+    // CLEAR never sends these; infer the type from the payer (Medicaid payers we
+    // know → "medicaid", anything else unknown → null) and leave the rest empty.
+    coverage_type: inferCoverageType(str(hi.payer_id), str(hi.payer_name)),
+    policy_holder_relationship: null,
+    monthly_premium: null,
   };
 }
 
@@ -95,4 +101,11 @@ export function normalizeClearTraits(raw: Record<string, any> | null | undefined
     ssn9: str(raw.ssn9),
     health_insurance: normalizeHealthInsurance(raw.health_insurance),
   };
+}
+
+/** Medicaid payers (by id or a "Medicaid" payer name) → "medicaid"; otherwise unknown. */
+export function inferCoverageType(payerId: string | null, payerName: string | null): string | null {
+  if (payerId && MEDICAID_PAYERS.has(payerId)) return "medicaid";
+  if (payerName && /medicaid/i.test(payerName)) return "medicaid";
+  return null;
 }

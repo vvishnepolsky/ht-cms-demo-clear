@@ -72,6 +72,20 @@ export type ResidentVerification = Omit<Verification, "traits"> & {
   traits: Omit<RedactedTraits, "health_insurance"> | null;
 };
 
+/**
+ * What a resident (or the hosted flow) may see of the coverage determination.
+ * The applicant's own non-Medicaid plan (employer, marketplace) is not a
+ * program-integrity finding, so `coverage` is included when
+ * `duplicate_enrollment === false`; while an out-of-state duplicate-enrollment
+ * finding exists the raw coverage record stays staff-only (unchanged posture).
+ * Staff always get the full record.
+ */
+export function residentDetermination(det: Determination | null, staff: boolean): Determination | null {
+  if (!det) return null;
+  if (staff || det.duplicate_enrollment === false) return det;
+  return { ...det, coverage: null };
+}
+
 export function toResidentVerification(row: VerificationRow): ResidentVerification {
   const { traits, ...rest } = toVerification(row);
   // Applicants (and the hosted flow's Results step) see only the curated

@@ -31,6 +31,7 @@ import type {
   OtherIncome,
   CitizenshipEntry,
   HealthInsuranceEntry,
+  IntakeInsurance,
   IntakeCitizenshipStatus,
   IntakeMember,
   IntakeDisplayMeta,
@@ -272,6 +273,24 @@ export function buildIntakeData(input: BuildIntakeDataInput): IntakeDataPayload 
     const e = healthIns?.[key];
     return !!e && e.hasInsurance === 'yes' && !e.skipped;
   }
+  /** Details of the current coverage (incl. the CLEAR-discovered employer plan), or null. */
+  function insuranceFor(key: string): IntakeInsurance | null {
+    if (!hasInsuranceFor(key)) return null;
+    const e = healthIns[key]!;
+    const premium = e.premium ? Number(String(e.premium).replace(/[^0-9.]/g, '')) : NaN;
+    return {
+      type: e.insuranceType || null,
+      insurer: e.companyName || null,
+      policyNumber: e.policyNumber || null,
+      groupNumber: e.groupNumber || null,
+      premiumMonthly: Number.isFinite(premium) ? premium : null,
+      policyHolderIsOther: e.differentHolder === true,
+      policyHolderName: e.differentHolder === true ? e.holderName || null : null,
+      policyHolderRelationship: e.differentHolder === true ? e.holderRelationship || null : null,
+      coverageStartDate: e.coverageStartDate || null,
+      source: e.source === 'clear' ? 'clear' : 'applicant',
+    };
+  }
 
   // ── Members rich shape (caseworker display) ───────────────────────────────
   const intakeMembers: IntakeMember[] = [];
@@ -302,6 +321,7 @@ export function buildIntakeData(input: BuildIntakeDataInput): IntakeDataPayload 
       totalMonthly: Math.round((primaryJobsMonthly + otherIncomeMonthly) * 100) / 100,
     },
     hasInsurance: hasInsuranceFor('0'),
+    insurance: insuranceFor('0'),
     nonMagiResources: data?.nonMagiResources?.['0'] ?? null,
     // Per-applicant BRE attributes (ENG-1865 follow-up) — like every household
     // member below, the primary's entry reflects its OWN per-person flags
@@ -334,6 +354,7 @@ export function buildIntakeData(input: BuildIntakeDataInput): IntakeDataPayload 
         totalMonthly: Math.round(memberMonthly * 100) / 100,
       },
       hasInsurance: hasInsuranceFor(memberKey),
+      insurance: insuranceFor(memberKey),
       nonMagiResources: data?.nonMagiResources?.[memberKey] ?? null,
       // Per-member BRE attributes (ENG-1865 follow-up) — each member is evaluated
       // with its OWN citizenship/health flags, not the primary's. Pregnancy is

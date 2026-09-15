@@ -756,9 +756,11 @@ type CoverageDetermination {
   """issue_found | clear"""
   result: String!
   duplicate_enrollment: Boolean!
+  """Mirror of coverage.coverage_type — employer | medicaid | … (visible to residents too)."""
+  coverage_type: String
   payer_state: String
   payer_state_name: String
-  """Staff-only (null for residents)."""
+  """Staff: always. Residents: only their own non-Medicaid plan (duplicate_enrollment false); null while a duplicate-enrollment finding exists."""
   coverage: HealthInsuranceTraits
 }
 
@@ -767,9 +769,17 @@ type HealthInsuranceTraits {
   payer_name: String
   plan_status: String
   insurance_member_id: String
+  group_id: String
   policy_holder_first_name: String
   policy_holder_last_name: String
   coverage_start_date: String
+  # --- demo additions (not part of CLEAR's payload; null on real runs) ---
+  """employer | medicaid | marketplace | medicare | tricare | private | other"""
+  coverage_type: String
+  """self | spouse | parent | other — when someone else holds the policy"""
+  policy_holder_relationship: String
+  """Whole dollars per month"""
+  monthly_premium: Int
 }
 
 type VerifyAssistFlag {

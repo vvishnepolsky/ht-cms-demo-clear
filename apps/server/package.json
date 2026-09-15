@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "seed": "tsx src/seed.ts",
     "smoke": "node scripts/smoke.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke:employer": "node scripts/smoke-employer.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

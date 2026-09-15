@@ -53,6 +53,10 @@ services:
         value: Rivera
       - key: DEMO_HOUSEHOLD_DOB
         value: "1993-03-14"
+      # Coverage the demo applicant carries: oos_medicaid (SC Medicaid finding + flag) or
+      # employer_plan (Aetna employer plan → no flag, insurance step prefilled, TPL note).
+      - key: DEMO_COVERAGE_SCENARIO
+        value: oos_medicaid
       # Optional (set in the dashboard): comma-separated document fields to take from
       # CLEAR's real result instead of the demo identity, e.g. first_name,last_name,dob.
       - key: DEMO_ENRICHMENT_PASSTHROUGH

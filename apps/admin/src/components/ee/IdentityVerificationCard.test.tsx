@@ -124,6 +124,41 @@ describe('IdentityVerificationCard', () => {
     expect(within(note).getByText('123485135')).toBeDefined();
   });
 
+  it('renders an employer plan as a neutral "Other coverage found" line (never red)', () => {
+    render(
+      <IdentityVerificationCard
+        identityVerification={{
+          ...BASE,
+          resolution: null,
+          determination: {
+            result: 'clear',
+            duplicate_enrollment: false,
+            coverage_type: 'employer',
+            payer_state: null,
+            payer_state_name: null,
+            coverage: {
+              payer_id: 'AETNA',
+              payer_name: 'Aetna',
+              plan_status: 'ACTIVE',
+              insurance_member_id: 'W123456789',
+              group_id: 'G123456789',
+              policy_holder_first_name: 'Jane',
+              policy_holder_last_name: 'Doe',
+              policy_holder_relationship: 'spouse',
+              coverage_start_date: '2026-01-01',
+              coverage_type: 'employer',
+              monthly_premium: 300,
+            },
+          },
+        }}
+      />,
+    );
+    expect(screen.queryByRole('note', { name: 'Coverage discovered' })).toBeNull();
+    const other = screen.getByRole('note', { name: 'Other coverage found' });
+    expect(other.getAttribute('data-coverage-type')).toBe('employer');
+    expect(within(other).getByText(/Aetna \(employer plan\) · member W…789 · group G…789 · policy holder Jane Doe \(spouse\) · since Jan 1, 2026 · \$300\/mo/)).toBeDefined();
+  });
+
   it('omits the coverage sub-card when no duplicate enrollment was found', () => {
     render(
       <IdentityVerificationCard
@@ -167,6 +202,22 @@ describe('identityVerificationStep (Auto-Processing Pipeline row)', () => {
     });
     expect(step?.status).toBe('pass');
     expect(step?.note).toMatch(/resolved/);
+  });
+
+  it('passes with an other-coverage note for an employer plan', () => {
+    const step = identityVerificationStep({
+      ...BASE,
+      determination: {
+        result: 'clear',
+        duplicate_enrollment: false,
+        coverage_type: 'employer',
+        payer_state: null,
+        payer_state_name: null,
+        coverage: { ...BASE.determination!.coverage!, payer_id: 'AETNA', payer_name: 'Aetna', coverage_type: 'employer' },
+      },
+    });
+    expect(step?.status).toBe('pass');
+    expect(step?.note).toMatch(/Other coverage found \(employer plan\)/);
   });
 
   it('is an info row for a clean success and a block row for a failed session', () => {

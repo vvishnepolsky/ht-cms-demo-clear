@@ -64,12 +64,7 @@ import {
 } from "../ee/households.js";
 import { createPerson, getPerson, toPersonRecord, updatePerson, type PersonInput } from "../ee/persons.js";
 import { FlagError, updateFlag } from "../flags.js";
-import {
-  primaryFlagForVerification,
-  toFlag,
-  verificationForCase,
-  type VerificationRow,
-} from "../verifications.js";
+import { primaryFlagForVerification, toFlag, verificationForCase, type VerificationRow, residentDetermination } from "../verifications.js";
 import { forbidden, requireStaffUser, requireUser, type GqlContext } from "./context.js";
 
 // --- helpers ---------------------------------------------------------------------------
@@ -184,7 +179,11 @@ function identityVerificationView(row: VerificationRow, staff: boolean) {
           duplicate_enrollment: det.duplicate_enrollment,
           payer_state: det.payer_state,
           payer_state_name: det.payer_state_name,
-          coverage: staff && det.coverage ? det.coverage : null,
+          coverage_type: det.coverage_type ?? det.coverage?.coverage_type ?? null,
+          // Staff see the raw coverage record; residents see it only for their own
+          // non-Medicaid plan (result clear) — never while a duplicate-enrollment
+          // finding is open (residentDetermination).
+          coverage: residentDetermination(det, staff)?.coverage ?? null,
         }
       : null,
     resolution: row.resolution,

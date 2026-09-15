@@ -9,7 +9,10 @@ export const MEDICAID_PAYERS = new Set(["SCMCD", "ILMCD"]);
 export const STATE_FULL: Record<string, string> = { SC: "South Carolina", IL: "Illinois" };
 
 // Out-of-state Medicaid: payer is Medicaid, its state resolves, that state is
-// NOT the tenant's jurisdiction, and the plan is ACTIVE.
+// NOT the tenant's jurisdiction, and the plan is ACTIVE. Any other coverage
+// (an employer plan, a marketplace plan, in-state Medicaid) is NOT a
+// duplicate-enrollment finding: result "clear", no flag, coverage still carried
+// so the wizard/admin can show it (third-party liability, not program integrity).
 export function isDuplicateEnrollment(
   hi: HealthInsuranceTraits | null | undefined,
   tenantState: string = config.tenantState,
@@ -36,5 +39,6 @@ export function determine(
     payer_state: duplicate ? code : null,
     payer_state_name: duplicate && code ? (STATE_FULL[code] ?? code) : null,
     coverage: hi ?? null,
+    coverage_type: hi?.coverage_type ?? (hi?.payer_id && MEDICAID_PAYERS.has(hi.payer_id) ? "medicaid" : null),
   };
 }

@@ -31,6 +31,7 @@ app.get("/api/health", (_req: Request, res: Response) => {
     demoEnrichmentPassthrough: config.demoEnrichmentPassthrough,
     demoApplicant: `${config.demoApplicant.firstName} ${config.demoApplicant.lastName} (${config.demoApplicant.dob})`,
     demoHouseholdMember: `${config.demoHouseholdMember.firstName} ${config.demoHouseholdMember.lastName} (${config.demoHouseholdMember.dob})`,
+    demoCoverageScenario: config.demoCoverageScenario,
     caseAssistNarrative: narrativeMode(),
   });
 });

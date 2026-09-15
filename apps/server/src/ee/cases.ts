@@ -286,6 +286,10 @@ export function identityContextFor(v: VerificationRow | undefined): IdentityCont
     flagDispositionReason: flag?.disposition_reason ?? null,
     flagUpdatedAt: flag?.updated_at ?? null,
     resolution: v.resolution,
+    otherCoverage:
+      det && !det.duplicate_enrollment && det.coverage && (det.coverage_type ?? det.coverage.coverage_type) && (det.coverage_type ?? det.coverage.coverage_type) !== "medicaid"
+        ? { type: (det.coverage_type ?? det.coverage.coverage_type) as string, payer: det.coverage.payer_name ?? null }
+        : null,
   };
 }
 

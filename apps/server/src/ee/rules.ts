@@ -96,6 +96,8 @@ export interface IdentityContext {
   flagUpdatedAt?: string | null;
   /** Applicant's hosted-flow answer: ended_submit_proof | confirm_enrolled | null. */
   resolution?: string | null;
+  /** Non-Medicaid coverage discovered (result clear): coverage_type + payer, e.g. { type: "employer", payer: "Aetna" }. */
+  otherCoverage?: { type: string; payer: string | null } | null;
 }
 
 const DISPOSITION_LABELS: Record<string, string> = {
@@ -124,13 +126,15 @@ function shortDate(iso: string | null | undefined): string | null {
 export function coverageDiscoveryRow(id: IdentityContext): TraceRow {
   const ok = id.status === "success";
   if (!id.duplicateEnrollment) {
+    const other = id.otherCoverage ?? null;
     return {
       ruleId: "SX-IDV-002",
       ruleName: "Coverage discovery",
       displayCode: "IDV-002",
       status: ok ? "PASS" : "PENDING",
       leftLabel: "Other health coverage found",
-      rightValue: ok ? "No other coverage found" : "Not checked",
+      rightValue: !ok ? "Not checked" : other ? `Other coverage found (${other.type} plan)` : "No other coverage found",
+      ...(ok && other ? { note: `${other.payer ?? other.type} — record as third-party liability; not a Medicaid finding.` } : {}),
     };
   }
   const stateName = id.payerStateName ?? id.payerName ?? "other state";

@@ -2,9 +2,10 @@
   "name": "demo-e2e",
   "private": true,
   "type": "module",
-  "description": "Headless-browser walk-through of the full demo storyline (resident wizard → CLEAR hosted flow → caseworker Case Assist). Not part of the npm workspaces; install separately.",
+  "description": "Headless-browser walk-through of the full demo storyline (resident wizard \u2192 CLEAR hosted flow \u2192 caseworker Case Assist). Not part of the npm workspaces; install separately.",
   "scripts": {
-    "storyline": "node storyline.mjs"
+    "storyline": "node storyline.mjs",
+    "storyline:employer": "node storyline-employer.mjs"
   },
   "dependencies": {
     "playwright": "^1.55.0"

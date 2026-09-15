@@ -20,13 +20,14 @@ import {
   createVerification,
   getVerification,
   normalizeDocumentTraits,
+  normalizeIsoDate,
   normalizePhoneTrait,
   normalizeSexTrait,
   type Verification,
   type VerificationRole,
 } from '../lib/verify-assist-client';
 import { SESSION_KEYS } from '../lib/session-keys';
-import type { IdentityVerification, PrimaryApplicant, WizardFormData } from './form-data.types';
+import type { HealthInsuranceEntry, IdentityVerification, PrimaryApplicant, WizardFormData } from './form-data.types';
 
 // ─── Pending marker (sessionStorage) ─────────────────────────────────────────
 
@@ -259,4 +260,57 @@ export function describeResolution(resolution: string | null | undefined): strin
     default:
       return null;
   }
+}
+
+// ─── Coverage discovery → insurance step ─────────────────────────────────────
+
+/** Wizard "type of coverage" values the insurance step offers. */
+const INSURANCE_TYPES = new Set(['employer', 'marketplace', 'medicare', 'tricare', 'private', 'other']);
+/** Relationship values the step's REL_OPTS_V2 select offers. */
+const HOLDER_RELATIONSHIPS = new Set(['spouse', 'child', 'stepchild', 'parent', 'sibling', 'grandchild', 'grandparent', 'other_relative', 'roommate', 'other']);
+
+/**
+ * Pure: when the verification's coverage discovery found the applicant's OWN
+ * (non-Medicaid, non-duplicate) coverage — e.g. an active employer plan — prefill
+ * one active entry for the primary applicant ('0') on the insurance step,
+ * marked `source: 'clear'` and locked. A duplicate-enrollment finding (out-of-
+ * state Medicaid) is a caseworker matter and never prefills anything; an entry
+ * the applicant already typed is left alone. Returns the input unchanged when
+ * there is nothing to apply.
+ */
+export function applyVerificationCoverageToInsurance(
+  healthInsurance: Record<string, HealthInsuranceEntry> | undefined,
+  verification: Verification,
+): Record<string, HealthInsuranceEntry> {
+  const current = healthInsurance ?? {};
+  const det = verification.determination;
+  const cov = det?.coverage;
+  if (!det || det.duplicate_enrollment || !cov) return current;
+  const type = (det.coverage_type ?? cov.coverage_type ?? '').toLowerCase();
+  if (!type || type === 'medicaid' || !INSURANCE_TYPES.has(type)) return current;
+  if (cov.plan_status && cov.plan_status.toUpperCase() !== 'ACTIVE') return current;
+  const existing = current['0'];
+  if (existing && existing.source !== 'clear' && existing.hasInsurance) return current;
+
+  const holderName = [cov.policy_holder_first_name, cov.policy_holder_last_name].filter(Boolean).join(' ').trim();
+  const relationship = (cov.policy_holder_relationship ?? '').toLowerCase();
+  const differentHolder = !!relationship && relationship !== 'self';
+  const entry: HealthInsuranceEntry = {
+    hasInsurance: 'yes',
+    insuranceType: type,
+    companyName: cov.payer_name ?? '',
+    policyNumber: cov.insurance_member_id ?? '',
+    groupNumber: cov.group_id ?? '',
+    differentHolder,
+    holderName: differentHolder ? holderName : '',
+    holderRelationship: differentHolder ? (HOLDER_RELATIONSHIPS.has(relationship) ? relationship : 'other') : '',
+    premium: cov.monthly_premium != null ? String(cov.monthly_premium) : '',
+    coverageStartDate: normalizeIsoDate(cov.coverage_start_date),
+    coverageEndDate: '',
+    lossReason: '',
+    skipped: false,
+    source: 'clear',
+    locked: true,
+  };
+  return { ...current, '0': entry };
 }

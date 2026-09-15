@@ -9,6 +9,7 @@ import React, {
   Fragment,
   createContext,
 } from 'react';
+import { VerifiedControl } from './VerifiedChip';
 import { PAY_FREQUENCY, computeMonthlyIncome } from './income-calc';
 import {
   Icon,
@@ -1141,6 +1142,10 @@ function StepInsuranceV2({ ctx }) {
 
   const member = allMembers.find((m) => m.id === activeId) || allMembers[0];
   const h = ins[activeId] || {};
+  // Entry prefilled from CLEAR's coverage discovery: greyed/locked until the
+  // applicant says it isn't right. Editing keeps `source: 'clear'` for the record.
+  const fromClear = h.source === 'clear';
+  const locked = fromClear && h.locked !== false;
 
   return (
     <Stack gap={20}>
@@ -1166,21 +1171,51 @@ function StepInsuranceV2({ ctx }) {
 
       <Panel title={member.name}>
         <Stack gap={14}>
-          <Field label={`Does ${member.name.split(' ')[0]} currently have health insurance?`}>
-            <RadioGroup
-              name={`ins-${activeId}`}
-              value={h.hasInsurance}
-              onChange={(x) => setMember(activeId, { hasInsurance: x, skipped: false })}
-              cols={3}
-              options={[
-                { value: 'yes', label: 'Yes, currently' },
-                { value: 'lost', label: 'Lost in past 3 months' },
-                { value: 'no', label: 'No coverage' },
-              ]}
-            />
-          </Field>
+          {fromClear ? (
+            <div className="verified-requirement" data-testid="insurance-from-clear" data-locked={locked ? 'true' : 'false'}>
+              <span className="verified-requirement-ic" aria-hidden="true">
+                <Icon name="shieldCheck" size={16} />
+              </span>
+              <div className="verified-requirement-body">
+                <div className="verified-requirement-title">Found during identity verification</div>
+                <div className="verified-requirement-sub">
+                  CLEAR's coverage check found this {h.companyName ? `${h.companyName} ` : ''}plan for{' '}
+                  {member.name.split(' ')[0]}. Review it below
+                  {locked ? ' — the details are locked to what was found.' : '.'}
+                </div>
+              </div>
+              {locked ? (
+                <button
+                  type="button"
+                  className="btn btn--link"
+                  data-testid="insurance-unlock"
+                  onClick={() => setMember(activeId, { locked: false })}
+                >
+                  This isn't right — edit
+                </button>
+              ) : (
+                <span className="fineprint">Editable</span>
+              )}
+            </div>
+          ) : null}
+          <VerifiedControl verified={locked}>
+            <Field label={`Does ${member.name.split(' ')[0]} currently have health insurance?`}>
+              <RadioGroup
+                name={`ins-${activeId}`}
+                value={h.hasInsurance}
+                onChange={(x) => setMember(activeId, { hasInsurance: x, skipped: false })}
+                cols={3}
+                options={[
+                  { value: 'yes', label: 'Yes, currently' },
+                  { value: 'lost', label: 'Lost in past 3 months' },
+                  { value: 'no', label: 'No coverage' },
+                ]}
+              />
+            </Field>
+          </VerifiedControl>
 
           {h.hasInsurance === 'yes' ? (
+            <VerifiedControl verified={locked}>
             <Stack gap={12}>
               <Field label="Type of coverage">
                 <Select
@@ -1250,6 +1285,7 @@ function StepInsuranceV2({ ctx }) {
                 />
               </Field>
             </Stack>
+            </VerifiedControl>
           ) : null}
 
           {h.hasInsurance === 'lost' ? (

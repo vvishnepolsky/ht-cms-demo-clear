@@ -94,9 +94,23 @@ export interface HealthInsuranceEntry {
   insuranceType?: string;
   companyName?: string;
   policyNumber?: string;
+  groupNumber?: string;
+  /** Is the policy holder someone other than this person? */
+  differentHolder?: boolean | null;
+  holderName?: string;
+  /** REL_OPTS_V2 value, e.g. spouse | parent | other */
+  holderRelationship?: string;
+  /** Monthly premium in dollars (string — the input is free text). */
+  premium?: string;
+  /** ISO yyyy-mm-dd */
+  coverageStartDate?: string;
   coverageEndDate?: string;
   lossReason?: string;
   skipped?: boolean;
+  /** 'clear' when the entry was prefilled from the CLEAR coverage discovery. */
+  source?: 'clear';
+  /** Prefilled entry is greyed/locked until the applicant chooses "This isn't right — edit". */
+  locked?: boolean;
 }
 
 export interface Household {
@@ -355,6 +369,23 @@ export interface IntakeMemberAddress {
  * from the BRE `applicant` block). Carries each member's OWN per-person BRE
  * attributes (ENG-1865). `address`/`phone`/`email` appear only on the primary.
  */
+export interface IntakeInsurance {
+  /** employer | marketplace | medicare | tricare | private | other */
+  type: string | null;
+  insurer: string | null;
+  policyNumber: string | null;
+  groupNumber: string | null;
+  premiumMonthly: number | null;
+  policyHolderIsOther: boolean;
+  policyHolderName: string | null;
+  /** spouse | parent | other … */
+  policyHolderRelationship: string | null;
+  /** ISO yyyy-mm-dd */
+  coverageStartDate: string | null;
+  /** 'clear' when prefilled from the identity verification's coverage discovery, else 'applicant'. */
+  source: 'clear' | 'applicant';
+}
+
 export interface IntakeMember {
   personId: string | null;
   firstName: string;
@@ -368,6 +399,8 @@ export interface IntakeMember {
   tribeName: string;
   income: IntakeMemberIncome;
   hasInsurance: boolean;
+  /** Details of the current coverage when hasInsurance (source 'clear' = found by CLEAR's coverage discovery). */
+  insurance?: IntakeInsurance | null;
   nonMagiResources: unknown;
   citizenshipStatus: IntakeCitizenshipStatus;
   isPregnant: boolean;
